@@ -13,9 +13,6 @@
     "bootstrap": "install-electron",
     "format": "prettier --write .",
     "lint": "eslint --cache .",
-    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
-    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-    "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
@@ -23,7 +20,9 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "prepare": "simple-git-hooks",
+    "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
     "@earendil-works/pi-ai": "catalog:core",
@@ -35,21 +34,43 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:lint",
-    "@electron-toolkit/tsconfig": "^2.0.0",
     "@eslint-react/eslint-plugin": "catalog:lint",
+    "@playwright/test": "catalog:test",
+    "@testing-library/react": "catalog:test",
+    "@testing-library/user-event": "catalog:test",
     "@types/node": "catalog:types",
     "@types/react": "catalog:types",
     "@types/react-dom": "catalog:types",
     "@vitejs/plugin-react": "catalog:vite",
+    "@vitest/coverage-v8": "catalog:test",
+    "@vitest/ui": "catalog:test",
+    "@vitest/web-worker": "catalog:test",
     "electron": "catalog:electron",
     "electron-builder": "catalog:electron",
     "electron-vite": "catalog:vite",
     "eslint": "catalog:lint",
     "eslint-plugin-format": "catalog:lint",
     "eslint-plugin-react-refresh": "catalog:lint",
+    "lint-staged": "catalog:dev",
+    "playwright": "catalog:test",
     "react": "catalog:core",
     "react-dom": "catalog:core",
+    "simple-git-hooks": "catalog:dev",
     "typescript": "catalog:dev",
-    "vite": "catalog:vite"
-  }
+    "vite": "catalog:vite",
+    "vitest": "catalog:test"
+  },
+  "simple-git-hooks": {
+    "commit-msg": "npx --no -- commitlint --edit $1",
+    "pre-commit": "npx lint-staged",
+    "preserveUnused": [
+      "commit-msg"
+    ]
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  },
+  "browserslist": [
+    "defaults"
+  ]
 }

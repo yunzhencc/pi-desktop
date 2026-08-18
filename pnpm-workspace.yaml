@@ -1,3 +1,5 @@
+minimumReleaseAgeExclude:
+  - '@testing-library/user-event@14.6.5'
 shellEmulator: true
 
 trustPolicy: no-downgrade
@@ -12,6 +14,7 @@ allowBuilds:
   electron-winstaller: true
   esbuild: true
   protobufjs: false
+  simple-git-hooks: true
 
 catalogs:
   core:
@@ -24,6 +27,8 @@ catalogs:
     react: 19.2.8
     react-dom: 19.2.8
   dev:
+    lint-staged: 17.3.0
+    simple-git-hooks: 2.13.1
     typescript: 6.0.3
   electron:
     electron: 43.4.0
@@ -34,6 +39,15 @@ catalogs:
     eslint: 10.8.1
     eslint-plugin-format: 2.0.1
     eslint-plugin-react-refresh: 0.5.4
+  test:
+    '@playwright/test': 1.62.1
+    '@testing-library/react': 16.3.2
+    '@testing-library/user-event': 14.6.5
+    '@vitest/coverage-v8': 4.1.10
+    '@vitest/ui': 4.1.10
+    '@vitest/web-worker': 4.1.10
+    playwright: 1.62.1
+    vitest: 4.1.10
   types:
     '@types/node': 26.2.0
     '@types/react': 19.2.18
@@ -45,5 +59,3 @@ catalogs:
 onlyBuiltDependencies:
   - electron
   - esbuild
-catalog:
-  '@electron-toolkit/tsconfig': ^2.0.0
