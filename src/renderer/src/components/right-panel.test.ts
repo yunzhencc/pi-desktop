@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clampRightPanelWidth,
   getExpandedRightPanelWidth,
+  getRightPanelHeaderWidth,
   readRightPanelWidth,
   shouldCloseRightPanel,
   writeRightPanelWidth,
@@ -20,6 +21,11 @@ describe('right panel width', () => {
   it('uses the entire main-content width when expanded', () => {
     expect(getExpandedRightPanelWidth(648)).toBe(648);
     expect(getExpandedRightPanelWidth(200)).toBe(320);
+  });
+
+  it('keeps the full-width panel controls inside the shell after the left toolbar reserve', () => {
+    expect(getRightPanelHeaderWidth(true, 900, 900, 124)).toBe(776);
+    expect(getRightPanelHeaderWidth(false, 396, 900, 240)).toBe(396);
   });
 
   it('stores a ratio so the panel follows the available main content width', () => {

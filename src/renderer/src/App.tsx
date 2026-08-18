@@ -2,6 +2,7 @@ import { useHotkey } from '@tanstack/react-hotkeys';
 import { useEffect, useState } from 'react';
 import {
   getExpandedRightPanelWidth,
+  getRightPanelHeaderWidth,
   readRightPanelWidth,
   writeRightPanelWidth,
 } from './components/right-panel';
@@ -45,6 +46,7 @@ export function App() {
 
   const toolbarInset = getToolbarInset({ isFullscreen, isMac });
   const toggleSidebar = () => setIsSidebarVisible(visible => !visible);
+  const headerLeftWidth = isSidebarVisible ? sidebarWidth : toolbarInset + 32;
   const mainContentWidth = viewportSize.width - (isSidebarVisible ? sidebarWidth : 0);
   const rightPanelWidth = readRightPanelWidth(
     String(rightPanelWidthRatio),
@@ -54,6 +56,12 @@ export function App() {
   const displayedRightPanelWidth = isRightPanelExpanded
     ? getExpandedRightPanelWidth(mainContentWidth)
     : rightPanelWidth;
+  const headerRightWidth = getRightPanelHeaderWidth(
+    isRightPanelExpanded,
+    displayedRightPanelWidth,
+    viewportSize.width,
+    headerLeftWidth,
+  );
   const updateRightPanelWidth = (width: number) => {
     setRightPanelWidthRatio(writeRightPanelWidth(width, mainContentWidth));
   };
@@ -82,7 +90,7 @@ export function App() {
           className="app-shell-toolbar app-shell-header-left flex shrink-0 items-center"
           style={{
             paddingInlineStart: toolbarInset,
-            width: isSidebarVisible ? sidebarWidth : toolbarInset + 32,
+            width: headerLeftWidth,
           }}
         >
           <SidebarToggle isSidebarVisible={isSidebarVisible} onToggle={toggleSidebar} />
@@ -91,7 +99,7 @@ export function App() {
         <div
           className="app-shell-toolbar app-shell-header-right flex shrink-0 items-center justify-end"
           style={{
-            width: isRightPanelOpen ? displayedRightPanelWidth : 40,
+            width: isRightPanelOpen ? headerRightWidth : 40,
           }}
         >
           {isRightPanelOpen && (

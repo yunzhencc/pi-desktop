@@ -20,6 +20,15 @@ export function getExpandedRightPanelWidth(mainContentWidth: number): number {
   return Math.max(RIGHT_PANEL_MIN_WIDTH, mainContentWidth);
 }
 
+export function getRightPanelHeaderWidth(
+  isExpanded: boolean,
+  panelWidth: number,
+  shellWidth: number,
+  headerLeftWidth: number,
+): number {
+  return isExpanded ? Math.max(0, shellWidth - headerLeftWidth) : panelWidth;
+}
+
 function getDefaultRightPanelWidth(mainContentWidth: number, shellHeight: number): number {
   return Math.max(
     RIGHT_PANEL_MIN_WIDTH,
