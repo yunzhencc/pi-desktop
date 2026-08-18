@@ -30,7 +30,12 @@
     "@earendil-works/pi-telemetry": "catalog:core",
     "@electron-toolkit/preload": "catalog:core",
     "@electron-toolkit/utils": "catalog:core",
-    "electron-updater": "catalog:core"
+    "electron-updater": "catalog:core",
+    "es-toolkit": "catalog:core",
+    "next-themes": "catalog:core",
+    "overlayscrollbars": "catalog:core",
+    "overlayscrollbars-react": "catalog:core",
+    "react-i18next": "catalog:core"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:lint",
