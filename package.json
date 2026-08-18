@@ -39,6 +39,9 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:lint",
+    "@commitlint/cli": "catalog:lint",
+    "@commitlint/config-conventional": "catalog:lint",
+    "@commitlint/types": "catalog:lint",
     "@eslint-react/eslint-plugin": "catalog:lint",
     "@playwright/test": "catalog:test",
     "@testing-library/react": "catalog:test",
