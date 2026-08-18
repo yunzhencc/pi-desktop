@@ -14,5 +14,7 @@ export default antfu({
   },
   react: true,
   typescript: true,
-  ignores: [],
+  ignores: [
+    'packages/shadcn-ui/src',
+  ],
 });

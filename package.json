@@ -30,6 +30,7 @@
     "@earendil-works/pi-telemetry": "catalog:core",
     "@electron-toolkit/preload": "catalog:core",
     "@electron-toolkit/utils": "catalog:core",
+    "@pi-desktop/shadcn-ui": "workspace:*",
     "electron-updater": "catalog:core",
     "es-toolkit": "catalog:core",
     "next-themes": "catalog:core",
@@ -44,6 +45,7 @@
     "@commitlint/types": "catalog:lint",
     "@eslint-react/eslint-plugin": "catalog:lint",
     "@playwright/test": "catalog:test",
+    "@tailwindcss/vite": "catalog:vite",
     "@testing-library/react": "catalog:test",
     "@testing-library/user-event": "catalog:test",
     "@types/node": "catalog:types",
@@ -64,6 +66,7 @@
     "react": "catalog:core",
     "react-dom": "catalog:core",
     "simple-git-hooks": "catalog:dev",
+    "tailwindcss": "catalog:dev",
     "typescript": "catalog:dev",
     "vite": "catalog:vite",
     "vitest": "catalog:test"

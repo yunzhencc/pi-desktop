@@ -1,0 +1,27 @@
+{
+  "name": "@pi-desktop/shadcn-ui",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./globals.css": "./src/styles/globals.css",
+    "./lib/*": "./src/lib/*.ts",
+    "./components/*": "./src/components/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@base-ui/react": "catalog:core",
+    "class-variance-authority": "catalog:core",
+    "clsx": "catalog:core",
+    "lucide-react": "catalog:core",
+    "react": "catalog:core",
+    "react-dom": "catalog:core",
+    "shadcn": "catalog:core",
+    "tailwind-merge": "catalog:core",
+    "tw-animate-css": "catalog:core",
+    "zod": "catalog:core"
+  }
+}
