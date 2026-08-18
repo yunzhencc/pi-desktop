@@ -29,6 +29,10 @@ export function getRightPanelHeaderWidth(
   return isExpanded ? Math.max(0, shellWidth - headerLeftWidth) : panelWidth;
 }
 
+export function getRightPanelExpansionAfterToggle(isOpen: boolean, isExpanded: boolean): boolean {
+  return isOpen ? false : isExpanded;
+}
+
 function getDefaultRightPanelWidth(mainContentWidth: number, shellHeight: number): number {
   return Math.max(
     RIGHT_PANEL_MIN_WIDTH,

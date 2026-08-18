@@ -2,6 +2,7 @@ import { useHotkey } from '@tanstack/react-hotkeys';
 import { useEffect, useState } from 'react';
 import {
   getExpandedRightPanelWidth,
+  getRightPanelExpansionAfterToggle,
   getRightPanelHeaderWidth,
   readRightPanelWidth,
   writeRightPanelWidth,
@@ -65,7 +66,10 @@ export function App() {
   const updateRightPanelWidth = (width: number) => {
     setRightPanelWidthRatio(writeRightPanelWidth(width, mainContentWidth));
   };
-  const toggleRightPanel = () => setIsRightPanelOpen(open => !open);
+  const toggleRightPanel = () => {
+    setIsRightPanelExpanded(getRightPanelExpansionAfterToggle(isRightPanelOpen, isRightPanelExpanded));
+    setIsRightPanelOpen(open => !open);
+  };
   const toggleRightPanelExpanded = () => setIsRightPanelExpanded(expanded => !expanded);
   useHotkey('Mod+B', toggleSidebar, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
 
