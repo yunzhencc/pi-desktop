@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
 
 function createWindow(): void {
@@ -14,6 +14,10 @@ function createWindow(): void {
     ...(process.platform === 'darwin'
       ? {
           titleBarStyle: 'hiddenInset',
+          trafficLightPosition: {
+            x: 16,
+            y: Math.round((46 * screen.getPrimaryDisplay().scaleFactor - 14) / 2),
+          },
         }
       : {}),
     ...(process.platform === 'linux' ? { icon } : {}),
