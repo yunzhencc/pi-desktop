@@ -1,0 +1,55 @@
+{
+  "name": "pi-desktop",
+  "version": "1.0.0",
+  "packageManager": "pnpm@11.20.0",
+  "description": "An Electron application with React and TypeScript",
+  "author": "example.com",
+  "main": "./out/main/index.js",
+  "engines": {
+    "node": "^22.18.0 || ^24.12.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "bootstrap": "install-electron",
+    "format": "prettier --write .",
+    "lint": "eslint --cache .",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev",
+    "build": "npm run typecheck && electron-vite build",
+    "postinstall": "electron-builder install-app-deps",
+    "build:unpack": "npm run build && electron-builder --dir",
+    "build:win": "npm run build && electron-builder --win",
+    "build:mac": "electron-vite build && electron-builder --mac",
+    "build:linux": "electron-vite build && electron-builder --linux"
+  },
+  "dependencies": {
+    "@earendil-works/pi-ai": "catalog:core",
+    "@earendil-works/pi-coding-agent": "catalog:core",
+    "@earendil-works/pi-telemetry": "catalog:core",
+    "@electron-toolkit/preload": "catalog:core",
+    "@electron-toolkit/utils": "catalog:core",
+    "electron-updater": "catalog:core"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:lint",
+    "@electron-toolkit/tsconfig": "^2.0.0",
+    "@eslint-react/eslint-plugin": "catalog:lint",
+    "@types/node": "catalog:types",
+    "@types/react": "catalog:types",
+    "@types/react-dom": "catalog:types",
+    "@vitejs/plugin-react": "catalog:vite",
+    "electron": "catalog:electron",
+    "electron-builder": "catalog:electron",
+    "electron-vite": "catalog:vite",
+    "eslint": "catalog:lint",
+    "eslint-plugin-format": "catalog:lint",
+    "eslint-plugin-react-refresh": "catalog:lint",
+    "react": "catalog:core",
+    "react-dom": "catalog:core",
+    "typescript": "catalog:dev",
+    "vite": "catalog:vite"
+  }
+}
