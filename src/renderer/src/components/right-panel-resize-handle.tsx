@@ -15,6 +15,7 @@ interface RightPanelResizeHandleProps {
   mainContentWidth: number;
   onClose: () => void;
   onResizeEnd: (width: number) => void;
+  onResizingChange: (isResizing: boolean) => void;
   onWidthChange: (width: number) => void;
   shellHeight: number;
   width: number;
@@ -24,12 +25,15 @@ export function RightPanelResizeHandle({
   mainContentWidth,
   onClose,
   onResizeEnd,
+  onResizingChange,
   onWidthChange,
   shellHeight,
   width,
 }: RightPanelResizeHandleProps) {
   const [isResizing, setIsResizing] = useState(false);
   const dragRef = useRef<DragState | null>(null);
+
+  useEffect(() => () => onResizingChange(false), [onResizingChange]);
 
   useEffect(() => {
     if (!isResizing)
@@ -51,6 +55,7 @@ export function RightPanelResizeHandle({
       drag.didMove ||= event.clientX !== drag.startPosition;
       const nextWidth = drag.startSize - event.clientX + drag.startPosition;
       if (shouldCloseRightPanel(nextWidth)) {
+        onResizingChange(false);
         onClose();
         return;
       }
@@ -67,6 +72,7 @@ export function RightPanelResizeHandle({
       }
       dragRef.current = null;
       setIsResizing(false);
+      onResizingChange(false);
     };
 
     window.addEventListener('pointermove', resize);
@@ -77,7 +83,7 @@ export function RightPanelResizeHandle({
       window.removeEventListener('pointerup', finish);
       window.removeEventListener('pointercancel', finish);
     };
-  }, [isResizing, mainContentWidth, onClose, onResizeEnd, onWidthChange]);
+  }, [isResizing, mainContentWidth, onClose, onResizeEnd, onResizingChange, onWidthChange]);
 
   const reset = () => {
     const nextWidth = readRightPanelWidth(null, mainContentWidth, shellHeight);
@@ -115,6 +121,7 @@ export function RightPanelResizeHandle({
           startPosition: event.clientX,
           startSize: width,
         };
+        onResizingChange(true);
         setIsResizing(true);
       }}
       role="separator"

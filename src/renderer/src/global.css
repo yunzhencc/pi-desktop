@@ -28,18 +28,6 @@ body,
   transition: width 500ms cubic-bezier(0.34, 1.1, 0.64, 1);
 }
 
-.app-shell-header-main {
-  border-bottom: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
-}
-
-.app-shell-header--both-panels-closed {
-  border-bottom: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
-}
-
-.app-shell-header--both-panels-closed .app-shell-header-main {
-  border-bottom: 0;
-}
-
 .app-shell-header-right {
   padding-inline-start: 0;
   padding-inline-end: 0.5rem;
@@ -86,6 +74,13 @@ body,
   box-shadow: none;
 }
 
+.app-shell[data-resizing='true'] .app-shell-header-left,
+.app-shell[data-resizing='true'] .app-shell-header-right,
+.app-shell[data-resizing='true'] .app-shell-left-panel,
+.app-shell[data-resizing='true'] .app-shell-right-panel {
+  transition: none;
+}
+
 .sidebar-trigger {
   -webkit-app-region: no-drag;
   color: var(--text-secondary);
@@ -101,6 +96,10 @@ body,
 
 .sidebar-trigger:focus-visible {
   box-shadow: 0 0 0 2px var(--focus);
+}
+
+.right-panel-expand-trigger[aria-pressed='true'] {
+  background: var(--surface-editor);
 }
 
 .sidebar-trigger-tooltip {

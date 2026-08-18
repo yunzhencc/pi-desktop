@@ -16,6 +16,10 @@ export function clampRightPanelWidth(width: number, mainContentWidth: number): n
   );
 }
 
+export function getExpandedRightPanelWidth(mainContentWidth: number): number {
+  return Math.max(RIGHT_PANEL_MIN_WIDTH, mainContentWidth);
+}
+
 function getDefaultRightPanelWidth(mainContentWidth: number, shellHeight: number): number {
   return Math.max(
     RIGHT_PANEL_MIN_WIDTH,

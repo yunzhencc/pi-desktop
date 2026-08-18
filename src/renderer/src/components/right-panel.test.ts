@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampRightPanelWidth,
+  getExpandedRightPanelWidth,
   readRightPanelWidth,
   shouldCloseRightPanel,
   writeRightPanelWidth,
@@ -14,6 +15,11 @@ describe('right panel width', () => {
 
   it('uses Codex’s adaptive 600px default when no width was persisted', () => {
     expect(readRightPanelWidth(null, 1000, 800)).toBe(640);
+  });
+
+  it('uses the entire main-content width when expanded', () => {
+    expect(getExpandedRightPanelWidth(648)).toBe(648);
+    expect(getExpandedRightPanelWidth(200)).toBe(320);
   });
 
   it('stores a ratio so the panel follows the available main content width', () => {

@@ -16,6 +16,7 @@ interface DragState {
 interface SidebarResizeHandleProps {
   onCollapse: () => void;
   onResizeEnd: (width: number) => void;
+  onResizingChange: (isResizing: boolean) => void;
   onWidthChange: (width: number) => void;
   width: number;
 }
@@ -23,11 +24,14 @@ interface SidebarResizeHandleProps {
 export function SidebarResizeHandle({
   onCollapse,
   onResizeEnd,
+  onResizingChange,
   onWidthChange,
   width,
 }: SidebarResizeHandleProps) {
   const [isResizing, setIsResizing] = useState(false);
   const dragRef = useRef<DragState | null>(null);
+
+  useEffect(() => () => onResizingChange(false), [onResizingChange]);
 
   useEffect(() => {
     if (!isResizing)
@@ -42,6 +46,7 @@ export function SidebarResizeHandle({
       drag.didMove ||= event.clientX !== drag.startPosition;
       const nextWidth = drag.startSize + event.clientX - drag.startPosition;
       if (shouldCollapseSidebar(nextWidth)) {
+        onResizingChange(false);
         onCollapse();
         return;
       }
@@ -61,6 +66,7 @@ export function SidebarResizeHandle({
       }
       dragRef.current = null;
       setIsResizing(false);
+      onResizingChange(false);
     };
 
     window.addEventListener('pointermove', resize);
@@ -71,7 +77,7 @@ export function SidebarResizeHandle({
       window.removeEventListener('pointerup', finish);
       window.removeEventListener('pointercancel', finish);
     };
-  }, [isResizing, onCollapse, onResizeEnd, onWidthChange]);
+  }, [isResizing, onCollapse, onResizeEnd, onResizingChange, onWidthChange]);
 
   const reset = () => {
     const nextWidth = clampSidebarWidth(SIDEBAR_DEFAULT_WIDTH, window.innerWidth);
@@ -109,6 +115,7 @@ export function SidebarResizeHandle({
           startPosition: event.clientX,
           startSize: width,
         };
+        onResizingChange(true);
         setIsResizing(true);
       }}
       role="separator"
