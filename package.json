@@ -32,12 +32,14 @@
     "@electron-toolkit/preload": "catalog:core",
     "@electron-toolkit/utils": "catalog:core",
     "@pi-desktop/shadcn-ui": "workspace:*",
+    "better-sqlite3": "catalog:core",
     "electron-updater": "catalog:core",
     "es-toolkit": "catalog:core",
     "next-themes": "catalog:core",
     "overlayscrollbars": "catalog:core",
     "overlayscrollbars-react": "catalog:core",
-    "react-i18next": "catalog:core"
+    "react-i18next": "catalog:core",
+    "zod": "catalog:core"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:lint",

@@ -24,6 +24,9 @@ catalogs:
     '@electron-toolkit/utils':
       specifier: 4.0.0
       version: 4.0.0
+    better-sqlite3:
+      specifier: 13.0.3
+      version: 13.0.3
     class-variance-authority:
       specifier: 0.7.1
       version: 0.7.1
@@ -191,6 +194,9 @@ importers:
       '@pi-desktop/shadcn-ui':
         specifier: workspace:*
         version: link:packages/shadcn-ui
+      better-sqlite3:
+        specifier: catalog:core
+        version: 13.0.3
       electron-updater:
         specifier: catalog:core
         version: 6.8.9(supports-color@7.2.0)
@@ -209,6 +215,9 @@ importers:
       react-i18next:
         specifier: catalog:core
         version: 17.0.11(i18next@26.3.6(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
+      zod:
+        specifier: catalog:core
+        version: 4.4.3
     devDependencies:
       '@antfu/eslint-config':
         specifier: catalog:lint
@@ -2348,6 +2357,10 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
+  better-sqlite3@13.0.3:
+    resolution: {integrity: sha512-RbOBxmLBG8uvFUc15X9+9SFemKcQ0WBuISBVkpuiaUB2qblC8UWlHEjdWVoZ8AdhSwmoEgsiXKfopX0CQxaACQ==}
+    engines: {node: '>=22'}
+
   bignumber.js@9.3.1:
     resolution: {integrity: sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==}
 
@@ -4394,6 +4407,10 @@ packages:
   node-abi@4.33.0:
     resolution: {integrity: sha512-vLBWCKb+7LWsX+TbfzWOkw0W81m377tyx3hOweBTjO43CXZnRGS1/JPWs20fr0PgZyDXk6ROYrylsEycK8raDA==}
     engines: {node: '>=22.12.0'}
+
+  node-addon-api@8.9.2:
+    resolution: {integrity: sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==}
+    engines: {node: ^18 || ^20 || >= 21}
 
   node-api-version@0.2.1:
     resolution: {integrity: sha512-2xP/IGGMmmSQpI1+O/k72jF/ykvZ89JeuKX3TLJAYPDVLUalrshrLHkeVcCCZqG/eEa635cr8IBYzgnDvM2O8Q==}
@@ -7755,6 +7772,10 @@ snapshots:
 
   baseline-browser-mapping@2.11.15: {}
 
+  better-sqlite3@13.0.3:
+    dependencies:
+      node-addon-api: 8.9.2
+
   bignumber.js@9.3.1: {}
 
   birecord@0.1.2: {}
@@ -10086,6 +10107,8 @@ snapshots:
   node-abi@4.33.0:
     dependencies:
       semver: 7.8.5
+
+  node-addon-api@8.9.2: {}
 
   node-api-version@0.2.1:
     dependencies:
