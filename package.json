@@ -32,6 +32,7 @@
     "@electron-toolkit/preload": "catalog:core",
     "@electron-toolkit/utils": "catalog:core",
     "@pi-desktop/shadcn-ui": "workspace:*",
+    "@tanstack/react-hotkeys": "catalog:core",
     "better-sqlite3": "catalog:core",
     "electron-updater": "catalog:core",
     "es-toolkit": "catalog:core",

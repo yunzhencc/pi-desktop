@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, screen, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
 
 function createWindow(): void {
@@ -14,9 +14,10 @@ function createWindow(): void {
     ...(process.platform === 'darwin'
       ? {
           titleBarStyle: 'hiddenInset',
+          vibrancy: 'menu',
           trafficLightPosition: {
             x: 16,
-            y: Math.round((46 * screen.getPrimaryDisplay().scaleFactor - 14) / 2),
+            y: Math.round((46 - 14) / 2),
           },
         }
       : {}),
@@ -27,8 +28,26 @@ function createWindow(): void {
     },
   });
 
+  if (process.platform === 'darwin') {
+    const syncTrafficLightPosition = () => {
+      mainWindow.setWindowButtonPosition({
+        x: 16,
+        y: Math.round((46 * mainWindow.webContents.getZoomFactor() - 14) / 2),
+      });
+    };
+    mainWindow.webContents.on('did-finish-load', syncTrafficLightPosition);
+    mainWindow.webContents.on('zoom-changed', syncTrafficLightPosition);
+  }
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();
+  });
+
+  mainWindow.on('enter-full-screen', () => {
+    mainWindow.webContents.send('window-fullscreen-changed', true);
+  });
+  mainWindow.on('leave-full-screen', () => {
+    mainWindow.webContents.send('window-fullscreen-changed', false);
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -63,6 +82,7 @@ app.whenReady().then(() => {
   // IPC test
   // eslint-disable-next-line no-console
   ipcMain.on('ping', () => console.log('pong'));
+  ipcMain.handle('window:is-full-screen', event => BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false);
 
   createWindow();
 

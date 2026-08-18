@@ -1,5 +1,11 @@
 @import '@pi-desktop/shadcn-ui/globals.css';
 
+html,
+body,
+#root {
+  background: transparent;
+}
+
 .draggable {
   -webkit-app-region: drag;
   user-select: none;
@@ -7,4 +13,149 @@
 
 .draggable button {
   -webkit-app-region: no-drag;
+}
+
+.app-shell-toolbar {
+  padding-inline: 1rem;
+}
+
+.app-shell-header {
+  height: 46px;
+}
+
+.app-shell-header-left {
+  padding-inline-end: 0;
+  transition: width 500ms cubic-bezier(0.34, 1.1, 0.64, 1);
+}
+
+.app-shell-header-main {
+  border-bottom: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
+}
+
+.app-shell-header--both-panels-closed {
+  border-bottom: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
+}
+
+.app-shell-header--both-panels-closed .app-shell-header-main {
+  border-bottom: 0;
+}
+
+.app-shell-header-right {
+  padding-inline-start: 0;
+  padding-inline-end: 0.5rem;
+  transition: width 500ms cubic-bezier(0.34, 1.1, 0.64, 1);
+}
+
+.app-shell-left-panel {
+  background: var(--surface-editor);
+  overflow: visible;
+  transition: width 500ms cubic-bezier(0.34, 1.1, 0.64, 1);
+}
+
+.app-shell-left-panel::after {
+  position: absolute;
+  top: 0;
+  right: calc(-1 * var(--radius-2xl));
+  bottom: 0;
+  width: var(--radius-2xl);
+  background: inherit;
+  content: '';
+  pointer-events: none;
+}
+
+.app-shell-left-panel[data-open='false'],
+.app-shell-left-panel[data-open='false']::after {
+  background: transparent;
+}
+
+.app-shell-left-panel[data-open='false'] {
+  visibility: hidden;
+}
+
+@supports (color: color-mix(in lab, red, red)) {
+  .app-shell-left-panel {
+    background: color-mix(in srgb, var(--surface-editor) 70%, transparent);
+  }
+}
+
+.app-shell-right-panel {
+  background: var(--surface);
+  border-inline-start: 1px solid var(--border-subtle);
+  overflow: hidden;
+  box-shadow: -8px 0 16px -8px rgb(0 0 0 / 18%);
+  transition: width 500ms cubic-bezier(0.34, 1.1, 0.64, 1);
+}
+
+.app-shell-right-panel[data-open='false'] {
+  border-inline-start-color: transparent;
+  box-shadow: none;
+  visibility: hidden;
+}
+
+.sidebar-trigger {
+  -webkit-app-region: no-drag;
+  color: var(--text-secondary);
+  border-radius: var(--radius-lg);
+  cursor: default;
+  outline: none;
+}
+
+.sidebar-trigger:hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.sidebar-trigger:focus-visible {
+  box-shadow: 0 0 0 2px var(--focus);
+}
+
+.sidebar-trigger-tooltip {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  padding: 6px 8px;
+  color: var(--foreground);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  box-shadow:
+    0 0 0 0.5px color-mix(in oklab, var(--foreground) 12%, transparent),
+    0 3px 7.5px #0000000a,
+    0 0 20px #0000000d;
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.sidebar-trigger:hover .sidebar-trigger-tooltip,
+.sidebar-trigger:focus-visible .sidebar-trigger-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sidebar-trigger-tooltip kbd {
+  margin-left: 8px;
+  color: var(--text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell-left-panel,
+  .app-shell-right-panel,
+  .sidebar-trigger-tooltip {
+    transition: none;
+  }
+}
+
+.app-shell-main-surface {
+  display: flex;
+  position: relative;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background-color: var(--surface);
 }

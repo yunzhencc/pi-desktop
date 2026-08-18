@@ -29,6 +29,7 @@ catalogs:
     '@earendil-works/pi-telemetry': 0.84.2
     '@electron-toolkit/preload': 3.0.2
     '@electron-toolkit/utils': 4.0.0
+    '@tanstack/react-hotkeys': ^0.10.0
     better-sqlite3: 13.0.3
     class-variance-authority: 0.7.1
     clsx: 2.1.1
