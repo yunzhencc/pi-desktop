@@ -47,6 +47,8 @@ catalogs:
     lint-staged: 17.3.0
     simple-git-hooks: 2.13.1
     tailwindcss: 4.3.3
+    tsx: 4.23.12
+    typed-query-selector: 2.12.2
     typescript: 6.0.3
   electron:
     electron: 43.4.0

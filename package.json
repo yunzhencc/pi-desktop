@@ -11,6 +11,7 @@
   },
   "scripts": {
     "bootstrap": "install-electron",
+    "clean": "tsx ./scripts/clean.ts",
     "format": "prettier --write .",
     "lint": "eslint --cache .",
     "start": "electron-vite preview",
@@ -67,6 +68,8 @@
     "react-dom": "catalog:core",
     "simple-git-hooks": "catalog:dev",
     "tailwindcss": "catalog:dev",
+    "tsx": "catalog:dev",
+    "typed-query-selector": "catalog:dev",
     "typescript": "catalog:dev",
     "vite": "catalog:vite",
     "vitest": "catalog:test"
