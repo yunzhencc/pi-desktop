@@ -2,7 +2,6 @@ import { useHotkey } from '@tanstack/react-hotkeys';
 import { useEffect, useState } from 'react';
 import {
   readRightPanelWidth,
-  shouldAutoCloseRightPanel,
   writeRightPanelWidth,
 } from './components/right-panel';
 import { RightPanelResizeHandle } from './components/right-panel-resize-handle';
@@ -52,10 +51,7 @@ export function App() {
   const updateRightPanelWidth = (width: number) => {
     setRightPanelWidthRatio(writeRightPanelWidth(width, mainContentWidth));
   };
-  const toggleRightPanel = () => {
-    if (!shouldAutoCloseRightPanel(viewportSize.width))
-      setIsRightPanelOpen(open => !open);
-  };
+  const toggleRightPanel = () => setIsRightPanelOpen(open => !open);
   useHotkey('Mod+B', toggleSidebar, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
 
   useEffect(() => {
@@ -66,8 +62,6 @@ export function App() {
   useEffect(() => {
     const updateViewportSize = () => {
       setViewportSize({ height: window.innerHeight, width: window.innerWidth });
-      if (shouldAutoCloseRightPanel(window.innerWidth))
-        setIsRightPanelOpen(false);
     };
 
     window.addEventListener('resize', updateViewportSize);
@@ -99,7 +93,6 @@ export function App() {
             aria-expanded={isRightPanelOpen}
             aria-label={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
             className="sidebar-trigger flex size-8 items-center justify-center"
-            disabled={shouldAutoCloseRightPanel(viewportSize.width)}
             onClick={toggleRightPanel}
             title="Toggle right panel"
             type="button"

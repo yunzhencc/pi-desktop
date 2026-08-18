@@ -1,8 +1,6 @@
 export const RIGHT_PANEL_DEFAULT_WIDTH = 600;
 export const RIGHT_PANEL_MIN_WIDTH = 320;
 export const RIGHT_PANEL_MAIN_CONTENT_RESERVE = 352;
-export const RIGHT_PANEL_COMPACT_BREAKPOINT = 960;
-
 export function shouldCloseRightPanel(width: number): boolean {
   return width < RIGHT_PANEL_MIN_WIDTH / 2;
 }
@@ -16,10 +14,6 @@ export function clampRightPanelWidth(width: number, mainContentWidth: number): n
     RIGHT_PANEL_MIN_WIDTH,
     Math.min(width, getRightPanelMaximum(mainContentWidth)),
   );
-}
-
-export function shouldAutoCloseRightPanel(viewportWidth: number): boolean {
-  return viewportWidth <= RIGHT_PANEL_COMPACT_BREAKPOINT;
 }
 
 function getDefaultRightPanelWidth(mainContentWidth: number, shellHeight: number): number {

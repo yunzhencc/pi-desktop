@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   clampRightPanelWidth,
   readRightPanelWidth,
-  shouldAutoCloseRightPanel,
   shouldCloseRightPanel,
   writeRightPanelWidth,
 } from './right-panel';
@@ -21,11 +20,6 @@ describe('right panel width', () => {
     const stored = writeRightPanelWidth(480, 1000);
 
     expect(readRightPanelWidth(String(stored), 1200, 800)).toBeCloseTo(577.56, 2);
-  });
-
-  it('uses Codex’s 960px compact breakpoint', () => {
-    expect(shouldAutoCloseRightPanel(960)).toBe(true);
-    expect(shouldAutoCloseRightPanel(961)).toBe(false);
   });
 
   it('closes after dragging below Codex’s 160px threshold', () => {

@@ -63,13 +63,8 @@ body,
   pointer-events: none;
 }
 
-.app-shell-left-panel[data-open='false'],
 .app-shell-left-panel[data-open='false']::after {
-  background: transparent;
-}
-
-.app-shell-left-panel[data-open='false'] {
-  visibility: hidden;
+  display: none;
 }
 
 @supports (color: color-mix(in lab, red, red)) {
@@ -89,7 +84,6 @@ body,
 .app-shell-right-panel[data-open='false'] {
   border-inline-start-color: transparent;
   box-shadow: none;
-  visibility: hidden;
 }
 
 .sidebar-trigger {
