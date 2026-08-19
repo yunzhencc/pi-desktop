@@ -2,9 +2,10 @@ import { Buffer } from 'node:buffer';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { calculateCost } from '@earendil-works/pi-ai';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AttachmentStore } from './attachments';
-import { PiRuntime } from './pi-runtime';
+import { DEEPSEEK_PROVIDER, PiRuntime } from './pi-runtime';
 
 const directories: string[] = [];
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Jb7sAAAAASUVORK5CYII=', 'base64');
@@ -22,6 +23,22 @@ afterEach(async () => {
 });
 
 describe('pi runtime', () => {
+  it('provides the cost data Pi needs to complete tool turns', async () => {
+    const { ModelRuntime } = await import('@earendil-works/pi-coding-agent');
+    const runtime = await ModelRuntime.create({ modelsPath: null, refreshOnCreate: false });
+    runtime.registerProvider('deepseek', DEEPSEEK_PROVIDER);
+    const model = runtime.getModel('deepseek', 'deepseek-v4-flash');
+
+    expect(calculateCost(model!, {
+      cacheRead: 0,
+      cacheWrite: 0,
+      cost: { cacheRead: 0, cacheWrite: 0, input: 0, output: 0, total: 0 },
+      input: 1,
+      output: 1,
+      totalTokens: 2,
+    })).toEqual({ cacheRead: 0, cacheWrite: 0, input: 0, output: 0, total: 0 });
+  });
+
   it('rejects sends until DeepSeek has been configured', async () => {
     const runtime = new PiRuntime(new AttachmentStore(), async () => ({ prompt: vi.fn(), subscribe: () => () => {} }));
 
@@ -78,11 +95,34 @@ describe('pi runtime', () => {
 
     await expect(runtime.openSession(session.getSessionFile()!)).resolves.toEqual({
       messages: [
-        { role: 'user', text: 'Earlier request', timestamp: 1000 },
-        { role: 'assistant', text: 'Earlier reply', timestamp: 2000 },
+        { entryId: 'message-1', role: 'user', text: 'Earlier request', timestamp: 1000 },
+        { entryId: 'message-2', role: 'assistant', text: 'Earlier reply', timestamp: 2000 },
       ],
       path: session.getSessionFile(),
     });
+  });
+
+  it('forks a new persisted session at the selected assistant reply', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-desktop-session-fork-'));
+    directories.push(root);
+    const workspace = join(root, 'workspace');
+    const agentDir = join(root, 'agent');
+    await mkdir(workspace);
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const sessionDir = join(agentDir, 'sessions', `--${workspace.slice(1).replace(/[/:]/g, '-')}--`);
+    const session = SessionManager.create(workspace, sessionDir);
+    await writeFile(session.getSessionFile()!, `${JSON.stringify(session.getHeader())}\n${JSON.stringify({ id: 'message-1', message: { content: 'Earlier request', role: 'user', timestamp: 1_000 }, parentId: null, timestamp: new Date().toISOString(), type: 'message' })}\n${JSON.stringify({ id: 'message-2', message: { content: [{ text: 'Earlier reply', type: 'text' }], role: 'assistant', timestamp: 2_000 }, parentId: 'message-1', timestamp: new Date().toISOString(), type: 'message' })}\n${JSON.stringify({ id: 'message-3', message: { content: 'Later request', role: 'user', timestamp: 3_000 }, parentId: 'message-2', timestamp: new Date().toISOString(), type: 'message' })}\n`);
+    const runtime = new PiRuntime(new AttachmentStore(), { agentDir });
+    await runtime.openSession(session.getSessionFile()!);
+
+    const fork = await runtime.forkAssistantMessage('message-2');
+
+    expect(fork.path).not.toBe(session.getSessionFile());
+    expect(fork.messages).toMatchObject([
+      { role: 'user', text: 'Earlier request', timestamp: 1_000 },
+      { role: 'assistant', text: 'Earlier reply', timestamp: 2_000 },
+    ]);
+    expect(fork.messages).not.toContainEqual(expect.objectContaining({ text: 'Later request' }));
   });
 
   it('disposes the active Pi context before a new conversation', async () => {
@@ -220,7 +260,7 @@ describe('pi runtime', () => {
     listener?.({ assistantMessageEvent: { contentIndex: 0, delta: 'Hi there', type: 'text_delta' }, type: 'message_update' });
     listener?.({ message: { content: [], role: 'assistant' }, type: 'message_end' });
 
-    expect(update).toHaveBeenLastCalledWith({ done: true, text: 'Hi there', type: 'assistant' });
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ done: true, text: 'Hi there', timestamp: expect.any(Number), type: 'assistant' }));
   });
 
   it('does not carry delta text into the next assistant message', async () => {

@@ -3,9 +3,19 @@ import type { DeepSeekConfiguration } from './deepseek-settings';
 import { join, resolve } from 'node:path';
 
 export type TranscriptUpdate
-  = | { done?: boolean; text: string; type: 'assistant' }
+  = | { done?: boolean; entryId?: string; text: string; timestamp?: number; type: 'assistant' }
     | { text: string; type: 'error' }
     | { status: 'running' | 'settled'; type: 'status' };
+
+export const DEEPSEEK_PROVIDER = {
+  api: 'openai-completions' as const,
+  baseUrl: 'https://api.deepseek.com',
+  models: [
+    { contextWindow: 128000, cost: { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 }, id: 'deepseek-v4-flash', input: ['text'] as const, maxTokens: 16384, name: 'DeepSeek V4 Flash', reasoning: true },
+    { contextWindow: 128000, cost: { cacheRead: 0, cacheWrite: 0, input: 0, output: 0 }, id: 'deepseek-v4-pro', input: ['text'] as const, maxTokens: 16384, name: 'DeepSeek V4 Pro', reasoning: true },
+  ],
+  name: 'DeepSeek',
+};
 
 export interface PiSessionSummary {
   firstMessage: string;
@@ -15,13 +25,15 @@ export interface PiSessionSummary {
 }
 
 export interface PiSessionSnapshot {
-  messages: Array<{ role: 'assistant' | 'user'; text: string; timestamp: number }>;
+  messages: Array<{ entryId: string; role: 'assistant' | 'user'; text: string; timestamp: number }>;
   path: string;
 }
 
 interface PiSession {
   abort?: () => Promise<void>;
   editLastUserMessage?: () => Promise<{ cancelled: boolean; editorText?: string }>;
+  forkAssistantMessage?: (entryId: string) => string | undefined;
+  getLastAssistantEntryId?: () => string | undefined;
   isStreaming?: boolean;
   prompt: (text: string, options?: { images?: Array<{ type: 'image'; data: string; mimeType: string }>; streamingBehavior?: 'steer' }) => Promise<void>;
   subscribe: (listener: (event: unknown) => void) => () => void;
@@ -112,9 +124,23 @@ export class PiRuntime {
     this.#sessionPath = path;
     this.#resetSession();
     return {
-      messages: session.getBranch().flatMap(toPiSessionMessage),
+      messages: toPiSessionMessages(session.getBranch()),
       path,
     };
+  }
+
+  async forkAssistantMessage(entryId: string): Promise<PiSessionSnapshot> {
+    if (this.#promptActive || this.#session?.isStreaming)
+      throw new Error('请等待当前回复完成后再创建分支');
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const path = this.#session?.forkAssistantMessage?.(entryId)
+      ?? (this.#sessionPath ? SessionManager.open(this.#sessionPath).createBranchedSession(entryId) : undefined);
+    if (!path)
+      throw new Error('无法从该回复创建分支');
+    const fork = SessionManager.open(path);
+    this.#sessionPath = path;
+    this.#resetSession();
+    return { messages: toPiSessionMessages(fork.getBranch()), path };
   }
 
   #resetSession(): void {
@@ -133,13 +159,13 @@ export class PiRuntime {
         ...(attachments.images.length ? { images: attachments.images } : {}),
         ...(this.#promptActive || session.isStreaming ? { streamingBehavior: 'steer' as const } : {}),
       };
+      const startsTurn = !this.#promptActive && !session.isStreaming;
       this.#promptActive = true;
-      this.#emit({ status: 'running', type: 'status' });
+      if (startsTurn)
+        this.#emit({ status: 'running', type: 'status' });
       void Promise.resolve(session.prompt(`${prompt}${attachments.text ? `\n${attachments.text}` : ''}`, Object.keys(options).length ? options : undefined)).catch((error) => {
-        if (!session.isStreaming) {
-          this.#promptActive = false;
-          this.#emit({ status: 'settled', type: 'status' });
-        }
+        if (!session.isStreaming)
+          this.#settleTurn();
         this.#emitError(error);
       });
     }
@@ -182,8 +208,7 @@ export class PiRuntime {
       return;
 
     if (session.abort == null) {
-      this.#promptActive = false;
-      this.#emit({ status: 'settled', type: 'status' });
+      this.#settleTurn();
       return;
     }
 
@@ -191,8 +216,7 @@ export class PiRuntime {
       await session.abort();
     }
     catch (error) {
-      this.#promptActive = false;
-      this.#emit({ status: 'settled', type: 'status' });
+      this.#settleTurn();
       this.#emitError(error);
       throw error;
     }
@@ -214,8 +238,7 @@ export class PiRuntime {
 
   #handleEvent(event: unknown): void {
     if (isAgentSettledEvent(event)) {
-      this.#promptActive = false;
-      this.#emit({ status: 'settled', type: 'status' });
+      this.#settleTurn();
       return;
     }
     if (isAssistantMessageStartEvent(event)) {
@@ -236,11 +259,21 @@ export class PiRuntime {
       .join('');
     const text = snapshotText || this.#streamedAssistantText;
     this.#streamedAssistantText = text;
-    this.#emit({ done: event.type === 'message_end', text, type: 'assistant' });
+    this.#emit({
+      done: event.type === 'message_end',
+      ...(event.type === 'message_end' ? { entryId: this.#session?.getLastAssistantEntryId?.(), timestamp: messageTimestamp(event.message) ?? Date.now() } : {}),
+      text,
+      type: 'assistant',
+    });
   }
 
   #emitError(error: unknown): void {
     this.#emit({ type: 'error', text: error instanceof Error ? error.message : '无法发送消息。' });
+  }
+
+  #settleTurn(): void {
+    this.#promptActive = false;
+    this.#emit({ status: 'settled', type: 'status' });
   }
 
   #emit(update: TranscriptUpdate): void {
@@ -252,15 +285,7 @@ export class PiRuntime {
 async function createDefaultSession(configuration: DeepSeekConfiguration, agentDir?: string, workspacePath?: string, sessionPath?: string): Promise<PiSession> {
   const { createAgentSession, ModelRuntime, SessionManager } = await import('@earendil-works/pi-coding-agent');
   const modelRuntime = await ModelRuntime.create({ modelsPath: null, refreshOnCreate: false });
-  modelRuntime.registerProvider('deepseek', {
-    api: 'openai-completions',
-    baseUrl: 'https://api.deepseek.com',
-    models: [
-      { contextWindow: 128000, id: 'deepseek-v4-flash', input: ['text'], maxTokens: 16384, name: 'DeepSeek V4 Flash', reasoning: true },
-      { contextWindow: 128000, id: 'deepseek-v4-pro', input: ['text'], maxTokens: 16384, name: 'DeepSeek V4 Pro', reasoning: true },
-    ],
-    name: 'DeepSeek',
-  });
+  modelRuntime.registerProvider('deepseek', DEEPSEEK_PROVIDER);
   await modelRuntime.setRuntimeApiKey('deepseek', configuration.apiKey);
   const model = modelRuntime.getModel('deepseek', configuration.model);
   if (!model)
@@ -279,6 +304,8 @@ async function createDefaultSession(configuration: DeepSeekConfiguration, agentD
       const message = session.sessionManager.getBranch().findLast(entry => entry.type === 'message' && entry.message.role === 'user');
       return message ? session.navigateTree(message.id) : { cancelled: true };
     },
+    forkAssistantMessage: entryId => session.sessionManager.createBranchedSession(entryId),
+    getLastAssistantEntryId: () => session.sessionManager.getBranch().findLast(entry => entry.type === 'message' && entry.message.role === 'assistant')?.id,
     get isStreaming() {
       return session.isStreaming;
     },
@@ -329,22 +356,36 @@ function isTextContent(content: unknown): content is { type: 'text'; text: strin
   return isRecord(content) && content.type === 'text' && typeof content.text === 'string';
 }
 
-function toPiSessionMessage(entry: unknown): PiSessionSnapshot['messages'][number][] {
+function toPiSessionMessages(entries: unknown[]): PiSessionSnapshot['messages'] {
+  return entries.flatMap((entry) => {
+    const message = toPiSessionMessage(entry);
+    if (message == null)
+      return [];
+    return [message];
+  });
+}
+
+function toPiSessionMessage(entry: unknown): ({ entryId: string; role: 'assistant' | 'user'; text: string; timestamp: number }) | undefined {
   if (!isRecord(entry) || entry.type !== 'message' || !isRecord(entry.message))
-    return [];
+    return undefined;
   const { message } = entry;
   if (message.role !== 'assistant' && message.role !== 'user')
-    return [];
+    return undefined;
   const text = typeof message.content === 'string'
     ? message.content
     : Array.isArray(message.content) ? message.content.filter(isTextContent).map(content => content.text).join('') : '';
   if (!text)
-    return [];
-  return [{
+    return undefined;
+  return {
+    entryId: typeof entry.id === 'string' ? entry.id : '',
     role: message.role,
     text,
     timestamp: typeof message.timestamp === 'number' ? message.timestamp : 0,
-  }];
+  };
+}
+
+function messageTimestamp(message: unknown): number | undefined {
+  return isRecord(message) && typeof message.timestamp === 'number' ? message.timestamp : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

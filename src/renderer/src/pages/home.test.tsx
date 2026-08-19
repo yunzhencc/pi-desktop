@@ -89,6 +89,43 @@ describe('home page', () => {
     expect(writeText).toHaveBeenCalledWith('Build this');
   });
 
+  it('copies an assistant reply and shows its completion time', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 19, 10, 1));
+    const writeText = vi.fn(() => Promise.resolve());
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<HomePage />);
+
+    act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', timestamp: Date.now(), type: 'assistant' }));
+
+    expect(screen.getByText('10:01')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy assistant message' }));
+    expect(writeText).toHaveBeenCalledWith('Done');
+  });
+
+  it('forks at an assistant reply and switches to the new conversation', async () => {
+    const onUpdate = vi.fn(() => () => {});
+    const forkAssistantMessage = vi.fn(() => Promise.resolve({
+      messages: [
+        { role: 'user', text: 'Forked request', timestamp: 1_000 },
+        { role: 'assistant', text: 'Forked reply', timestamp: 2_000 },
+      ],
+      path: '/sessions/forked.jsonl',
+    }));
+    vi.stubGlobal('api', { composer: { forkAssistantMessage, newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<HomePage />);
+
+    act(() => onUpdate.mock.calls[0]![0]({ done: true, entryId: 'assistant-1', text: 'Original reply', timestamp: 2_000, type: 'assistant' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fork conversation from this message' }));
+
+    await waitFor(() => expect(forkAssistantMessage).toHaveBeenCalledWith('assistant-1'));
+    expect(screen.getByText('Forked request')).not.toBeNull();
+    expect(screen.getByText('Forked reply')).not.toBeNull();
+    expect(screen.queryByText('Original reply')).toBeNull();
+  });
+
   it('edits the latest user message in place without navigating until it is resent', async () => {
     const editLastUserMessage = vi.fn(() => Promise.resolve('Build this'));
     const send = vi.fn(() => Promise.resolve());
@@ -175,54 +212,6 @@ describe('home page', () => {
     expect(screen.getByText('Earlier reply')).not.toBeNull();
   });
 
-  it('restores completed duration from session history', () => {
-    render(<HomePage />);
-
-    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
-      detail: {
-        messages: [
-          { role: 'user', text: 'Earlier request', timestamp: 1_000 },
-          { role: 'assistant', text: 'Earlier reply', timestamp: 66_000 },
-        ],
-      },
-    })));
-
-    expect(screen.getByText('耗时 1分 5秒')).not.toBeNull();
-  });
-
-  it('renders completed duration as a divider before the assistant message', () => {
-    render(<HomePage />);
-
-    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
-      detail: {
-        messages: [
-          { role: 'user', text: 'Earlier request', timestamp: 1_000 },
-          { role: 'assistant', text: 'Earlier reply', timestamp: 66_000 },
-        ],
-      },
-    })));
-
-    const divider = screen.getByText('耗时 1分 5秒').closest('[data-duration-divider]');
-    expect(divider).not.toBeNull();
-    expect(divider?.nextElementSibling?.classList.contains('chat-message-assistant')).toBe(true);
-  });
-
-  it('does not run a timer for restored assistant messages without a recorded duration', () => {
-    vi.useFakeTimers();
-    render(<HomePage />);
-
-    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
-      detail: {
-        messages: [
-          { role: 'assistant', text: 'Earlier reply', timestamp: Date.now() - 60_000 },
-        ],
-      },
-    })));
-    act(() => vi.advanceTimersByTime(60_000));
-
-    expect(screen.queryByText(/Working for/)).toBeNull();
-  });
-
   it('shows project controls only while the conversation is new', () => {
     render(<HomePage />);
 
@@ -251,64 +240,6 @@ describe('home page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
 
     expect(screen.getByRole('log').contains(screen.getByRole('button', { name: 'Fake composer' }))).toBe(true);
-  });
-
-  it('shows the completed assistant work duration', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-08-19T10:00:00Z'));
-    const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    render(<HomePage />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
-    vi.setSystemTime(new Date('2026-08-19T10:01:05Z'));
-    act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', type: 'assistant' }));
-
-    expect(screen.getByText('耗时 1分 5秒')).not.toBeNull();
-  });
-
-  it('shows active assistant work duration in Chinese', () => {
-    const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    render(<HomePage />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
-    act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Working', type: 'assistant' }));
-    act(() => animationFrames.at(-1)?.(0));
-
-    expect(screen.getByText('处理中')).not.toBeNull();
-  });
-
-  it('labels active elapsed work as processed in Chinese', () => {
-    const startedAtMs = 1_787_162_200_000;
-    const dateNow = vi.spyOn(Date, 'now').mockReturnValue(startedAtMs);
-    const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    render(<HomePage />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
-    dateNow.mockReturnValue(startedAtMs + 65_000);
-    act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Working', type: 'assistant' }));
-    act(() => animationFrames.at(-1)?.(0));
-
-    expect(screen.getByText('已处理 1分 5秒')).not.toBeNull();
-  });
-
-  it('freezes streamed assistant work duration when the agent settles', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-08-19T10:00:00Z'));
-    const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    render(<HomePage />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
-    vi.setSystemTime(new Date('2026-08-19T10:01:05Z'));
-    act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Done', type: 'assistant' }));
-    act(() => animationFrames.at(-1)?.(0));
-    act(() => onUpdate.mock.calls[0]![0]({ status: 'settled', type: 'status' }));
-    act(() => vi.advanceTimersByTime(60_000));
-
-    expect(screen.getByText('耗时 1分 5秒')).not.toBeNull();
   });
 
   it('renders a streamed assistant snapshot as Markdown', () => {

@@ -147,7 +147,10 @@ app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron');
   deepseekSettings = new DeepSeekSettings(getDeepSeekSettingsPath(), safeStorage);
-  piRuntime.configureDeepSeek(await deepseekSettings.load());
+  const loadDeepSeek = async () => {
+    if (!deepseekSettings.configuration())
+      piRuntime.configureDeepSeek(await deepseekSettings.load());
+  };
   workspaceRegistry = new WorkspaceRegistry(getWorkspacesPath());
   const workspaceSnapshot = await workspaceRegistry.load();
   if (workspaceSnapshot.selectedWorkspacePath)
@@ -172,7 +175,10 @@ app.whenReady().then(async () => {
     nativeTheme.themeSource = themeSource;
     syncPrimaryWindowBackdrop?.();
   });
-  ipcMain.handle('providers:deepseek:get', () => deepseekSettings.snapshot());
+  ipcMain.handle('providers:deepseek:get', async () => {
+    await loadDeepSeek();
+    return deepseekSettings.snapshot();
+  });
   ipcMain.handle('providers:deepseek:save', async (_event, apiKey: unknown, model: unknown) => {
     if (!safeStorage.isEncryptionAvailable())
       throw new Error('系统密钥存储不可用，无法保存 DeepSeek API Key');
@@ -236,7 +242,10 @@ app.whenReady().then(async () => {
 
   const composer = createComposerHandlers(
     attachmentStore,
-    (prompt, attachmentIds) => piRuntime.send(prompt, attachmentIds),
+    async (prompt, attachmentIds) => {
+      await loadDeepSeek();
+      return piRuntime.send(prompt, attachmentIds);
+    },
     () => piRuntime.startNewConversation(),
   );
   ipcMain.handle('composer:add-attachments', (_event, paths: unknown) => {
@@ -263,6 +272,11 @@ app.whenReady().then(async () => {
     if (message !== undefined && typeof message !== 'string')
       throw new TypeError('Invalid edited message');
     return piRuntime.editLastUserMessage(message);
+  });
+  ipcMain.handle('composer:fork-assistant-message', (_event, entryId: unknown) => {
+    if (typeof entryId !== 'string' || !entryId)
+      throw new TypeError('无效的回复');
+    return piRuntime.forkAssistantMessage(entryId);
   });
   ipcMain.handle('composer:new-conversation', () => composer.startNewConversation());
   ipcMain.handle('composer:stop', () => piRuntime.abort());

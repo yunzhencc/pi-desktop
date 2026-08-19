@@ -867,28 +867,42 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   padding: 24px 0 0;
 }
 
+.chat-message-assistant-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.chat-message-assistant-action {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  place-items: center;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chat-message-assistant-action:hover,
+.chat-message-assistant-action:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--text-secondary);
+}
+
+.chat-message-assistant-action:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .chat-message-error {
   color: var(--destructive);
-}
-
-.chat-worked-for {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  gap: 12px;
-  margin: 0;
-  color: var(--text-tertiary);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.chat-worked-for p {
-  margin: 0;
-}
-
-.chat-worked-for-rule {
-  width: 100%;
-  border-top: 1px solid var(--border-subtle);
 }
 
 .chat-turn {

@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react';
-import { Copy, Pencil } from 'lucide-react';
+import { Copy, GitFork, Pencil } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useIntl } from 'react-intl';
 import piLogo from '../../../../resources/icon.svg?asset';
 import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
 import { MarkdownMessage } from '../components/markdown-message';
@@ -9,11 +8,11 @@ import { ProjectPicker } from '../components/project-picker';
 import { ThreadScrollLayout } from '../components/thread-scroll-layout';
 
 interface Message {
-  completedAtMs?: number;
+  entryId?: string;
   id: number;
   role: 'assistant' | 'error' | 'user';
-  startedAtMs?: number;
   text: string;
+  timestamp?: number;
   done?: boolean;
 }
 
@@ -27,7 +26,7 @@ export function HomePage() {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
   const workspaceRef = useRef<WorkspaceSnapshot>();
   const composerFooterRef = useRef<HTMLDivElement>(null);
-  const pendingAssistantRef = useRef<{ done: boolean; text: string } | null>(null);
+  const pendingAssistantRef = useRef<{ done: boolean; entryId?: string; text: string; timestamp?: number } | null>(null);
   const streamingFrameRef = useRef<number | null>(null);
   const [composerFooterHeightPx, setComposerFooterHeightPx] = useState(0);
 
@@ -70,15 +69,7 @@ export function HomePage() {
       pendingAssistantRef.current = null;
       setIsRunning(false);
       const session = (event as CustomEvent<PiSessionSnapshot>).detail;
-      let latestUserStartedAtMs: number | undefined;
-      setMessages(session.messages.map((message, index) => {
-        const timestamp = message.timestamp || undefined;
-        if (message.role === 'user') {
-          latestUserStartedAtMs = timestamp;
-          return { done: true, id: index, role: message.role, startedAtMs: timestamp, text: message.text };
-        }
-        return { completedAtMs: timestamp, done: true, id: index, role: message.role, startedAtMs: latestUserStartedAtMs, text: message.text };
-      }));
+      setMessages(session.messages.map((message, index) => ({ done: true, entryId: message.entryId, id: index, role: message.role, text: message.text, timestamp: message.timestamp || undefined })));
     };
     window.addEventListener('new-conversation', startNewConversation);
     window.addEventListener('session-changed', openSession);
@@ -107,14 +98,11 @@ export function HomePage() {
   }, [messages.length]);
 
   useEffect(() => {
-    const appendAssistant = (text: string, done: boolean) => {
+    const appendAssistant = ({ done, entryId, text, timestamp }: NonNullable<typeof pendingAssistantRef.current>) => {
       setMessages((current) => {
         const last = current.at(-1);
         const now = Date.now();
-        const startedAtMs = last?.role === 'assistant'
-          ? last.startedAtMs
-          : current.findLast(message => message.role === 'user')?.startedAtMs ?? now;
-        const message = { completedAtMs: done ? now : undefined, done, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, startedAtMs, text };
+        const message = { done, entryId, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, text, timestamp };
         return last?.role === 'assistant' && !last.done ? [...current.slice(0, -1), message] : [...current, message];
       });
     };
@@ -123,7 +111,7 @@ export function HomePage() {
       const pending = pendingAssistantRef.current;
       pendingAssistantRef.current = null;
       if (pending != null)
-        appendAssistant(pending.text, pending.done);
+        appendAssistant(pending);
     };
     const discardPendingAssistant = () => {
       if (streamingFrameRef.current != null)
@@ -133,15 +121,8 @@ export function HomePage() {
     };
     const unsubscribe = window.api.composer.onUpdate((update) => {
       if (update.type === 'status') {
-        if (update.status === 'settled') {
+        if (update.status === 'settled')
           flushAssistant();
-          setMessages((current) => {
-            const last = current.at(-1);
-            return last?.role === 'assistant' && !last.done
-              ? [...current.slice(0, -1), { ...last, completedAtMs: Date.now(), done: true }]
-              : current;
-          });
-        }
         setIsRunning(update.status === 'running');
         return;
       }
@@ -152,11 +133,11 @@ export function HomePage() {
       }
       if (update.done) {
         discardPendingAssistant();
-        appendAssistant(update.text, true);
+        appendAssistant(update);
         return;
       }
 
-      pendingAssistantRef.current = { done: false, text: update.text };
+      pendingAssistantRef.current = update;
       streamingFrameRef.current ??= requestAnimationFrame(flushAssistant);
     });
     return () => {
@@ -172,7 +153,7 @@ export function HomePage() {
       onStop={() => void window.api.composer.stop()}
       onSubmitted={(text) => {
         const startedAtMs = Date.now();
-        setMessages(current => [...current, { id: startedAtMs, role: 'user', startedAtMs, text }]);
+        setMessages(current => [...current, { id: startedAtMs, role: 'user', text, timestamp: startedAtMs }]);
       }}
       workspace={workspace}
     />
@@ -190,6 +171,12 @@ export function HomePage() {
       return index < 0 ? current : [...current.slice(0, index), { ...current[index]!, text }];
     });
     setEditingMessage(undefined);
+    window.dispatchEvent(new Event('sessions-changed'));
+  };
+
+  const forkAssistantMessage = async (entryId: string) => {
+    const session = await window.api.composer.forkAssistantMessage(entryId);
+    window.dispatchEvent(new CustomEvent<PiSessionSnapshot>('session-changed', { detail: session }));
     window.dispatchEvent(new Event('sessions-changed'));
   };
 
@@ -239,10 +226,14 @@ export function HomePage() {
             >
               {({ message }) => (
                 <div className="chat-turn">
-                  {message.role === 'assistant' && <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} />}
                   <article className={`chat-message chat-message-${message.role}${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
                     {message.role === 'assistant'
-                      ? <MarkdownMessage>{message.text}</MarkdownMessage>
+                      ? (
+                          <>
+                            <MarkdownMessage>{message.text}</MarkdownMessage>
+                            {message.done && <AssistantMessageFooter entryId={message.entryId} isRunning={isRunning} onFork={forkAssistantMessage} text={message.text} timestamp={message.timestamp} />}
+                          </>
+                        )
                       : message.role === 'user'
                         ? (
                             editingMessage?.id === message.id
@@ -250,7 +241,7 @@ export function HomePage() {
                               : (
                                   <>
                                     <div className="chat-message-user-content" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>{message.text}</div>
-                                    <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} startedAtMs={message.startedAtMs} text={message.text} />
+                                    <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={message.text} timestamp={message.timestamp} />
                                   </>
                                 )
                           )
@@ -272,12 +263,12 @@ export function HomePage() {
   );
 }
 
-function UserMessageFooter({ canEdit, onEdit, startedAtMs, text }: Pick<Message, 'startedAtMs' | 'text'> & { canEdit: boolean; onEdit: () => void }) {
-  const timestamp = startedAtMs == null ? null : new Intl.DateTimeFormat(undefined, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' }).format(startedAtMs);
+function UserMessageFooter({ canEdit, onEdit, text, timestamp }: Pick<Message, 'text' | 'timestamp'> & { canEdit: boolean; onEdit: () => void }) {
+  const time = formatMessageTime(timestamp);
 
   return (
     <footer className="chat-message-user-footer">
-      {timestamp != null && <time dateTime={new Date(startedAtMs!).toISOString()}>{timestamp}</time>}
+      {time != null && <time dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
       {canEdit && <button aria-label="Edit message" className="chat-message-user-copy" onClick={onEdit} title="Edit message" type="button"><Pencil aria-hidden="true" size={14} /></button>}
       <button aria-label="Copy message" className="chat-message-user-copy" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button">
         <Copy aria-hidden="true" size={14} />
@@ -286,36 +277,17 @@ function UserMessageFooter({ canEdit, onEdit, startedAtMs, text }: Pick<Message,
   );
 }
 
-function WorkedFor({ completedAtMs, done, startedAtMs }: Pick<Message, 'completedAtMs' | 'done' | 'startedAtMs'>) {
-  const { formatMessage } = useIntl();
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (done || startedAtMs == null || completedAtMs != null)
-      return;
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, [completedAtMs, done, startedAtMs]);
-
-  if ((done && completedAtMs == null) || startedAtMs == null)
-    return null;
-  const elapsedMs = Math.max(0, (completedAtMs ?? now) - startedAtMs);
-  const seconds = Math.floor(elapsedMs / 1000);
-  const duration = seconds < 60
-    ? formatMessage({ id: 'conversation.duration.seconds' }, { seconds })
-    : formatMessage(
-        { id: 'conversation.duration.minutes' },
-        { minutes: Math.floor(seconds / 60), seconds: seconds % 60 },
-      );
-  const label = completedAtMs != null
-    ? formatMessage({ id: 'conversation.workedFor' }, { duration })
-    : elapsedMs >= 1000
-      ? formatMessage({ id: 'conversation.workingFor' }, { duration })
-      : formatMessage({ id: 'conversation.working' });
+function AssistantMessageFooter({ entryId, isRunning, onFork, text, timestamp }: Pick<Message, 'entryId' | 'text' | 'timestamp'> & { isRunning: boolean; onFork: (entryId: string) => Promise<void> }) {
+  const time = formatMessageTime(timestamp);
   return (
-    <div className="chat-worked-for" data-duration-divider>
-      <p>{label}</p>
-      <div aria-hidden="true" className="chat-worked-for-rule" />
-    </div>
+    <footer className="chat-message-assistant-footer">
+      <button aria-label="Copy assistant message" className="chat-message-assistant-action" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button"><Copy aria-hidden="true" size={18} /></button>
+      <button aria-label="Fork conversation from this message" className="chat-message-assistant-action" disabled={entryId == null || isRunning} onClick={() => entryId != null && void onFork(entryId)} title="Fork conversation" type="button"><GitFork aria-hidden="true" size={18} /></button>
+      {time != null && <time dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
+    </footer>
   );
+}
+
+function formatMessageTime(timestamp: number | undefined): string | null {
+  return timestamp == null ? null : new Intl.DateTimeFormat(undefined, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' }).format(timestamp);
 }

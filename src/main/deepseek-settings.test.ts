@@ -35,4 +35,27 @@ describe('deepseek settings', () => {
       model: 'deepseek-v4-flash',
     });
   });
+
+  it('decrypts a stored key once per app session', async () => {
+    const path = await settingsPath();
+    const crypto = {
+      decryptString: (value: Buffer) => value.toString(),
+      encryptString: (value: string) => Buffer.from(value),
+    };
+    await new DeepSeekSettings(path, crypto).save('sk-secret', 'deepseek-v4-flash');
+
+    let decryptions = 0;
+    const settings = new DeepSeekSettings(path, {
+      decryptString: (value: Buffer) => {
+        decryptions += 1;
+        return value.toString();
+      },
+      encryptString: (value: string) => Buffer.from(value),
+    });
+
+    await settings.load();
+    await settings.load();
+
+    expect(decryptions).toBe(1);
+  });
 });

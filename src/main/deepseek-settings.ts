@@ -27,6 +27,7 @@ interface StoredSettings {
 
 export class DeepSeekSettings {
   #configuration: DeepSeekConfiguration | undefined;
+  #loaded = false;
 
   constructor(
     private readonly path: string,
@@ -34,6 +35,10 @@ export class DeepSeekSettings {
   ) {}
 
   async load(): Promise<DeepSeekConfiguration | undefined> {
+    if (this.#loaded)
+      return this.#configuration;
+    this.#loaded = true;
+
     try {
       const value = JSON.parse(await readFile(this.path, 'utf8')) as StoredSettings;
       if (!isModel(value.model) || typeof value.apiKey !== 'string')
