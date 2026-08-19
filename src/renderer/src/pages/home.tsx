@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { Copy } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import piLogo from '../../../../resources/icon.svg?asset';
 import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
@@ -67,7 +68,7 @@ export function HomePage() {
       pendingAssistantRef.current = null;
       setIsRunning(false);
       const session = (event as CustomEvent<PiSessionSnapshot>).detail;
-      setMessages(session.messages.map((message, index) => ({ done: true, id: index, role: message.role, text: message.text })));
+      setMessages(session.messages.map((message, index) => ({ done: true, id: index, role: message.role, startedAtMs: message.timestamp || undefined, text: message.text })));
     };
     window.addEventListener('new-conversation', startNewConversation);
     window.addEventListener('session-changed', openSession);
@@ -210,7 +211,14 @@ export function HomePage() {
                           <MarkdownMessage>{message.text}</MarkdownMessage>
                         </>
                       )
-                    : message.text}
+                    : message.role === 'user'
+                      ? (
+                          <>
+                            <div className="chat-message-user-content">{message.text}</div>
+                            <UserMessageFooter startedAtMs={message.startedAtMs} text={message.text} />
+                          </>
+                        )
+                      : message.text}
                 </article>
               )}
             </ThreadScrollLayout>
@@ -224,6 +232,19 @@ export function HomePage() {
         </div>
       )}
     </section>
+  );
+}
+
+function UserMessageFooter({ startedAtMs, text }: Pick<Message, 'startedAtMs' | 'text'>) {
+  const timestamp = startedAtMs == null ? null : new Intl.DateTimeFormat(undefined, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' }).format(startedAtMs);
+
+  return (
+    <footer className="chat-message-user-footer">
+      {timestamp != null && <time dateTime={new Date(startedAtMs!).toISOString()}>{timestamp}</time>}
+      <button aria-label="Copy message" className="chat-message-user-copy" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button">
+        <Copy aria-hidden="true" size={14} />
+      </button>
+    </footer>
   );
 }
 

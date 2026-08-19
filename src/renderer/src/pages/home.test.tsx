@@ -60,6 +60,20 @@ describe('home page', () => {
     expect(screen.getByText('Build this')).not.toBeNull();
   });
 
+  it('shows a user message timestamp and copies its text', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 19, 10, 1));
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+
+    expect(screen.getByText('10:01')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
+    expect(writeText).toHaveBeenCalledWith('Build this');
+  });
+
   it('directs an unselected workspace to the sidebar', async () => {
     workspaces.get.mockResolvedValue({ workspaces: [] });
     render(<HomePage />);

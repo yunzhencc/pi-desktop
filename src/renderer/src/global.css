@@ -764,22 +764,19 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
-  max-height: 0;
-  margin-top: 0;
-  overflow: hidden;
+  height: 20px;
+  margin-top: 4px;
   color: var(--text-tertiary);
   font-size: 12px;
   line-height: 16px;
   opacity: 0;
   pointer-events: none;
-  transition: max-height 150ms ease, margin-top 150ms ease, opacity 150ms ease;
+  transition: opacity 150ms ease;
   white-space: normal;
 }
 
 .chat-message-user:hover .chat-message-user-footer,
 .chat-message-user:has(.chat-message-user-copy:focus-visible) .chat-message-user-footer {
-  max-height: 20px;
-  margin-top: 4px;
   opacity: 1;
   pointer-events: auto;
 }
