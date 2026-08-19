@@ -15,7 +15,12 @@ interface PiSession {
   dispose?: () => void;
 }
 
-type SessionFactory = (configuration: DeepSeekConfiguration) => Promise<PiSession>;
+type SessionFactory = (configuration: DeepSeekConfiguration, agentDir?: string) => Promise<PiSession>;
+
+interface PiRuntimeOptions {
+  agentDir?: string;
+  createSession?: SessionFactory;
+}
 
 export class PiRuntime {
   #session: PiSession | undefined;
@@ -24,11 +29,21 @@ export class PiRuntime {
   #configuration: DeepSeekConfiguration | undefined;
   #promptActive = false;
   #streamedAssistantText = '';
+  private readonly agentDir: string | undefined;
+  private readonly createSession: SessionFactory;
 
   constructor(
     private readonly attachments: AttachmentStore,
-    private readonly createSession: SessionFactory = createDefaultSession,
-  ) {}
+    optionsOrCreateSession: PiRuntimeOptions | SessionFactory = createDefaultSession,
+  ) {
+    if (typeof optionsOrCreateSession === 'function') {
+      this.createSession = optionsOrCreateSession;
+    }
+    else {
+      this.agentDir = optionsOrCreateSession.agentDir;
+      this.createSession = optionsOrCreateSession.createSession ?? createDefaultSession;
+    }
+  }
 
   subscribe(listener: (update: TranscriptUpdate) => void): () => void {
     this.#listeners.add(listener);
@@ -80,7 +95,7 @@ export class PiRuntime {
     if (!this.#configuration)
       throw new Error('请先在设置中配置 DeepSeek API Key');
 
-    const session = await this.createSession(this.#configuration);
+    const session = await this.createSession(this.#configuration, this.agentDir);
     this.#sessionUnsubscribe = session.subscribe(event => this.#handleEvent(event));
     this.#session = session;
     return session;
@@ -103,10 +118,11 @@ export class PiRuntime {
     if (!isAssistantMessageEvent(event))
       return;
 
-    const text = event.message.content
+    const snapshotText = event.message.content
       .filter(isTextContent)
       .map(content => content.text)
       .join('');
+    const text = snapshotText || this.#streamedAssistantText;
     this.#streamedAssistantText = text;
     this.#emit({ done: event.type === 'message_end', text, type: 'assistant' });
   }
@@ -121,7 +137,7 @@ export class PiRuntime {
   }
 }
 
-async function createDefaultSession(configuration: DeepSeekConfiguration): Promise<PiSession> {
+async function createDefaultSession(configuration: DeepSeekConfiguration, agentDir?: string): Promise<PiSession> {
   const { createAgentSession, ModelRuntime } = await import('@earendil-works/pi-coding-agent');
   const modelRuntime = await ModelRuntime.create({ modelsPath: null, refreshOnCreate: false });
   modelRuntime.registerProvider('deepseek', {
@@ -137,7 +153,7 @@ async function createDefaultSession(configuration: DeepSeekConfiguration): Promi
   const model = modelRuntime.getModel('deepseek', configuration.model);
   if (!model)
     throw new Error('无法找到所选的 DeepSeek 模型');
-  const { session } = await createAgentSession({ cwd: process.cwd(), model, modelRuntime });
+  const { session } = await createAgentSession({ agentDir, cwd: process.cwd(), model, modelRuntime });
   return {
     dispose: () => session.dispose(),
     get isStreaming() {

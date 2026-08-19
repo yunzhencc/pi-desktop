@@ -28,6 +28,16 @@ describe('pi runtime', () => {
     await expect(runtime.send('Hello', [])).rejects.toThrow('请先在设置中配置 DeepSeek API Key');
   });
 
+  it('uses the app-owned agent directory for new sessions', async () => {
+    const createSession = vi.fn(async () => ({ prompt: vi.fn(), subscribe: () => () => {} }));
+    const runtime = new PiRuntime(new AttachmentStore(), { agentDir: '/tmp/pi-desktop-agent', createSession });
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+
+    await runtime.send('Hello', []);
+
+    expect(createSession).toHaveBeenCalledWith({ apiKey: 'sk-test', model: 'deepseek-v4-flash' }, '/tmp/pi-desktop-agent');
+  });
+
   it('passes Pi image content and text-file content to a session prompt', async () => {
     const attachments = new AttachmentStore();
     const result = await attachments.add([
@@ -86,6 +96,26 @@ describe('pi runtime', () => {
     listener?.({ assistantMessageEvent: { contentIndex: 0, delta: ' there', type: 'text_delta' }, type: 'message_update' });
 
     expect(update).toHaveBeenLastCalledWith({ done: false, text: 'Hi there', type: 'assistant' });
+  });
+
+  it('keeps streamed text when the terminal assistant snapshot is empty', async () => {
+    let listener: ((event: unknown) => void) | undefined;
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({
+      prompt: vi.fn(),
+      subscribe: (callback: (event: unknown) => void) => {
+        listener = callback;
+        return () => {};
+      },
+    }));
+    const update = vi.fn();
+    runtime.subscribe(update);
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+
+    await runtime.send('Hello', []);
+    listener?.({ assistantMessageEvent: { contentIndex: 0, delta: 'Hi there', type: 'text_delta' }, type: 'message_update' });
+    listener?.({ message: { content: [], role: 'assistant' }, type: 'message_end' });
+
+    expect(update).toHaveBeenLastCalledWith({ done: true, text: 'Hi there', type: 'assistant' });
   });
 
   it('does not carry delta text into the next assistant message', async () => {

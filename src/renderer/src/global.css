@@ -546,15 +546,19 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   border: 1px solid var(--border-subtle);
 }
 
-.chat-composer-wrap {
+.chat-composer-footer {
   position: absolute;
   right: 0;
-  bottom: 16px;
+  bottom: 0;
   left: 0;
   z-index: 1;
+  padding-bottom: 16px;
+  background: var(--surface);
+}
+
+.chat-composer-wrap {
   width: min(100% - 32px, 720px);
   margin: 0 auto;
-  padding: 0 0 16px;
 }
 
 .chat-composer {

@@ -51,6 +51,15 @@ catalogs:
     lucide-react:
       specifier: 1.32.0
       version: 1.32.0
+    mdast-util-from-markdown:
+      specifier: 2.0.3
+      version: 2.0.3
+    mdast-util-gfm:
+      specifier: 3.1.0
+      version: 3.1.0
+    micromark-extension-gfm:
+      specifier: 3.0.0
+      version: 3.0.0
     motion:
       specifier: ^13.1.0
       version: 13.1.0
@@ -252,13 +261,13 @@ importers:
         specifier: catalog:core
         version: 1.32.0(react@19.2.8)
       mdast-util-from-markdown:
-        specifier: ^2.0.3
+        specifier: catalog:core
         version: 2.0.3(supports-color@7.2.0)
       mdast-util-gfm:
-        specifier: ^3.1.0
+        specifier: catalog:core
         version: 3.1.0(supports-color@7.2.0)
       micromark-extension-gfm:
-        specifier: ^3.0.0
+        specifier: catalog:core
         version: 3.0.0
       motion:
         specifier: catalog:core

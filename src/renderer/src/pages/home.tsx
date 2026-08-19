@@ -15,21 +15,21 @@ interface Message {
 
 export function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const composerRef = useRef<HTMLDivElement>(null);
-  const [composerHeightPx, setComposerHeightPx] = useState(0);
+  const composerFooterRef = useRef<HTMLDivElement>(null);
+  const [composerFooterHeightPx, setComposerFooterHeightPx] = useState(0);
 
   useLayoutEffect(() => {
-    const composer = composerRef.current;
-    if (composer == null)
+    const footer = composerFooterRef.current;
+    if (footer == null)
       return;
 
-    const updateHeight = () => setComposerHeightPx(composer.offsetHeight);
+    const updateHeight = () => setComposerFooterHeightPx(footer.offsetHeight);
     const frame = requestAnimationFrame(updateHeight);
     if (typeof ResizeObserver === 'undefined')
       return () => cancelAnimationFrame(frame);
 
     const observer = new ResizeObserver(updateHeight);
-    observer.observe(composer);
+    observer.observe(footer);
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();
@@ -52,7 +52,7 @@ export function HomePage() {
   }), []);
 
   return (
-    <section className="chat-page" style={{ '--thread-scroll-padding-bottom': `${composerHeightPx + 16}px` } as CSSProperties}>
+    <section className="chat-page" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
       {messages.length === 0
         ? (
             <div className="chat-empty-state">
@@ -76,12 +76,14 @@ export function HomePage() {
               )}
             </ThreadScrollLayout>
           )}
-      <div className="chat-composer-wrap" ref={composerRef}>
-        <ChatComposer onSubmitted={(text) => {
-          const startedAtMs = Date.now();
-          setMessages(current => [...current, { id: startedAtMs, role: 'user', startedAtMs, text }]);
-        }}
-        />
+      <div className="chat-composer-footer" ref={composerFooterRef}>
+        <div className="chat-composer-wrap">
+          <ChatComposer onSubmitted={(text) => {
+            const startedAtMs = Date.now();
+            setMessages(current => [...current, { id: startedAtMs, role: 'user', startedAtMs, text }]);
+          }}
+          />
+        </div>
       </div>
     </section>
   );

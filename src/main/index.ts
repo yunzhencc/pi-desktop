@@ -18,7 +18,7 @@ import {
 let isPrimaryWindowOpaque = false;
 let syncPrimaryWindowBackdrop: (() => void) | undefined;
 const attachmentStore = new AttachmentStore();
-const piRuntime = new PiRuntime(attachmentStore);
+const piRuntime = new PiRuntime(attachmentStore, { agentDir: join(app.getPath('userData'), 'pi-agent') });
 let deepseekSettings: DeepSeekSettings;
 
 function getPrimaryWindowStatePath(): string {
