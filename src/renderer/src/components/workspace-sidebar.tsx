@@ -103,7 +103,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
                   <div id={sessionListId}>
                     {(sessionsByWorkspace[item.path] ?? []).map(session => (
                       <button aria-current={session.path === selectedSessionPath ? 'page' : undefined} key={session.path} onClick={() => void openSession(item.path, session.path)} type="button">
-                        <span>{session.firstMessage || '新对话'}</span>
+                        <span className="workspace-sidebar-session-title">{session.firstMessage || '新对话'}</span>
                         {session.path === runningSessionPath && <span aria-label="正在生成" className="workspace-sidebar-session-activity" role="status"><LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /></span>}
                       </button>
                     ))}

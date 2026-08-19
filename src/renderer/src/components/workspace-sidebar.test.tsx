@@ -114,12 +114,13 @@ describe('workspace sidebar', () => {
       </I18nProvider>,
     );
 
-    await screen.findByRole('button', { name: 'Summarize the forecast' });
+    const sessionButton = await screen.findByRole('button', { name: 'Summarize the forecast' });
     const onUpdate = window.api.composer.onUpdate as ReturnType<typeof vi.fn>;
     fireEvent(window, new CustomEvent('session-changed', { detail: { messages: [], path: session.path } }));
     act(() => onUpdate.mock.calls[0]![0]({ sessionPath: session.path, status: 'running', type: 'status' }));
 
     expect(screen.getByRole('status', { name: '正在生成' })).not.toBeNull();
+    expect(sessionButton.querySelector('.workspace-sidebar-session-title')).not.toBeNull();
   });
 
   it('collapses and expands a project session history from its project row', async () => {

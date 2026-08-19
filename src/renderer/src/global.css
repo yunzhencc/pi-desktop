@@ -562,6 +562,11 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   padding-left: 28px;
 }
 
+.workspace-sidebar-session-title {
+  flex: 1;
+  min-width: 0;
+}
+
 .workspace-sidebar-list button:hover,
 .workspace-sidebar-list button[aria-current='page'] {
   background: color-mix(in srgb, var(--foreground) 6%, transparent);
@@ -577,6 +582,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .workspace-sidebar-session-activity {
   display: grid;
   flex: 0 0 auto;
+  margin-left: auto;
   width: 16px;
   height: 16px;
   place-items: center;
@@ -943,6 +949,25 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   color: var(--text-tertiary);
   font-size: 13px;
   line-height: 20px;
+}
+
+.chat-worked-for {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.chat-worked-for p {
+  margin: 0;
+}
+
+.chat-worked-for-rule {
+  width: 100%;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .chat-turn {

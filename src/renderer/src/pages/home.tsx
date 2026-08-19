@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Copy, GitFork, LoaderCircle, Pencil } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import piLogo from '../../../../resources/icon.svg?asset';
 import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
 import { MarkdownMessage } from '../components/markdown-message';
@@ -11,7 +12,7 @@ interface Message {
   completedAtMs?: number;
   entryId?: string;
   id: number;
-  role: 'activity' | 'assistant' | 'error' | 'user';
+  role: 'activity' | 'assistant' | 'error' | 'user' | 'work';
   startedAtMs?: number;
   text: string;
   timestamp?: number;
@@ -19,6 +20,7 @@ interface Message {
   toolCallId?: string;
   toolName?: string;
   toolStatus?: 'completed' | 'failed' | 'running';
+  workStatus?: 'stopped' | 'worked';
 }
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
@@ -75,14 +77,23 @@ export function HomePage() {
       setIsRunning(false);
       const session = (event as CustomEvent<PiSessionSnapshot>).detail;
       let latestUserStartedAtMs: number | undefined;
-      setMessages(session.messages.map((message, index) => {
+      const restored: Message[] = [];
+      session.messages.forEach((message, index) => {
+        if (message.role === 'work') {
+          restored.push({ completedAtMs: message.completedAtMs, done: true, id: index, role: 'work', startedAtMs: message.startedAtMs, text: '', workStatus: message.status });
+          return;
+        }
         const timestamp = message.timestamp || undefined;
         if (message.role === 'user') {
           latestUserStartedAtMs = timestamp;
-          return { done: true, entryId: message.entryId, id: index, role: message.role, startedAtMs: timestamp, text: message.text, timestamp };
+          restored.push({ done: true, entryId: message.entryId, id: index, role: message.role, startedAtMs: timestamp, text: message.text, timestamp });
+          return;
         }
-        return { completedAtMs: timestamp, done: true, entryId: message.entryId, id: index, role: message.role, startedAtMs: latestUserStartedAtMs, text: message.text, timestamp };
-      }));
+        if (restored.at(-1)?.role !== 'work' && latestUserStartedAtMs != null && timestamp != null)
+          restored.push({ completedAtMs: timestamp, done: true, id: -index - 1, role: 'work', startedAtMs: latestUserStartedAtMs, text: '', workStatus: 'worked' });
+        restored.push({ done: true, entryId: message.entryId, id: index, role: message.role, text: message.text, timestamp });
+      });
+      setMessages(restored);
     };
     window.addEventListener('new-conversation', startNewConversation);
     window.addEventListener('session-changed', openSession);
@@ -113,13 +124,14 @@ export function HomePage() {
   useEffect(() => {
     const appendAssistant = ({ done, entryId, text, timestamp }: NonNullable<typeof pendingAssistantRef.current>) => {
       setMessages((current) => {
-        const last = current.at(-1);
+        const latestUserStartedAtMs = current.findLast(message => message.role === 'user')?.startedAtMs;
+        const withWork = current.some(message => message.role === 'work' && !message.done) || latestUserStartedAtMs == null
+          ? current
+          : [...current, { completedAtMs: done ? timestamp ?? Date.now() : undefined, done, id: -Date.now(), role: 'work' as const, startedAtMs: latestUserStartedAtMs, text: '', workStatus: done ? 'worked' as const : undefined }];
+        const last = withWork.at(-1);
         const now = Date.now();
-        const startedAtMs = last?.role === 'assistant'
-          ? last.startedAtMs
-          : current.findLast(message => message.role === 'user')?.startedAtMs ?? now;
-        const message = { completedAtMs: done ? timestamp ?? now : undefined, done, entryId, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, startedAtMs, text, timestamp };
-        return last?.role === 'assistant' && !last.done ? [...current.slice(0, -1), message] : [...current, message];
+        const message = { done, entryId, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, text, timestamp };
+        return last?.role === 'assistant' && !last.done ? [...withWork.slice(0, -1), message] : [...withWork, message];
       });
     };
     const flushAssistant = () => {
@@ -137,13 +149,19 @@ export function HomePage() {
     };
     const unsubscribe = window.api.composer.onUpdate((update) => {
       if (update.type === 'status') {
+        if (update.status === 'running') {
+          const startedAtMs = update.startedAtMs ?? Date.now();
+          setMessages(current => current.some(message => message.role === 'work' && !message.done)
+            ? current
+            : [...current, { done: false, id: startedAtMs, role: 'work', startedAtMs, text: '' }]);
+        }
         if (update.status === 'settled') {
           flushAssistant();
           setMessages((current) => {
-            const last = current.at(-1);
-            return last?.role === 'assistant' && !last.done
-              ? [...current.slice(0, -1), { ...last, completedAtMs: Date.now(), done: true }]
-              : current;
+            const workIndex = current.findLastIndex(message => message.role === 'work' && !message.done);
+            return workIndex < 0
+              ? current
+              : [...current.slice(0, workIndex), { ...current[workIndex]!, completedAtMs: update.completedAtMs ?? Date.now(), done: true, workStatus: update.workStatus ?? 'worked' }, ...current.slice(workIndex + 1)];
           });
         }
         setIsRunning(update.status === 'running');
@@ -265,29 +283,33 @@ export function HomePage() {
             >
               {({ message }) => (
                 <div className="chat-turn">
-                  <article className={`chat-message chat-message-${message.role}${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
-                    {message.role === 'assistant'
-                      ? (
-                          <>
-                            <MarkdownMessage>{message.text}</MarkdownMessage>
-                            {message.done && message.text.trim() && <AssistantMessageFooter entryId={message.entryId} isLatest={messages.at(-1) === message} isRunning={isRunning} onFork={forkAssistantMessage} text={message.text} timestamp={message.timestamp} />}
-                          </>
-                        )
-                      : message.role === 'user'
-                        ? (
-                            editingMessage?.id === message.id
-                              ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
-                              : (
-                                  <>
-                                    <div className="chat-message-user-content" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>{message.text}</div>
-                                    <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={message.text} timestamp={message.timestamp} />
-                                  </>
+                  {message.role === 'work'
+                    ? <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} status={message.workStatus} />
+                    : (
+                        <article className={`chat-message chat-message-${message.role}${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
+                          {message.role === 'assistant'
+                            ? (
+                                <>
+                                  <MarkdownMessage>{message.text}</MarkdownMessage>
+                                  {message.done && message.text.trim() && <AssistantMessageFooter entryId={message.entryId} isLatest={messages.at(-1) === message} isRunning={isRunning} onFork={forkAssistantMessage} text={message.text} timestamp={message.timestamp} />}
+                                </>
+                              )
+                            : message.role === 'user'
+                              ? (
+                                  editingMessage?.id === message.id
+                                    ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
+                                    : (
+                                        <>
+                                          <div className="chat-message-user-content" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>{message.text}</div>
+                                          <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={message.text} timestamp={message.timestamp} />
+                                        </>
+                                      )
                                 )
-                          )
-                        : message.role === 'activity'
-                          ? <ToolActivity name={message.toolName ?? message.text} status={message.toolStatus ?? 'running'} />
-                          : message.text}
-                  </article>
+                              : message.role === 'activity'
+                                ? <ToolActivity name={message.toolName ?? message.text} status={message.toolStatus ?? 'running'} />
+                                : message.text}
+                        </article>
+                      )}
                 </div>
               )}
             </ThreadScrollLayout>
@@ -313,6 +335,42 @@ function ToolActivity({ name, status }: { name: string; status: NonNullable<Mess
         {label}
         {status === 'running' && '…'}
       </span>
+    </div>
+  );
+}
+
+function WorkedFor({ completedAtMs, done, startedAtMs, status }: Pick<Message, 'completedAtMs' | 'done' | 'startedAtMs' | 'workStatus'> & { status?: 'stopped' | 'worked' }) {
+  const { formatMessage } = useIntl();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (done || startedAtMs == null || completedAtMs != null)
+      return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [completedAtMs, done, startedAtMs]);
+
+  if ((done && completedAtMs == null) || startedAtMs == null)
+    return null;
+  const elapsedMs = Math.max(0, (completedAtMs ?? now) - startedAtMs);
+  const seconds = Math.floor(elapsedMs / 1000);
+  const duration = seconds < 60
+    ? formatMessage({ id: 'conversation.duration.seconds' }, { seconds })
+    : formatMessage(
+        { id: 'conversation.duration.minutes' },
+        { minutes: Math.floor(seconds / 60), seconds: seconds % 60 },
+      );
+  const label = status === 'stopped'
+    ? formatMessage({ id: 'conversation.stoppedAfter' }, { duration })
+    : completedAtMs != null
+      ? formatMessage({ id: 'conversation.workedFor' }, { duration })
+      : elapsedMs >= 1000
+        ? formatMessage({ id: 'conversation.workingFor' }, { duration })
+        : formatMessage({ id: 'conversation.working' });
+  return (
+    <div className="chat-worked-for" data-duration-divider>
+      <p>{label}</p>
+      <div aria-hidden="true" className="chat-worked-for-rule" />
     </div>
   );
 }

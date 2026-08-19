@@ -5,8 +5,11 @@ import { join, resolve } from 'node:path';
 export type TranscriptUpdate
   = | { done?: boolean; entryId?: string; text: string; timestamp?: number; type: 'assistant' }
     | { text: string; type: 'error' }
-    | { sessionPath?: string; status: 'running' | 'settled'; type: 'status' }
+    | { completedAtMs?: number; sessionPath?: string; startedAtMs?: number; status: 'running' | 'settled'; type: 'status'; workStatus?: WorkStatus }
     | { sessionPath?: string; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string; type: 'tool' };
+
+type WorkStatus = 'stopped' | 'worked';
+const workedForEntryType = 'pi-desktop-worked-for';
 
 export const DEEPSEEK_PROVIDER = {
   api: 'openai-completions' as const,
@@ -26,7 +29,10 @@ export interface PiSessionSummary {
 }
 
 export interface PiSessionSnapshot {
-  messages: Array<{ entryId: string; role: 'assistant' | 'user'; text: string; timestamp: number }>;
+  messages: Array<
+    | { entryId: string; role: 'assistant' | 'user'; text: string; timestamp: number }
+    | { completedAtMs: number; role: 'work'; startedAtMs: number; status: WorkStatus }
+  >;
   path: string;
 }
 
@@ -38,6 +44,7 @@ interface PiSession {
   getSessionPath?: () => string | undefined;
   isStreaming?: boolean;
   prompt: (text: string, options?: { images?: Array<{ type: 'image'; data: string; mimeType: string }>; streamingBehavior?: 'steer' }) => Promise<void>;
+  recordWorkDuration?: (duration: { completedAtMs: number; startedAtMs: number; status: WorkStatus }) => void;
   subscribe: (listener: (event: unknown) => void) => () => void;
   dispose?: () => void;
 }
@@ -58,6 +65,8 @@ export class PiRuntime {
   #configuration: DeepSeekConfiguration | undefined;
   #promptActive = false;
   #streamedAssistantText = '';
+  #turnStartedAtMs: number | undefined;
+  #abortRequested = false;
   #sessionPath: string | undefined;
   #workspacePath: string | undefined;
   private readonly agentDir: string | undefined;
@@ -151,6 +160,8 @@ export class PiRuntime {
     this.#session = undefined;
     this.#sessionUnsubscribe = undefined;
     this.#promptActive = false;
+    this.#turnStartedAtMs = undefined;
+    this.#abortRequested = false;
   }
 
   async send(prompt: string, attachmentIds: string[]): Promise<void> {
@@ -163,11 +174,14 @@ export class PiRuntime {
       };
       const startsTurn = !this.#promptActive && !session.isStreaming;
       this.#promptActive = true;
-      if (startsTurn)
-        this.#emit({ ...this.#sessionMetadata(), status: 'running', type: 'status' });
+      if (startsTurn) {
+        this.#turnStartedAtMs = Date.now();
+        this.#abortRequested = false;
+        this.#emit({ ...this.#sessionMetadata(), startedAtMs: this.#turnStartedAtMs, status: 'running', type: 'status' });
+      }
       void Promise.resolve(session.prompt(`${prompt}${attachments.text ? `\n${attachments.text}` : ''}`, Object.keys(options).length ? options : undefined)).catch((error) => {
         if (!session.isStreaming)
-          this.#settleTurn();
+          this.#settleTurn('worked');
         this.#emitError(error);
       });
     }
@@ -202,6 +216,8 @@ export class PiRuntime {
     this.#session = undefined;
     this.#sessionUnsubscribe = undefined;
     this.#promptActive = false;
+    this.#turnStartedAtMs = undefined;
+    this.#abortRequested = false;
   }
 
   async abort(): Promise<void> {
@@ -210,15 +226,16 @@ export class PiRuntime {
       return;
 
     if (session.abort == null) {
-      this.#settleTurn();
+      this.#settleTurn('stopped');
       return;
     }
 
     try {
+      this.#abortRequested = true;
       await session.abort();
     }
     catch (error) {
-      this.#settleTurn();
+      this.#settleTurn('stopped');
       this.#emitError(error);
       throw error;
     }
@@ -241,7 +258,7 @@ export class PiRuntime {
 
   #handleEvent(event: unknown): void {
     if (isAgentSettledEvent(event)) {
-      this.#settleTurn();
+      this.#settleTurn(this.#abortRequested ? 'stopped' : 'worked');
       return;
     }
     if (isAssistantMessageStartEvent(event)) {
@@ -282,9 +299,15 @@ export class PiRuntime {
     this.#emit({ type: 'error', text: error instanceof Error ? error.message : '无法发送消息。' });
   }
 
-  #settleTurn(): void {
+  #settleTurn(status: WorkStatus): void {
+    const startedAtMs = this.#turnStartedAtMs;
+    const completedAtMs = Date.now();
     this.#promptActive = false;
-    this.#emit({ ...this.#sessionMetadata(), status: 'settled', type: 'status' });
+    this.#turnStartedAtMs = undefined;
+    this.#abortRequested = false;
+    if (startedAtMs != null)
+      this.#session?.recordWorkDuration?.({ completedAtMs, startedAtMs, status });
+    this.#emit({ ...this.#sessionMetadata(), completedAtMs, startedAtMs, status: 'settled', type: 'status', workStatus: status });
   }
 
   #sessionMetadata(): { sessionPath?: string } {
@@ -326,6 +349,10 @@ async function createDefaultSession(configuration: DeepSeekConfiguration, agentD
       return session.isStreaming;
     },
     prompt: (text, options) => session.prompt(text, options),
+    recordWorkDuration: (duration) => {
+      const assistantEntry = session.sessionManager.getBranch().findLast(entry => entry.type === 'message' && entry.message.role === 'assistant');
+      session.sessionManager.appendCustomEntry(workedForEntryType, { ...duration, assistantEntryId: assistantEntry?.id });
+    },
     subscribe: listener => session.subscribe(event => listener(event)),
   };
 }
@@ -381,12 +408,34 @@ function isTextContent(content: unknown): content is { type: 'text'; text: strin
 }
 
 function toPiSessionMessages(entries: unknown[]): PiSessionSnapshot['messages'] {
+  const persistedWork = new Map<string, Extract<PiSessionSnapshot['messages'][number], { role: 'work' }>>();
+  const unattachedWork: Extract<PiSessionSnapshot['messages'][number], { role: 'work' }>[] = [];
+  for (const entry of entries) {
+    const work = toPiWorkDuration(entry);
+    if (work == null)
+      continue;
+    const { assistantEntryId, ...duration } = work;
+    if (assistantEntryId)
+      persistedWork.set(assistantEntryId, duration);
+    else
+      unattachedWork.push(duration);
+  }
+
+  let latestUserTimestamp: number | undefined;
   return entries.flatMap((entry) => {
     const message = toPiSessionMessage(entry);
     if (message == null)
       return [];
-    return [message];
-  });
+    if (message.role === 'user') {
+      latestUserTimestamp = message.timestamp;
+      return [message];
+    }
+    const work = persistedWork.get(message.entryId)
+      ?? (latestUserTimestamp != null && latestUserTimestamp > 0 && message.timestamp > 0
+        ? { completedAtMs: message.timestamp, role: 'work' as const, startedAtMs: latestUserTimestamp, status: 'worked' as const }
+        : undefined);
+    return work ? [work, message] : [message];
+  }).concat(unattachedWork);
 }
 
 function toPiSessionMessage(entry: unknown): ({ entryId: string; role: 'assistant' | 'user'; text: string; timestamp: number }) | undefined {
@@ -405,6 +454,21 @@ function toPiSessionMessage(entry: unknown): ({ entryId: string; role: 'assistan
     role: message.role,
     text,
     timestamp: typeof message.timestamp === 'number' ? message.timestamp : 0,
+  };
+}
+
+function toPiWorkDuration(entry: unknown): (Extract<PiSessionSnapshot['messages'][number], { role: 'work' }> & { assistantEntryId?: string }) | undefined {
+  if (!isRecord(entry) || entry.type !== 'custom' || entry.customType !== workedForEntryType || !isRecord(entry.data))
+    return undefined;
+  const { assistantEntryId, completedAtMs, startedAtMs, status } = entry.data;
+  if (!Number.isFinite(startedAtMs) || !Number.isFinite(completedAtMs) || (status !== 'stopped' && status !== 'worked'))
+    return undefined;
+  return {
+    ...(typeof assistantEntryId === 'string' ? { assistantEntryId } : {}),
+    completedAtMs,
+    role: 'work',
+    startedAtMs,
+    status,
   };
 }
 

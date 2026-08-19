@@ -107,7 +107,7 @@ describe('home page', () => {
     expect(writeText).toHaveBeenCalledWith('Done');
   });
 
-  it('does not insert a duration divider before the assistant action footer', () => {
+  it('shows a completed duration divider before the assistant reply', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-19T10:00:00Z'));
     const onUpdate = vi.fn(() => () => {});
@@ -118,7 +118,8 @@ describe('home page', () => {
     vi.setSystemTime(new Date('2026-08-19T10:01:05Z'));
     act(() => onUpdate.mock.calls[0]![0]({ done: true, entryId: 'assistant-1', text: 'Done', timestamp: Date.now(), type: 'assistant' }));
 
-    expect(container.querySelector('[data-duration-divider]')).toBeNull();
+    expect(screen.getByText('耗时 1分 5秒')).not.toBeNull();
+    expect(container.querySelector('[data-duration-divider]')).not.toBeNull();
   });
 
   it('shows previous assistant reply actions only on hover', () => {

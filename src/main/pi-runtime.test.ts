@@ -96,6 +96,7 @@ describe('pi runtime', () => {
     await expect(runtime.openSession(session.getSessionFile()!)).resolves.toEqual({
       messages: [
         { entryId: 'message-1', role: 'user', text: 'Earlier request', timestamp: 1000 },
+        { completedAtMs: 2000, role: 'work', startedAtMs: 1000, status: 'worked' },
         { entryId: 'message-2', role: 'assistant', text: 'Earlier reply', timestamp: 2000 },
       ],
       path: session.getSessionFile(),
@@ -120,6 +121,7 @@ describe('pi runtime', () => {
     expect(fork.path).not.toBe(session.getSessionFile());
     expect(fork.messages).toMatchObject([
       { role: 'user', text: 'Earlier request', timestamp: 1_000 },
+      { completedAtMs: 2_000, role: 'work', startedAtMs: 1_000, status: 'worked' },
       { role: 'assistant', text: 'Earlier reply', timestamp: 2_000 },
     ]);
     expect(fork.messages).not.toContainEqual(expect.objectContaining({ text: 'Later request' }));
@@ -329,8 +331,8 @@ describe('pi runtime', () => {
     listener?.({ type: 'agent_settled' });
 
     expect(update.mock.calls.map(([event]) => event)).toEqual([
-      { status: 'running', type: 'status' },
-      { status: 'settled', type: 'status' },
+      { startedAtMs: expect.any(Number), status: 'running', type: 'status' },
+      { completedAtMs: expect.any(Number), startedAtMs: expect.any(Number), status: 'settled', type: 'status', workStatus: 'stopped' },
     ]);
     expect(abort).toHaveBeenCalledOnce();
   });
@@ -355,7 +357,7 @@ describe('pi runtime', () => {
     listener?.({ isError: false, result: {}, toolCallId: 'tool-1', toolName: 'read', type: 'tool_execution_end' });
 
     expect(update.mock.calls.map(([event]) => event)).toEqual([
-      { sessionPath: '/sessions/active.jsonl', status: 'running', type: 'status' },
+      { sessionPath: '/sessions/active.jsonl', startedAtMs: expect.any(Number), status: 'running', type: 'status' },
       { sessionPath: '/sessions/active.jsonl', status: 'running', toolCallId: 'tool-1', toolName: 'read', type: 'tool' },
       { sessionPath: '/sessions/active.jsonl', status: 'completed', toolCallId: 'tool-1', toolName: 'read', type: 'tool' },
     ]);
