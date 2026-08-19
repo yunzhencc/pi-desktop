@@ -77,6 +77,15 @@ export class WorkspaceRegistry {
     return this.snapshot();
   }
 
+  async clear(): Promise<WorkspaceSnapshot> {
+    if (!this.#snapshot.selectedWorkspacePath)
+      return this.snapshot();
+
+    this.#snapshot = { ...this.#snapshot, selectedWorkspacePath: undefined };
+    await this.#write();
+    return this.snapshot();
+  }
+
   async #write(): Promise<void> {
     const temporaryPath = join(dirname(this.path), `.${basename(this.path)}.tmp`);
     await writeFile(temporaryPath, JSON.stringify(this.#snapshot), { encoding: 'utf8', mode: 0o600 });

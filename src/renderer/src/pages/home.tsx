@@ -158,6 +158,9 @@ export function HomePage() {
 
   const newConversationToolbar = (
     <NewConversationToolbar
+      onClearProject={() => {
+        void window.api.workspaces.clear().then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
+      }}
       workspace={workspace}
     />
   );

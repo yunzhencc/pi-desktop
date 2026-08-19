@@ -107,6 +107,15 @@ describe('pi runtime', () => {
     await expect(runtime.send('Hello', [])).rejects.toThrow('请先选择工作区');
   });
 
+  it('rejects sends after the selected workspace is cleared', async () => {
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({ prompt: vi.fn(), subscribe: () => () => {} }));
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
+    runtime.clearWorkspace();
+
+    await expect(runtime.send('Hello', [])).rejects.toThrow('请先选择工作区');
+  });
+
   it('passes Pi image content and text-file content to a session prompt', async () => {
     const attachments = new AttachmentStore();
     const result = await attachments.add([

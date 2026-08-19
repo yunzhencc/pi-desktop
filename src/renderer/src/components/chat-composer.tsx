@@ -13,7 +13,7 @@ type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDropp
 type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 
-export function NewConversationToolbar({ workspace }: { workspace?: WorkspaceSnapshot }) {
+export function NewConversationToolbar({ onClearProject, workspace }: { onClearProject?: () => void; workspace?: WorkspaceSnapshot }) {
   const [branchResult, setBranchResult] = useState<{ branch?: string; path: string }>();
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
 
@@ -28,8 +28,13 @@ export function NewConversationToolbar({ workspace }: { workspace?: WorkspaceSna
 
   return (
     <div aria-label="新会话项目上下文" className="new-conversation-toolbar" data-has-project={Boolean(selectedWorkspace)} role="toolbar">
-      <span className="new-conversation-toolbar-project">
-        <Folder aria-hidden="true" size={18} />
+      <span className="new-conversation-toolbar-project" data-clear-project-available={selectedWorkspace && onClearProject ? '' : undefined}>
+        {selectedWorkspace && onClearProject && (
+          <button aria-label="不在项目中工作" className="new-conversation-toolbar-project-clear" onClick={onClearProject} type="button">
+            <X aria-hidden="true" size={16} />
+          </button>
+        )}
+        <Folder aria-hidden="true" className="new-conversation-toolbar-project-icon" size={18} />
         <span>{selectedWorkspace?.displayName ?? '选择项目'}</span>
       </span>
       {selectedWorkspace && (

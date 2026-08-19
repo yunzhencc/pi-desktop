@@ -33,6 +33,7 @@ declare global {
         open: (workspacePath: string, sessionPath: string) => Promise<{ session: PiSessionSnapshot; workspace: WorkspaceSnapshot }>;
       };
       workspaces: {
+        clear: () => Promise<WorkspaceSnapshot>;
         get: () => Promise<WorkspaceSnapshot>;
         getGitBranch: (path: string) => Promise<string | undefined>;
         pickDirectory: () => Promise<string | undefined>;

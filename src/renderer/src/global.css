@@ -914,22 +914,53 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   background: color-mix(in oklab, var(--foreground) 2.5%, transparent);
 }
 
-.new-conversation-toolbar[data-has-project='false'] {
-  width: fit-content;
-  min-height: 38px;
-  margin-bottom: 6px;
-  padding: 0 10px;
-  border-radius: 20px;
-  background: color-mix(in srgb, var(--foreground) 5%, transparent);
-}
-
 .new-conversation-toolbar-project {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  position: relative;
   color: var(--text-secondary);
   font-size: 14px;
+}
+
+.new-conversation-toolbar-project[data-clear-project-available]:hover .new-conversation-toolbar-project-icon,
+.new-conversation-toolbar-project:has(.new-conversation-toolbar-project-clear:focus-visible) .new-conversation-toolbar-project-icon {
+  opacity: 0;
+}
+
+.new-conversation-toolbar-project-clear {
+  position: absolute;
+  z-index: 1;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.new-conversation-toolbar-project-clear:hover {
+  color: var(--text-primary);
+}
+
+.new-conversation-toolbar-project-clear:focus-visible {
+  outline: 1px solid var(--focus);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.new-conversation-toolbar-project[data-clear-project-available]:hover .new-conversation-toolbar-project-clear {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .new-conversation-toolbar-project {

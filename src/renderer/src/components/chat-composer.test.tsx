@@ -16,6 +16,7 @@ const composer = {
 const weather = { displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' };
 const notes = { displayName: 'notes', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/notes' };
 const workspaces = {
+  clear: vi.fn(),
   create: vi.fn(),
   getGitBranch: vi.fn(),
   get: vi.fn(),
@@ -36,6 +37,7 @@ beforeEach(() => {
   composer.removeAttachment.mockResolvedValue(undefined);
   composer.send.mockResolvedValue(undefined);
   workspaces.create.mockResolvedValue({ selectedWorkspacePath: weather.path, workspaces: [weather, notes] });
+  workspaces.clear.mockResolvedValue({ workspaces: [weather, notes] });
   workspaces.getGitBranch.mockResolvedValue('main');
   workspaces.pickDirectory.mockResolvedValue('/projects/weather');
   workspaces.select.mockResolvedValue({ selectedWorkspacePath: notes.path, workspaces: [notes, weather] });
@@ -188,6 +190,17 @@ describe('chat composer', () => {
     expect(toolbar.textContent).toContain('weather');
     expect(toolbar.textContent).toContain('本地');
     expect(toolbar.textContent).toContain('main');
+  });
+
+  it('clears the selected project from its hover action', async () => {
+    const user = userEvent.setup();
+    const onClearProject = vi.fn();
+    renderNewConversationToolbar({ onClearProject });
+
+    await user.hover(screen.getByText('weather'));
+    await user.click(screen.getByRole('button', { name: '不在项目中工作' }));
+
+    expect(onClearProject).toHaveBeenCalledOnce();
   });
 
   it('uses the drop attachment command for Electron file paths', async () => {

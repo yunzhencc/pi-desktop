@@ -45,6 +45,7 @@ const api = {
     open: (workspacePath: string, sessionPath: string): Promise<{ session: PiSessionSnapshot; workspace: WorkspaceSnapshot }> => ipcRenderer.invoke('sessions:open', workspacePath, sessionPath),
   },
   workspaces: {
+    clear: (): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:clear'),
     get: (): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:get'),
     getGitBranch: (path: string): Promise<string | undefined> => ipcRenderer.invoke('workspaces:get-git-branch', path),
     pickDirectory: (): Promise<string | undefined> => ipcRenderer.invoke('workspaces:pick-directory'),

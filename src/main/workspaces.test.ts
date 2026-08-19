@@ -58,6 +58,23 @@ describe('workspace registry', () => {
     expect(registry.snapshot().workspaces[0]).toMatchObject({ displayName: '天气助手', path: project });
   });
 
+  it('clears the selected project but keeps it in recents', async () => {
+    const path = await registryPath();
+    const project = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
+    directories.push(project);
+    await mkdir(project);
+    const registry = new WorkspaceRegistry(path);
+
+    await registry.load();
+    await registry.select(project);
+    const cleared = await registry.clear();
+
+    expect(cleared).toEqual({
+      workspaces: [expect.objectContaining({ path: project })],
+    });
+    await expect(new WorkspaceRegistry(path).load()).resolves.toEqual(cleared);
+  });
+
   it('rejects a path that is not an existing directory', async () => {
     const registry = new WorkspaceRegistry(await registryPath());
     await registry.load();

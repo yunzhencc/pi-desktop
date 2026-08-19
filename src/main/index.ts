@@ -189,6 +189,11 @@ app.whenReady().then(async () => {
     return snapshot;
   };
   ipcMain.handle('workspaces:get', () => workspaceRegistry.snapshot());
+  ipcMain.handle('workspaces:clear', async () => {
+    const snapshot = await workspaceRegistry.clear();
+    piRuntime.clearWorkspace();
+    return snapshot;
+  });
   ipcMain.handle('workspaces:get-git-branch', (_event, path: unknown) => {
     if (typeof path !== 'string' || !path.trim())
       throw new TypeError('无效的工作区路径');

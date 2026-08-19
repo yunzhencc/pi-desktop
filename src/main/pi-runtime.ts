@@ -84,6 +84,14 @@ export class PiRuntime {
     this.#resetSession();
   }
 
+  clearWorkspace(): void {
+    if (!this.#workspacePath)
+      return;
+    this.#workspacePath = undefined;
+    this.#sessionPath = undefined;
+    this.#resetSession();
+  }
+
   startNewConversation(): void {
     this.#sessionPath = undefined;
     this.#resetSession();
