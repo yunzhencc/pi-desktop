@@ -137,12 +137,17 @@ html.electron-opaque #root {
   flex: 1;
   height: 30px;
   padding: 0 8px;
+  border-radius: var(--radius-lg);
 }
 
 .sidebar-profile-trigger:hover,
-.sidebar-profile-trigger[aria-expanded='true'],
 .sidebar-profile-menu button:hover {
-  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  background: color-mix(in oklab, var(--foreground) 5%, transparent);
+}
+
+.dark .sidebar-profile-trigger:hover,
+.dark .sidebar-profile-menu button:hover {
+  background: color-mix(in oklab, #fff 8%, transparent);
 }
 
 .sidebar-profile-trigger:focus-visible,
@@ -158,10 +163,11 @@ html.electron-opaque #root {
   height: 18px;
   place-items: center;
   border-radius: 999px;
-  background: color-mix(in srgb, #8b5cf6 10%, transparent);
-  color: #8b5cf6;
-  font-size: 10px;
+  background: #b49355;
+  color: #f2ede2;
+  font-size: 7px;
   font-weight: 500;
+  line-height: 1;
 }
 
 .sidebar-profile-name {
@@ -241,6 +247,11 @@ html.electron-opaque #root {
 .sidebar-profile-menu-identity > span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.sidebar-profile-menu-identity .sidebar-profile-avatar {
+  font-size: 9px;
+  font-weight: 400;
 }
 
 .sidebar-profile-menu-separator {
