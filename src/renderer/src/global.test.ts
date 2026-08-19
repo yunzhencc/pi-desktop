@@ -34,4 +34,18 @@ describe('app shell surfaces', () => {
   it('leaves a one-pixel gap between adjacent settings navigation items', () => {
     expect(styles).toMatch(/\.settings-navigation-item \+ \.settings-navigation-item\s*\{\s*margin-top: 1px;/);
   });
+
+  it('uses Codex settings typography and semantic colors', () => {
+    const titleRule = styles.match(/\.settings-navigation-title\s*\{([\s\S]*?)\}/)?.[1];
+    const backRule = styles.match(/\.settings-back-button\s*\{([\s\S]*?)\}/)?.[1];
+    const itemRule = styles.match(/\.settings-back-button,\s*\.settings-navigation-item\s*\{([\s\S]*?)\}/)?.[1];
+
+    expect(titleRule).toContain('font-size: 16px;');
+    expect(titleRule).toContain('font-weight: 400;');
+    expect(titleRule).toContain('color: var(--text-tertiary);');
+    expect(backRule).toContain('font-weight: 400;');
+    expect(backRule).toContain('color: var(--text-tertiary);');
+    expect(itemRule).toContain('height: 28px;');
+    expect(itemRule).toContain('font-size: 14px;');
+  });
 });

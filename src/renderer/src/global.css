@@ -281,8 +281,9 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 
 .settings-navigation-title {
   padding: 16px 8px 8px;
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--text-tertiary);
+  font-size: 16px;
+  font-weight: 400;
 }
 
 .settings-back-button,
@@ -291,11 +292,11 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   align-items: center;
   gap: 8px;
   width: 100%;
-  height: 32px;
+  height: 28px;
   padding: 0 8px;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   text-align: left;
 }
@@ -305,7 +306,9 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   height: 32px;
   padding: 0 8px;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .settings-back-button:hover {

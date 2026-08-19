@@ -3,7 +3,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GeneralSettingsView, SettingsView } from './settings-view';
+import { messages } from '../providers/i18n';
+import { GeneralSettingsView, SettingsSidebar, SettingsView } from './settings-view';
 
 describe('settings view', () => {
   afterEach(cleanup);
@@ -60,5 +61,15 @@ describe('settings view', () => {
     expect(screen.getByRole('heading', { name: '常规' })).not.toBeNull();
     fireEvent.change(screen.getByRole('combobox', { name: '语言' }), { target: { value: 'en' } });
     expect(onLocaleChange).toHaveBeenCalledWith('en');
+  });
+
+  it('uses Personal as the Chinese settings category', () => {
+    render(
+      <IntlProvider locale="zh-CN" messages={messages['zh-CN']}>
+        <SettingsSidebar activePath="/settings/general" onClose={vi.fn()} onNavigate={vi.fn()} />
+      </IntlProvider>,
+    );
+
+    expect(screen.getByText('个人')).not.toBeNull();
   });
 });
