@@ -12,6 +12,7 @@ const api = {
       return () => ipcRenderer.removeListener('window-fullscreen-changed', listener);
     },
     getIsOpaqueSurface: (): Promise<boolean> => ipcRenderer.invoke('window:is-opaque-surface'),
+    setThemeSource: (theme: 'system' | 'light' | 'dark'): Promise<void> => ipcRenderer.invoke('window:set-theme-source', theme),
     onOpaqueSurfaceChange: (callback: (opaque: boolean) => void) => {
       const listener = (_: Electron.IpcRendererEvent, opaque: boolean) => callback(opaque);
       ipcRenderer.on('window-opaque-surface-changed', listener);

@@ -22,4 +22,12 @@ describe('app shell surfaces', () => {
 
     expect(lightOpaqueSidebarRule).toContain('background: #fafafa;');
   });
+
+  it('highlights only the active settings navigation item', () => {
+    const navigationRule = styles.match(/\.settings-back-button,\s*\.settings-navigation-item\s*\{([\s\S]*?)\}/)?.[1];
+    const activeNavigationRule = styles.match(/\.settings-navigation-item\[aria-current='page'\]\s*\{([\s\S]*?)\}/)?.[1];
+
+    expect(navigationRule).not.toContain('background:');
+    expect(activeNavigationRule).toContain('background: color-mix(in srgb, var(--foreground) 8%, transparent);');
+  });
 });

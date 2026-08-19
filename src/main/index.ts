@@ -11,6 +11,7 @@ import {
 } from './window-state';
 
 let isPrimaryWindowOpaque = false;
+let syncPrimaryWindowBackdrop: (() => void) | undefined;
 
 function getPrimaryWindowStatePath(): string {
   return join(app.getPath('userData'), 'window-state.json');
@@ -60,6 +61,7 @@ function createWindow(): void {
       mainWindow.setVibrancy(opaque ? null : 'menu');
       mainWindow.webContents.send('window-opaque-surface-changed', opaque);
     };
+    syncPrimaryWindowBackdrop = syncWindowBackdrop;
     const syncTrafficLightPosition = () => {
       mainWindow.setWindowButtonPosition({
         x: 16,
@@ -76,6 +78,10 @@ function createWindow(): void {
     mainWindow.on('show', syncWindowBackdrop);
     mainWindow.on('hide', syncWindowBackdrop);
     syncWindowBackdrop();
+    mainWindow.on('closed', () => {
+      if (syncPrimaryWindowBackdrop === syncWindowBackdrop)
+        syncPrimaryWindowBackdrop = undefined;
+    });
   }
 
   mainWindow.on('ready-to-show', () => {
@@ -135,6 +141,14 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'));
   ipcMain.handle('window:is-full-screen', event => BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false);
   ipcMain.handle('window:is-opaque-surface', () => isPrimaryWindowOpaque);
+  ipcMain.handle('window:set-theme-source', (_event, themeSource: unknown) => {
+    if (themeSource !== 'system' && themeSource !== 'light' && themeSource !== 'dark')
+      throw new TypeError('Invalid theme source');
+
+    nativeTheme.themeSource = themeSource;
+    syncPrimaryWindowBackdrop?.();
+  });
+  nativeTheme.on('updated', () => syncPrimaryWindowBackdrop?.());
 
   createWindow();
 

@@ -8,6 +8,7 @@ declare global {
         getIsFullscreen: () => Promise<boolean>;
         onFullscreenChange: (callback: (isFullscreen: boolean) => void) => () => void;
         getIsOpaqueSurface: () => Promise<boolean>;
+        setThemeSource: (theme: 'system' | 'light' | 'dark') => Promise<void>;
         onOpaqueSurfaceChange: (callback: (opaque: boolean) => void) => () => void;
       };
     };
