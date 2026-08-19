@@ -33,6 +33,10 @@ export function getRightPanelExpansionAfterToggle(isOpen: boolean, isExpanded: b
   return isOpen ? false : isExpanded;
 }
 
+export function getRightPanelWidthMode(isExpanded: boolean): 'full' | 'regular' {
+  return isExpanded ? 'full' : 'regular';
+}
+
 function getDefaultRightPanelWidth(mainContentWidth: number, shellHeight: number): number {
   return Math.max(
     RIGHT_PANEL_MIN_WIDTH,

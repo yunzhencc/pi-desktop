@@ -74,6 +74,11 @@ body,
   box-shadow: none;
 }
 
+.app-shell-right-panel[data-width-mode='full'] {
+  border-inline-start-color: transparent;
+  box-shadow: none;
+}
+
 .app-shell[data-resizing='true'] .app-shell-header-left,
 .app-shell[data-resizing='true'] .app-shell-header-right,
 .app-shell[data-resizing='true'] .app-shell-left-panel,

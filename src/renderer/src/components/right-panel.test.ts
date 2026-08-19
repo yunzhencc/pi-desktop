@@ -4,6 +4,7 @@ import {
   getExpandedRightPanelWidth,
   getRightPanelExpansionAfterToggle,
   getRightPanelHeaderWidth,
+  getRightPanelWidthMode,
   readRightPanelWidth,
   shouldCloseRightPanel,
   writeRightPanelWidth,
@@ -32,6 +33,11 @@ describe('right panel width', () => {
   it('clears full-width mode when the panel is hidden', () => {
     expect(getRightPanelExpansionAfterToggle(true, true)).toBe(false);
     expect(getRightPanelExpansionAfterToggle(false, false)).toBe(false);
+  });
+
+  it('uses Codex’s full mode without a panel divider', () => {
+    expect(getRightPanelWidthMode(true)).toBe('full');
+    expect(getRightPanelWidthMode(false)).toBe('regular');
   });
 
   it('stores a ratio so the panel follows the available main content width', () => {

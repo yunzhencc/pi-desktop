@@ -4,6 +4,7 @@ import {
   getExpandedRightPanelWidth,
   getRightPanelExpansionAfterToggle,
   getRightPanelHeaderWidth,
+  getRightPanelWidthMode,
   readRightPanelWidth,
   writeRightPanelWidth,
 } from './components/right-panel';
@@ -57,6 +58,7 @@ export function App() {
   const displayedRightPanelWidth = isRightPanelExpanded
     ? getExpandedRightPanelWidth(mainContentWidth)
     : rightPanelWidth;
+  const rightPanelWidthMode = getRightPanelWidthMode(isRightPanelExpanded);
   const headerRightWidth = getRightPanelHeaderWidth(
     isRightPanelExpanded,
     displayedRightPanelWidth,
@@ -165,6 +167,7 @@ export function App() {
       <aside
         className="app-shell-right-panel relative shrink-0"
         data-open={isRightPanelOpen}
+        data-width-mode={rightPanelWidthMode}
         style={{
           width: isRightPanelOpen ? displayedRightPanelWidth : 0,
         }}
