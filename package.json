@@ -1,9 +1,17 @@
 {
   "name": "pi-desktop",
   "version": "1.0.0",
+  "private": true,
   "packageManager": "pnpm@11.20.0",
-  "description": "An Electron application with React and TypeScript",
-  "author": "example.com",
+  "description": "Pi Coding Agent 桌面端",
+  "author": "wangxingkang <wang_xingkang@qq.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/yunzhencc/pi-desktop#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yunzhencc/pi-desktop.git"
+  },
+  "bugs": "https://github.com/yunzhencc/pi-desktop/issues",
   "main": "./out/main/index.js",
   "engines": {
     "node": "^22.18.0 || ^24.12.0",
