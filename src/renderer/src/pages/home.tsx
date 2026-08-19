@@ -70,7 +70,15 @@ export function HomePage() {
       pendingAssistantRef.current = null;
       setIsRunning(false);
       const session = (event as CustomEvent<PiSessionSnapshot>).detail;
-      setMessages(session.messages.map((message, index) => ({ done: true, id: index, role: message.role, startedAtMs: message.timestamp || undefined, text: message.text })));
+      let latestUserStartedAtMs: number | undefined;
+      setMessages(session.messages.map((message, index) => {
+        const timestamp = message.timestamp || undefined;
+        if (message.role === 'user') {
+          latestUserStartedAtMs = timestamp;
+          return { done: true, id: index, role: message.role, startedAtMs: timestamp, text: message.text };
+        }
+        return { completedAtMs: timestamp, done: true, id: index, role: message.role, startedAtMs: latestUserStartedAtMs, text: message.text };
+      }));
     };
     window.addEventListener('new-conversation', startNewConversation);
     window.addEventListener('session-changed', openSession);
@@ -230,27 +238,25 @@ export function HomePage() {
               turns={messages.map(message => ({ key: String(message.id), message }))}
             >
               {({ message }) => (
-                <article className={`chat-message chat-message-${message.role}${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
-                  {message.role === 'assistant'
-                    ? (
-                        <>
-                          <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} />
-                          <MarkdownMessage>{message.text}</MarkdownMessage>
-                        </>
-                      )
-                    : message.role === 'user'
-                      ? (
-                          editingMessage?.id === message.id
-                            ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
-                            : (
-                                <>
-                                  <div className="chat-message-user-content" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>{message.text}</div>
-                                  <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} startedAtMs={message.startedAtMs} text={message.text} />
-                                </>
-                              )
-                        )
-                      : message.text}
-                </article>
+                <div className="chat-turn">
+                  {message.role === 'assistant' && <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} />}
+                  <article className={`chat-message chat-message-${message.role}${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
+                    {message.role === 'assistant'
+                      ? <MarkdownMessage>{message.text}</MarkdownMessage>
+                      : message.role === 'user'
+                        ? (
+                            editingMessage?.id === message.id
+                              ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
+                              : (
+                                  <>
+                                    <div className="chat-message-user-content" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>{message.text}</div>
+                                    <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} startedAtMs={message.startedAtMs} text={message.text} />
+                                  </>
+                                )
+                          )
+                        : message.text}
+                  </article>
+                </div>
               )}
             </ThreadScrollLayout>
           )}
@@ -306,5 +312,10 @@ function WorkedFor({ completedAtMs, done, startedAtMs }: Pick<Message, 'complete
     : elapsedMs >= 1000
       ? formatMessage({ id: 'conversation.workingFor' }, { duration })
       : formatMessage({ id: 'conversation.working' });
-  return <p className="chat-worked-for">{label}</p>;
+  return (
+    <div className="chat-worked-for" data-duration-divider>
+      <p>{label}</p>
+      <div aria-hidden="true" className="chat-worked-for-rule" />
+    </div>
+  );
 }

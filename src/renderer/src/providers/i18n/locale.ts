@@ -17,7 +17,7 @@ export const messages = {
     'conversation.quick': '快速聊天',
     'conversation.workedFor': '耗时 {duration}',
     'conversation.working': '处理中',
-    'conversation.workingFor': '处理中 {duration}',
+    'conversation.workingFor': '已处理 {duration}',
     'panel.expand': '展开面板',
     'panel.hide': '隐藏右侧面板',
     'panel.restore': '恢复面板宽度',

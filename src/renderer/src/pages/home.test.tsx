@@ -60,6 +60,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -174,6 +175,38 @@ describe('home page', () => {
     expect(screen.getByText('Earlier reply')).not.toBeNull();
   });
 
+  it('restores completed duration from session history', () => {
+    render(<HomePage />);
+
+    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
+      detail: {
+        messages: [
+          { role: 'user', text: 'Earlier request', timestamp: 1_000 },
+          { role: 'assistant', text: 'Earlier reply', timestamp: 66_000 },
+        ],
+      },
+    })));
+
+    expect(screen.getByText('耗时 1分 5秒')).not.toBeNull();
+  });
+
+  it('renders completed duration as a divider before the assistant message', () => {
+    render(<HomePage />);
+
+    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
+      detail: {
+        messages: [
+          { role: 'user', text: 'Earlier request', timestamp: 1_000 },
+          { role: 'assistant', text: 'Earlier reply', timestamp: 66_000 },
+        ],
+      },
+    })));
+
+    const divider = screen.getByText('耗时 1分 5秒').closest('[data-duration-divider]');
+    expect(divider).not.toBeNull();
+    expect(divider?.nextElementSibling?.classList.contains('chat-message-assistant')).toBe(true);
+  });
+
   it('does not run a timer for restored assistant messages without a recorded duration', () => {
     vi.useFakeTimers();
     render(<HomePage />);
@@ -244,6 +277,21 @@ describe('home page', () => {
     act(() => animationFrames.at(-1)?.(0));
 
     expect(screen.getByText('处理中')).not.toBeNull();
+  });
+
+  it('labels active elapsed work as processed in Chinese', () => {
+    const startedAtMs = 1_787_162_200_000;
+    const dateNow = vi.spyOn(Date, 'now').mockReturnValue(startedAtMs);
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    dateNow.mockReturnValue(startedAtMs + 65_000);
+    act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Working', type: 'assistant' }));
+    act(() => animationFrames.at(-1)?.(0));
+
+    expect(screen.getByText('已处理 1分 5秒')).not.toBeNull();
   });
 
   it('freezes streamed assistant work duration when the agent settles', () => {

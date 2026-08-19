@@ -864,7 +864,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .chat-message-assistant {
   width: 100%;
   max-width: none;
-  padding: 12px 16px;
+  padding: 24px 0 0;
 }
 
 .chat-message-error {
@@ -872,10 +872,29 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 }
 
 .chat-worked-for {
-  margin: 0 0 8px;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
   color: var(--text-tertiary);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.chat-worked-for p {
+  margin: 0;
+}
+
+.chat-worked-for-rule {
+  width: 100%;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.chat-turn {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
 }
 
 .markdown-message {
