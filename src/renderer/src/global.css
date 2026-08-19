@@ -519,16 +519,22 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 }
 
 .chat-composer-editor .ProseMirror[data-empty='true'] p::before {
+  position: absolute;
+  inset: 0 0 auto;
+  overflow: hidden;
+  max-width: 100%;
   color: var(--text-tertiary);
   content: var(--chat-composer-placeholder);
   opacity: 0.5;
   pointer-events: none;
+  text-overflow: ellipsis;
   user-select: none;
   white-space: nowrap;
 }
 
 .chat-composer-editor .ProseMirror p {
   margin: 0;
+  position: relative;
 }
 
 .chat-composer-actions {
