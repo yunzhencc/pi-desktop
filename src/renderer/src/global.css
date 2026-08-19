@@ -69,6 +69,53 @@ html.electron-opaque #root {
   padding: 8px;
 }
 
+.sidebar-new-conversation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 31px;
+  margin: 54px 8px 0;
+  padding: 0 4px 0 8px;
+  border-radius: 10px;
+}
+
+.sidebar-new-conversation:hover {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.sidebar-new-conversation__main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  height: 31px;
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 21px;
+  text-align: left;
+}
+
+.sidebar-new-conversation__quick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
+}
+
+.sidebar-new-conversation__quick:hover,
+.sidebar-new-conversation__quick:focus-visible {
+  color: var(--foreground);
+}
+
+.sidebar-new-conversation button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 0;
+}
+
 .sidebar-profile-trigger,
 .sidebar-profile-menu button {
   display: flex;

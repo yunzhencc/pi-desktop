@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
-import { act, render, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
+import { messages } from './providers/i18n/locale';
 
 vi.mock('@tanstack/react-hotkeys', () => ({ useHotkey: () => {} }));
 vi.mock('@tanstack/react-router', () => ({
@@ -37,6 +38,7 @@ describe('app window surface', () => {
   });
 
   afterEach(() => {
+    cleanup();
     document.documentElement.classList.remove('electron-opaque');
   });
 
@@ -44,15 +46,7 @@ describe('app window surface', () => {
     render(
       <IntlProvider
         locale="en"
-        messages={{
-          'panel.show': 'Show panel',
-          'panel.toggle': 'Toggle panel',
-          'profile.logOut': 'Log out',
-          'profile.settings': 'Settings',
-          'resize.sidebar': 'Resize sidebar',
-          'sidebar.hide': 'Hide sidebar',
-          'sidebar.toggle': 'Toggle sidebar',
-        }}
+        messages={messages.en}
       >
         <App />
       </IntlProvider>,
@@ -65,5 +59,19 @@ describe('app window surface', () => {
 
     act(() => opaqueSurfaceListener?.(false));
     expect(document.documentElement.classList.contains('electron-opaque')).toBe(false);
+  });
+
+  it('shows Codex’s new-conversation controls outside settings', () => {
+    render(
+      <IntlProvider
+        locale="zh-CN"
+        messages={messages['zh-CN']}
+      >
+        <App />
+      </IntlProvider>,
+    );
+
+    expect(screen.getByRole('button', { name: '新对话' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '快速聊天' })).toBeTruthy();
   });
 });
