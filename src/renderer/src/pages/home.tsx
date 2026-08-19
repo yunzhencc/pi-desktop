@@ -13,13 +13,44 @@ interface Message {
   done?: boolean;
 }
 
+type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
+
 export function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
+  const workspaceRef = useRef<WorkspaceSnapshot>();
   const composerFooterRef = useRef<HTMLDivElement>(null);
   const pendingAssistantRef = useRef<{ done: boolean; text: string } | null>(null);
   const streamingFrameRef = useRef<number | null>(null);
   const [composerFooterHeightPx, setComposerFooterHeightPx] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    void window.api.workspaces.get().then((snapshot) => {
+      if (active) {
+        workspaceRef.current = snapshot;
+        setWorkspace(snapshot);
+      }
+    }).catch(() => {
+      if (active) {
+        workspaceRef.current = { workspaces: [] };
+        setWorkspace({ workspaces: [] });
+      }
+    });
+    const onWorkspaceChanged = (event: Event) => {
+      const next = (event as CustomEvent<WorkspaceSnapshot>).detail;
+      if (next.selectedWorkspacePath !== workspaceRef.current?.selectedWorkspacePath)
+        setMessages([]);
+      workspaceRef.current = next;
+      setWorkspace(next);
+    };
+    window.addEventListener('workspace-changed', onWorkspaceChanged);
+    return () => {
+      active = false;
+      window.removeEventListener('workspace-changed', onWorkspaceChanged);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     const footer = composerFooterRef.current;
@@ -99,6 +130,17 @@ export function HomePage() {
       }}
     />
   );
+
+  if (workspace && !workspace.selectedWorkspacePath) {
+    return (
+      <section className="chat-page">
+        <div className="chat-empty-state">
+          <p>Choose a project</p>
+          <span>Select or add a project from the sidebar to start a conversation.</span>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="chat-page" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>

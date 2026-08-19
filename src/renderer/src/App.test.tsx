@@ -43,6 +43,14 @@ describe('app window surface', () => {
             return () => {};
           },
         },
+        workspaces: {
+          get: () => Promise.resolve({
+            selectedWorkspacePath: '/projects/weather',
+            workspaces: [{ displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' }],
+          }),
+          pick: () => Promise.resolve({ workspaces: [] }),
+          select: () => Promise.resolve({ workspaces: [] }),
+        },
       },
     });
   });
@@ -83,6 +91,17 @@ describe('app window surface', () => {
 
     expect(screen.getByRole('button', { name: '新对话' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '快速聊天' })).toBeTruthy();
+  });
+
+  it('shows projects and an add-project entry in the sidebar', async () => {
+    render(
+      <IntlProvider locale="en" messages={messages.en}>
+        <App />
+      </IntlProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'weather' })).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeTruthy();
   });
 
   it('opens settings with Codex’s shortcut', () => {

@@ -2,7 +2,7 @@ import type { DeepSeekModel } from './deepseek-settings';
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, nativeTheme, safeStorage, screen, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, safeStorage, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
 import { AttachmentStore } from './attachments';
 import { createComposerHandlers } from './composer-ipc';
@@ -14,12 +14,14 @@ import {
   readPrimaryWindowState,
   writePrimaryWindowState,
 } from './window-state';
+import { WorkspaceRegistry } from './workspaces';
 
 let isPrimaryWindowOpaque = false;
 let syncPrimaryWindowBackdrop: (() => void) | undefined;
 const attachmentStore = new AttachmentStore();
 const piRuntime = new PiRuntime(attachmentStore, { agentDir: join(app.getPath('userData'), 'pi-agent') });
 let deepseekSettings: DeepSeekSettings;
+let workspaceRegistry: WorkspaceRegistry;
 
 function getPrimaryWindowStatePath(): string {
   return join(app.getPath('userData'), 'window-state.json');
@@ -27,6 +29,10 @@ function getPrimaryWindowStatePath(): string {
 
 function getDeepSeekSettingsPath(): string {
   return join(app.getPath('userData'), 'providers', 'deepseek.json');
+}
+
+function getWorkspacesPath(): string {
+  return join(app.getPath('userData'), 'workspaces.json');
 }
 
 function createWindow(): void {
@@ -142,6 +148,10 @@ app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.electron');
   deepseekSettings = new DeepSeekSettings(getDeepSeekSettingsPath(), safeStorage);
   piRuntime.configureDeepSeek(await deepseekSettings.load());
+  workspaceRegistry = new WorkspaceRegistry(getWorkspacesPath());
+  const workspaceSnapshot = await workspaceRegistry.load();
+  if (workspaceSnapshot.selectedWorkspacePath)
+    piRuntime.setWorkspace(workspaceSnapshot.selectedWorkspacePath);
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -172,6 +182,31 @@ app.whenReady().then(async () => {
     const snapshot = await deepseekSettings.save(apiKey, model as DeepSeekModel);
     piRuntime.configureDeepSeek(deepseekSettings.configuration());
     return snapshot;
+  });
+  const selectWorkspace = async (path: string) => {
+    const snapshot = await workspaceRegistry.select(path);
+    piRuntime.setWorkspace(snapshot.selectedWorkspacePath!);
+    return snapshot;
+  };
+  ipcMain.handle('workspaces:get', () => workspaceRegistry.snapshot());
+  ipcMain.handle('workspaces:pick-directory', async (event) => {
+    const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender) ?? undefined, {
+      properties: ['openDirectory'],
+      title: '选择源文件夹',
+    });
+    return result.canceled ? undefined : result.filePaths[0];
+  });
+  ipcMain.handle('workspaces:create', async (_event, name: unknown, path: unknown) => {
+    if (typeof name !== 'string' || !name.trim() || typeof path !== 'string' || !path.trim())
+      throw new TypeError('无效的项目');
+    const snapshot = await workspaceRegistry.create(path, name);
+    piRuntime.setWorkspace(snapshot.selectedWorkspacePath!);
+    return snapshot;
+  });
+  ipcMain.handle('workspaces:select', (_event, path: unknown) => {
+    if (typeof path !== 'string' || !path.trim())
+      throw new TypeError('无效的工作区路径');
+    return selectWorkspace(path);
   });
   nativeTheme.on('updated', () => syncPrimaryWindowBackdrop?.());
 

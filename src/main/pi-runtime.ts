@@ -1,6 +1,5 @@
 import type { AttachmentStore } from './attachments';
 import type { DeepSeekConfiguration } from './deepseek-settings';
-import process from 'node:process';
 
 export type TranscriptUpdate
   = | { done?: boolean; text: string; type: 'assistant' }
@@ -15,7 +14,7 @@ interface PiSession {
   dispose?: () => void;
 }
 
-type SessionFactory = (configuration: DeepSeekConfiguration, agentDir?: string) => Promise<PiSession>;
+type SessionFactory = (configuration: DeepSeekConfiguration, agentDir?: string, workspacePath?: string) => Promise<PiSession>;
 
 interface PiRuntimeOptions {
   agentDir?: string;
@@ -29,6 +28,7 @@ export class PiRuntime {
   #configuration: DeepSeekConfiguration | undefined;
   #promptActive = false;
   #streamedAssistantText = '';
+  #workspacePath: string | undefined;
   private readonly agentDir: string | undefined;
   private readonly createSession: SessionFactory;
 
@@ -52,6 +52,19 @@ export class PiRuntime {
 
   configureDeepSeek(configuration: DeepSeekConfiguration | undefined): void {
     this.#configuration = configuration;
+    this.#resetSession();
+  }
+
+  setWorkspace(path: string): void {
+    if (!path.trim())
+      throw new TypeError('工作区路径不能为空');
+    if (this.#workspacePath === path)
+      return;
+    this.#workspacePath = path;
+    this.#resetSession();
+  }
+
+  #resetSession(): void {
     this.#sessionUnsubscribe?.();
     this.#session?.dispose?.();
     this.#session = undefined;
@@ -119,8 +132,10 @@ export class PiRuntime {
       return this.#session;
     if (!this.#configuration)
       throw new Error('请先在设置中配置 DeepSeek API Key');
+    if (!this.#workspacePath)
+      throw new Error('请先选择工作区');
 
-    const session = await this.createSession(this.#configuration, this.agentDir);
+    const session = await this.createSession(this.#configuration, this.agentDir, this.#workspacePath);
     this.#sessionUnsubscribe = session.subscribe(event => this.#handleEvent(event));
     this.#session = session;
     return session;
@@ -163,7 +178,7 @@ export class PiRuntime {
   }
 }
 
-async function createDefaultSession(configuration: DeepSeekConfiguration, agentDir?: string): Promise<PiSession> {
+async function createDefaultSession(configuration: DeepSeekConfiguration, agentDir?: string, workspacePath?: string): Promise<PiSession> {
   const { createAgentSession, ModelRuntime } = await import('@earendil-works/pi-coding-agent');
   const modelRuntime = await ModelRuntime.create({ modelsPath: null, refreshOnCreate: false });
   modelRuntime.registerProvider('deepseek', {
@@ -179,7 +194,7 @@ async function createDefaultSession(configuration: DeepSeekConfiguration, agentD
   const model = modelRuntime.getModel('deepseek', configuration.model);
   if (!model)
     throw new Error('无法找到所选的 DeepSeek 模型');
-  const { session } = await createAgentSession({ agentDir, cwd: process.cwd(), model, modelRuntime });
+  const { session } = await createAgentSession({ agentDir, cwd: workspacePath, model, modelRuntime });
   return {
     abort: () => session.abort(),
     dispose: () => session.dispose(),

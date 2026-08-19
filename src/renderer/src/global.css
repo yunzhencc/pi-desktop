@@ -434,6 +434,230 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   font-size: 14px;
 }
 
+.workspace-sidebar {
+  flex: 1;
+  min-height: 0;
+  margin: 16px 8px;
+  overflow: auto;
+}
+
+.workspace-sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 8px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+.workspace-sidebar-heading button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--text-tertiary);
+}
+
+.workspace-sidebar-heading button:hover,
+.workspace-sidebar-heading button:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+}
+
+.workspace-sidebar-list button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: left;
+}
+
+.workspace-sidebar-list button:hover,
+.workspace-sidebar-list button[aria-current='page'] {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+}
+
+.workspace-sidebar-list span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-dialog-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, #000 13%, transparent);
+}
+
+.project-dialog {
+  width: min(520px, 92vw);
+  padding: 20px;
+  border: 0.5px solid var(--border-subtle);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, #000 20%, transparent);
+}
+
+.project-dialog-header,
+.project-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-dialog-header {
+  margin-bottom: 16px;
+}
+
+.project-dialog-header h2 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.project-dialog-header button,
+.project-dialog-actions button:first-child {
+  color: var(--text-tertiary);
+}
+
+.project-dialog-header button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 8px;
+}
+
+.project-dialog-header button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.project-dialog-name {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  color: var(--text-tertiary);
+}
+
+.project-dialog-name svg {
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 0 12px;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.project-dialog-name:focus-within {
+  border-color: var(--focus);
+}
+
+.project-dialog-name input {
+  min-width: 0;
+  flex: 1;
+  padding: 0 12px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 14px;
+}
+
+.project-dialog-name input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.project-dialog-label {
+  display: block;
+  margin: 16px 0 8px;
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.project-dialog-source {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 96px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.project-dialog-source svg {
+  width: 16px;
+  height: 16px;
+}
+
+.project-dialog-source:hover,
+.project-dialog-source:focus-visible,
+.project-dialog-header button:hover,
+.project-dialog-header button:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.project-dialog-source span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-dialog-error {
+  margin: 12px 0 0;
+  color: var(--destructive);
+}
+
+.project-dialog-actions {
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.project-dialog-actions button {
+  min-width: 90px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.project-dialog-actions button:last-child {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.project-dialog-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .chat-message {
   width: fit-content;
   max-width: min(100%, 44rem);

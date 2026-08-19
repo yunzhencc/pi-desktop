@@ -19,6 +19,7 @@ import {
 import { SidebarResizeHandle } from './components/sidebar-resize-handle';
 import { SidebarToggle } from './components/sidebar-toggle';
 import { getToolbarInset } from './components/toolbar-inset';
+import { WorkspaceSidebar } from './components/workspace-sidebar';
 import { ShortcutSettingsProvider, useShortcutSettings } from './shortcuts/shortcut-context';
 
 const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
@@ -240,6 +241,7 @@ function AppShell() {
                         </svg>
                       </button>
                     </div>
+                    <WorkspaceSidebar />
                     <SidebarProfile name="Wang Xingkang" onOpenSettings={openSettings} />
                   </>
                 )}

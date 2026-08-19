@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HomePage } from './home';
 
 let animationFrames: FrameRequestCallback[];
+let workspaces: { get: ReturnType<typeof vi.fn>; pick: ReturnType<typeof vi.fn>; select: ReturnType<typeof vi.fn> };
 
 vi.mock('../components/chat-composer', () => ({
   ChatComposer: ({ isRunning, onStop, onSubmitted }: { isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) => (
@@ -21,7 +22,18 @@ beforeEach(() => {
     return animationFrames.length;
   });
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
-  vi.stubGlobal('api', { composer: { onUpdate: vi.fn(() => () => {}) } });
+  workspaces = {
+    get: vi.fn(() => Promise.resolve({
+      selectedWorkspacePath: '/projects/weather',
+      workspaces: [{ displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' }],
+    })),
+    pick: vi.fn(() => Promise.resolve({
+      selectedWorkspacePath: '/projects/weather',
+      workspaces: [{ displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' }],
+    })),
+    select: vi.fn(),
+  };
+  vi.stubGlobal('api', { composer: { onUpdate: vi.fn(() => () => {}) }, workspaces });
 });
 
 afterEach(() => {
@@ -41,9 +53,16 @@ describe('home page', () => {
     expect(screen.getByText('Build this')).not.toBeNull();
   });
 
+  it('directs an unselected workspace to the sidebar', async () => {
+    workspaces.get.mockResolvedValue({ workspaces: [] });
+    render(<HomePage />);
+
+    await waitFor(() => expect(screen.getByText('Select or add a project from the sidebar to start a conversation.')).not.toBeNull());
+  });
+
   it('renders submitted and streamed turns through the transcript log', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { onUpdate } });
+    vi.stubGlobal('api', { composer: { onUpdate }, workspaces });
     render(<HomePage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -66,7 +85,7 @@ describe('home page', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-19T10:00:00Z'));
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { onUpdate } });
+    vi.stubGlobal('api', { composer: { onUpdate }, workspaces });
     render(<HomePage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -78,7 +97,7 @@ describe('home page', () => {
 
   it('renders a streamed assistant snapshot as Markdown', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { onUpdate } });
+    vi.stubGlobal('api', { composer: { onUpdate }, workspaces });
     const { container } = render(<HomePage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Use **bold** text.', type: 'assistant' }));
@@ -89,7 +108,7 @@ describe('home page', () => {
 
   it('renders only the latest streamed snapshot in an animation frame', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { onUpdate } });
+    vi.stubGlobal('api', { composer: { onUpdate }, workspaces });
     render(<HomePage />);
 
     act(() => {
@@ -105,7 +124,7 @@ describe('home page', () => {
   it('keeps the composer active until the agent settles and can stop it', () => {
     const onUpdate = vi.fn(() => () => {});
     const stop = vi.fn();
-    vi.stubGlobal('api', { composer: { onUpdate, stop } });
+    vi.stubGlobal('api', { composer: { onUpdate, stop }, workspaces });
     render(<HomePage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ status: 'running', type: 'status' }));

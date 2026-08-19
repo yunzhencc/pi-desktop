@@ -32,10 +32,18 @@ describe('pi runtime', () => {
     const createSession = vi.fn(async () => ({ prompt: vi.fn(), subscribe: () => () => {} }));
     const runtime = new PiRuntime(new AttachmentStore(), { agentDir: '/tmp/pi-desktop-agent', createSession });
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
 
     await runtime.send('Hello', []);
 
-    expect(createSession).toHaveBeenCalledWith({ apiKey: 'sk-test', model: 'deepseek-v4-flash' }, '/tmp/pi-desktop-agent');
+    expect(createSession).toHaveBeenCalledWith({ apiKey: 'sk-test', model: 'deepseek-v4-flash' }, '/tmp/pi-desktop-agent', '/tmp/project');
+  });
+
+  it('rejects sends until a workspace has been selected', async () => {
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({ prompt: vi.fn(), subscribe: () => () => {} }));
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+
+    await expect(runtime.send('Hello', [])).rejects.toThrow('请先选择工作区');
   });
 
   it('passes Pi image content and text-file content to a session prompt', async () => {
@@ -47,6 +55,7 @@ describe('pi runtime', () => {
     const prompt = vi.fn();
     const runtime = new PiRuntime(attachments, async () => ({ prompt, subscribe: () => () => {} }));
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
 
     await runtime.send('Explain these files', result.attachments.map(attachment => attachment.id));
 
@@ -68,6 +77,7 @@ describe('pi runtime', () => {
     const update = vi.fn();
     runtime.subscribe(update);
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
 
     await runtime.send('Hello', []);
     listener?.({
@@ -90,6 +100,7 @@ describe('pi runtime', () => {
     const update = vi.fn();
     runtime.subscribe(update);
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
 
     await runtime.send('Hello', []);
     listener?.({ assistantMessageEvent: { contentIndex: 0, delta: 'Hi', type: 'text_delta' }, type: 'message_update' });
@@ -110,6 +121,7 @@ describe('pi runtime', () => {
     const update = vi.fn();
     runtime.subscribe(update);
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
 
     await runtime.send('Hello', []);
     listener?.({ assistantMessageEvent: { contentIndex: 0, delta: 'Hi there', type: 'text_delta' }, type: 'message_update' });
@@ -130,6 +142,7 @@ describe('pi runtime', () => {
     const update = vi.fn();
     runtime.subscribe(update);
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
 
     await runtime.send('Hello', []);
     listener?.({ assistantMessageEvent: { contentIndex: 0, delta: 'First', type: 'text_delta' }, type: 'message_update' });
@@ -146,6 +159,7 @@ describe('pi runtime', () => {
       subscribe: () => () => {},
     }));
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
 
     let firstAccepted = false;
     void runtime.send('First', []).then(() => {
@@ -175,6 +189,7 @@ describe('pi runtime', () => {
     const update = vi.fn();
     runtime.subscribe(update);
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
 
     await runtime.send('Hello', []);
     await runtime.abort();
