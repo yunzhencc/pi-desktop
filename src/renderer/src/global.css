@@ -532,21 +532,12 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   flex: 0 0 auto;
 }
 
-.workspace-sidebar-project-name {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 30px;
-  padding: 0 8px;
-  color: var(--text-secondary);
-  font-size: 14px;
+.workspace-sidebar-project-toggle > span {
+  flex: 1;
+  min-width: 0;
 }
 
-.workspace-sidebar-project-name svg {
-  flex: 0 0 auto;
-}
-
-.workspace-sidebar-project > button {
+.workspace-sidebar-project > div > button {
   padding-left: 28px;
 }
 

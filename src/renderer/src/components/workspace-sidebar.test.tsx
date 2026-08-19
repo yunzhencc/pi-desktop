@@ -37,7 +37,7 @@ describe('workspace sidebar', () => {
     );
 
     await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
-    expect(screen.queryByRole('button', { name: 'weather' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'weather' })).not.toBeNull();
     expect(screen.getByRole('navigation', { name: '项目' })).not.toBeNull();
     expect(screen.getByRole('button', { name: '添加项目' })).not.toBeNull();
   });
@@ -71,6 +71,28 @@ describe('workspace sidebar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Summarize the forecast' }));
 
     await waitFor(() => expect(window.api.sessions.open).toHaveBeenCalledWith(weather.path, session.path));
+  });
+
+  it('collapses and expands a project session history from its project row', async () => {
+    window.api.sessions.list.mockResolvedValue([session]);
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'Summarize the forecast' });
+    const toggle = screen.getByRole('button', { name: 'weather' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(toggle);
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('button', { name: 'Summarize the forecast' })).toBeNull();
+
+    fireEvent.click(toggle);
+
+    expect(screen.getByRole('button', { name: 'Summarize the forecast' })).not.toBeNull();
   });
 
   it('opens the create-project step and persists only after confirmation', async () => {

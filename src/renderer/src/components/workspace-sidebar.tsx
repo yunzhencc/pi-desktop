@@ -10,6 +10,7 @@ export function WorkspaceSidebar() {
   const { formatMessage } = useIntl();
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
   const [sessionsByWorkspace, setSessionsByWorkspace] = useState<Record<string, PiSessionSummary[]>>({});
+  const [collapsedSessionPaths, setCollapsedSessionPaths] = useState<Record<string, boolean>>({});
   const [selectedSessionPath, setSelectedSessionPath] = useState<string>();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -66,19 +67,27 @@ export function WorkspaceSidebar() {
       </div>
       {!isCollapsed && (
         <div className="workspace-sidebar-list">
-          {workspace?.workspaces.map(item => (
-            <div className="workspace-sidebar-project" key={item.path}>
-              <div className="workspace-sidebar-project-name">
-                <CodexFolder aria-hidden="true" />
-                <span>{item.displayName}</span>
-              </div>
-              {sessionsByWorkspace[item.path]?.map(session => (
-                <button aria-current={session.path === selectedSessionPath ? 'page' : undefined} key={session.path} onClick={() => void openSession(item.path, session.path)} type="button">
-                  <span>{session.firstMessage || '新对话'}</span>
+          {workspace?.workspaces.map((item) => {
+            const collapsed = collapsedSessionPaths[item.path] ?? false;
+            const sessionListId = `workspace-sessions-${item.path}`;
+            return (
+              <div className="workspace-sidebar-project" key={item.path}>
+                <button aria-controls={sessionListId} aria-expanded={!collapsed} className="workspace-sidebar-project-toggle" onClick={() => setCollapsedSessionPaths(paths => ({ ...paths, [item.path]: !paths[item.path] }))} type="button">
+                  <CodexFolder aria-hidden="true" />
+                  <span>{item.displayName}</span>
                 </button>
-              ))}
-            </div>
-          ))}
+                {!collapsed && (
+                  <div id={sessionListId}>
+                    {(sessionsByWorkspace[item.path] ?? []).map(session => (
+                      <button aria-current={session.path === selectedSessionPath ? 'page' : undefined} key={session.path} onClick={() => void openSession(item.path, session.path)} type="button">
+                        <span>{session.firstMessage || '新对话'}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
       {isCreating && <CreateProjectDialog onClose={() => setIsCreating(false)} onCreated={update} />}
