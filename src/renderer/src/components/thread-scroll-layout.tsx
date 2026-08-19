@@ -1,0 +1,112 @@
+import type { ReactNode } from 'react';
+import type { ThreadLayout, ThreadTurn } from './thread-virtualizer';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { buildThreadLayout, preserveAnchorDistance, visibleThreadRange } from './thread-virtualizer';
+
+const DEFAULT_TURN_HEIGHT = 72;
+const FOLLOW_THRESHOLD = 24;
+const TURN_GAP = 16;
+
+export function ThreadScrollLayout<T extends ThreadTurn>({ children, turns }: {
+  children: (turn: T) => ReactNode;
+  turns: T[];
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const previousLayoutRef = useRef<ThreadLayout | null>(null);
+  const previousTurnKeysRef = useRef<string[]>([]);
+  const anchorKeyRef = useRef<string | null>(null);
+  const followsBottomRef = useRef(true);
+  const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(() => new Map());
+  const [viewportHeightPx, setViewportHeightPx] = useState(0);
+  const layout = useMemo(() => buildThreadLayout(turns, measuredHeights, TURN_GAP, DEFAULT_TURN_HEIGHT), [measuredHeights, turns]);
+  const range = viewportHeightPx > 0
+    ? visibleThreadRange({ distanceFromBottomPx: distanceFromBottom(scrollRef.current), layout, overscanCount: 2, viewportHeightPx })
+    : { endIndex: turns.length, startIndex: 0 };
+  const visibleTurns = turns.slice(range.startIndex, range.endIndex);
+  const topSpacerPx = range.startIndex === 0 ? 0 : layout.totalHeightPx - layout.bottomOffsetsPx[range.startIndex]! - layout.heightsPx[range.startIndex]!;
+  const bottomSpacerPx = range.endIndex === 0 ? 0 : layout.bottomOffsetsPx[range.endIndex - 1]!;
+
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    if (element == null)
+      return;
+
+    const previousLayout = previousLayoutRef.current;
+    const sameTurns = previousTurnKeysRef.current.length === layout.turnKeys.length
+      && previousTurnKeysRef.current.every((key, index) => key === layout.turnKeys[index]);
+    if (followsBottomRef.current) {
+      element.scrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
+    }
+    else if (sameTurns && previousLayout != null && anchorKeyRef.current != null) {
+      const nextDistance = preserveAnchorDistance({
+        anchorKey: anchorKeyRef.current,
+        distanceFromBottomPx: distanceFromBottom(element),
+        nextLayout: layout,
+        previousLayout,
+      });
+      if (nextDistance != null)
+        element.scrollTop = Math.max(0, element.scrollHeight - element.clientHeight - nextDistance);
+    }
+
+    previousLayoutRef.current = layout;
+    previousTurnKeysRef.current = layout.turnKeys;
+    setViewportHeightPx(current => current === element.clientHeight ? current : element.clientHeight);
+  }, [layout]);
+
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    if (element == null || typeof ResizeObserver === 'undefined')
+      return;
+
+    const observer = new ResizeObserver((entries) => {
+      setMeasuredHeights((current) => {
+        const next = new Map(current);
+        let changed = false;
+        for (const entry of entries) {
+          const key = entry.target.getAttribute('data-thread-turn');
+          const height = Math.ceil(entry.contentRect.height);
+          if (key != null && height > 0 && next.get(key) !== height) {
+            next.set(key, height);
+            changed = true;
+          }
+        }
+        return changed ? next : current;
+      });
+    });
+    element.querySelectorAll<HTMLElement>('[data-thread-turn]').forEach(turn => observer.observe(turn));
+    return () => observer.disconnect();
+  }, [range.endIndex, range.startIndex, turns]);
+
+  return (
+    <div
+      aria-live="polite"
+      className="thread-scroll-layout"
+      onScroll={() => {
+        const element = scrollRef.current;
+        if (element == null)
+          return;
+        const distance = distanceFromBottom(element);
+        followsBottomRef.current = distance <= FOLLOW_THRESHOLD;
+        const nextRange = visibleThreadRange({ distanceFromBottomPx: distance, layout, overscanCount: 2, viewportHeightPx: element.clientHeight });
+        anchorKeyRef.current = layout.turnKeys[nextRange.startIndex] ?? null;
+        setViewportHeightPx(current => current === element.clientHeight ? current : element.clientHeight);
+      }}
+      ref={scrollRef}
+      role="log"
+    >
+      <div aria-hidden="true" style={{ height: topSpacerPx }} />
+      {visibleTurns.map((turn, index) => (
+        <div data-thread-turn={turn.key} key={turn.key} style={{ marginBottom: index === visibleTurns.length - 1 ? 0 : TURN_GAP }}>
+          {children(turn)}
+        </div>
+      ))}
+      <div aria-hidden="true" style={{ height: bottomSpacerPx }} />
+    </div>
+  );
+}
+
+function distanceFromBottom(element: HTMLElement | null) {
+  if (element == null)
+    return 0;
+  return Math.max(0, element.scrollHeight - element.clientHeight - element.scrollTop);
+}
