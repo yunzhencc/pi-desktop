@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { I18nProvider } from './i18n';
 import { ThemeProvider } from './theme';
 
 interface ProvidersProps {
@@ -8,7 +9,7 @@ interface ProvidersProps {
 export function Providers(props: ProvidersProps) {
   return (
     <ThemeProvider>
-      {props.children}
+      <I18nProvider>{props.children}</I18nProvider>
     </ThemeProvider>
   );
 }

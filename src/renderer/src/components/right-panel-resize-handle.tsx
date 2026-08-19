@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import {
   clampRightPanelWidth,
   readRightPanelWidth,
@@ -30,6 +31,7 @@ export function RightPanelResizeHandle({
   shellHeight,
   width,
 }: RightPanelResizeHandleProps) {
+  const { formatMessage } = useIntl();
   const [isResizing, setIsResizing] = useState(false);
   const dragRef = useRef<DragState | null>(null);
 
@@ -93,7 +95,7 @@ export function RightPanelResizeHandle({
 
   return (
     <div
-      aria-label="Resize right panel"
+      aria-label={formatMessage({ id: 'resize.rightPanel' })}
       aria-orientation="vertical"
       aria-valuemax={clampRightPanelWidth(Number.POSITIVE_INFINITY, mainContentWidth)}
       aria-valuemin={320}

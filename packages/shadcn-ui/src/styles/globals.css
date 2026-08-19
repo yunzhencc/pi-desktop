@@ -63,6 +63,7 @@
     --surface: #fff;
     --surface-elevated: #fff;
     --surface-editor: #ededed66;
+    --surface-tertiary: #ededed;
     --text-secondary: #212121b3;
     --text-tertiary: #21212180;
     --border-subtle: #21212114;
@@ -107,6 +108,7 @@
     --surface: #181818;
     --surface-elevated: #282828;
     --surface-editor: #212121;
+    --surface-tertiary: #212121;
     --text-secondary: #ffffffb3;
     --text-tertiary: #ffffff80;
     --border-subtle: #ffffff14;

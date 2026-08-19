@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import {
   clampSidebarWidth,
   shouldCollapseSidebar,
@@ -28,6 +29,7 @@ export function SidebarResizeHandle({
   onWidthChange,
   width,
 }: SidebarResizeHandleProps) {
+  const { formatMessage } = useIntl();
   const [isResizing, setIsResizing] = useState(false);
   const dragRef = useRef<DragState | null>(null);
 
@@ -87,7 +89,7 @@ export function SidebarResizeHandle({
 
   return (
     <div
-      aria-label="Resize sidebar"
+      aria-label={formatMessage({ id: 'resize.sidebar' })}
       aria-orientation="vertical"
       aria-valuemax={SIDEBAR_MAX_WIDTH}
       aria-valuemin={SIDEBAR_MIN_WIDTH}

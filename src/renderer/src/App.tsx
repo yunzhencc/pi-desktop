@@ -1,5 +1,7 @@
 import { useHotkey } from '@tanstack/react-hotkeys';
+import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import {
   getExpandedRightPanelWidth,
   getRightPanelExpansionAfterToggle,
@@ -9,6 +11,8 @@ import {
   writeRightPanelWidth,
 } from './components/right-panel';
 import { RightPanelResizeHandle } from './components/right-panel-resize-handle';
+import { SettingsSidebar } from './components/settings-view';
+import { SidebarProfile } from './components/sidebar-profile';
 import {
   readSidebarWidth,
 } from './components/sidebar-resize';
@@ -20,6 +24,9 @@ const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
 
 export function App() {
+  const { formatMessage } = useIntl();
+  const navigate = useNavigate();
+  const isSettingsPage = useRouterState({ select: state => state.location.pathname.startsWith('/settings/') });
   const isMac = navigator.platform.includes('Mac');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -47,7 +54,10 @@ export function App() {
   });
 
   const toolbarInset = getToolbarInset({ isFullscreen, isMac });
-  const toggleSidebar = () => setIsSidebarVisible(visible => !visible);
+  const toggleSidebar = () => {
+    if (!isSettingsPage)
+      setIsSidebarVisible(visible => !visible);
+  };
   const headerLeftWidth = isSidebarVisible ? sidebarWidth : toolbarInset + 32;
   const mainContentWidth = viewportSize.width - (isSidebarVisible ? sidebarWidth : 0);
   const rightPanelWidth = readRightPanelWidth(
@@ -99,7 +109,7 @@ export function App() {
             width: headerLeftWidth,
           }}
         >
-          <SidebarToggle isSidebarVisible={isSidebarVisible} onToggle={toggleSidebar} />
+          {!isSettingsPage && <SidebarToggle isSidebarVisible={isSidebarVisible} onToggle={toggleSidebar} />}
         </div>
         <div className="min-w-0 flex-1" />
         <div
@@ -110,11 +120,11 @@ export function App() {
         >
           {isRightPanelOpen && (
             <button
-              aria-label={isRightPanelExpanded ? 'Restore panel width' : 'Expand panel'}
+              aria-label={formatMessage({ id: isRightPanelExpanded ? 'panel.restore' : 'panel.expand' })}
               aria-pressed={isRightPanelExpanded}
               className="right-panel-expand-trigger sidebar-trigger flex size-8 items-center justify-center"
               onClick={toggleRightPanelExpanded}
-              title={isRightPanelExpanded ? 'Restore panel width' : 'Expand panel'}
+              title={formatMessage({ id: isRightPanelExpanded ? 'panel.restore' : 'panel.expand' })}
               type="button"
             >
               {isRightPanelExpanded
@@ -133,10 +143,10 @@ export function App() {
           )}
           <button
             aria-expanded={isRightPanelOpen}
-            aria-label={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
+            aria-label={formatMessage({ id: isRightPanelOpen ? 'panel.hide' : 'panel.show' })}
             className="sidebar-trigger flex size-8 items-center justify-center"
             onClick={toggleRightPanel}
-            title="Toggle right panel"
+            title={formatMessage({ id: 'panel.toggle' })}
             type="button"
           >
             <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 20 20">
@@ -147,23 +157,30 @@ export function App() {
         </div>
       </header>
       <aside
-        className="app-shell-left-panel relative shrink-0"
+        className="app-shell-left-panel relative flex shrink-0 flex-col"
         data-open={isSidebarVisible}
         style={{
           width: isSidebarVisible ? sidebarWidth : 0,
         }}
       >
         {isSidebarVisible && (
-          <SidebarResizeHandle
-            onCollapse={() => setIsSidebarVisible(false)}
-            onResizeEnd={width => localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(width))}
-            onResizingChange={setIsResizing}
-            onWidthChange={setSidebarWidth}
-            width={sidebarWidth}
-          />
+          <>
+            {!isSettingsPage && (
+              <SidebarResizeHandle
+                onCollapse={() => setIsSidebarVisible(false)}
+                onResizeEnd={width => localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(width))}
+                onResizingChange={setIsResizing}
+                onWidthChange={setSidebarWidth}
+                width={sidebarWidth}
+              />
+            )}
+            {isSettingsPage
+              ? <SettingsSidebar onClose={() => navigate({ to: '/' })} />
+              : <SidebarProfile name="Wang Xingkang" onOpenSettings={() => navigate({ to: '/settings/appearance' })} />}
+          </>
         )}
       </aside>
-      <main className="app-shell-main-surface min-w-0" />
+      <main className="app-shell-main-surface min-w-0"><Outlet /></main>
       <aside
         className="app-shell-right-panel relative shrink-0"
         data-open={isRightPanelOpen}

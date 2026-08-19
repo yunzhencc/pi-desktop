@@ -1,0 +1,61 @@
+export type AppLocale = 'zh-CN' | 'en';
+
+export const DEFAULT_LOCALE: AppLocale = 'zh-CN';
+export const LOCALE_STORAGE_KEY = 'pi-desktop-locale';
+
+export const messages = {
+  'zh-CN': {
+    'appearance.dark': '深色',
+    'appearance.light': '浅色',
+    'appearance.system': '系统',
+    'panel.expand': '展开面板',
+    'panel.hide': '隐藏右侧面板',
+    'panel.restore': '恢复面板宽度',
+    'panel.show': '显示右侧面板',
+    'panel.toggle': '切换右侧面板',
+    'profile.logOut': '退出登录',
+    'profile.settings': '设置',
+    'resize.rightPanel': '调整右侧面板大小',
+    'resize.sidebar': '调整侧边栏大小',
+    'settings.appearance': '外观',
+    'settings.backToApp': '返回应用',
+    'settings.chinese': '中文',
+    'settings.english': '英语',
+    'settings.language': '语言',
+    'settings.navigation': '设置导航',
+    'settings.settings': '设置',
+    'settings.theme': '主题',
+    'sidebar.hide': '隐藏侧边栏',
+    'sidebar.show': '显示侧边栏',
+    'sidebar.toggle': '切换侧边栏',
+  },
+  'en': {
+    'appearance.dark': 'Dark',
+    'appearance.light': 'Light',
+    'appearance.system': 'System',
+    'panel.expand': 'Expand panel',
+    'panel.hide': 'Hide right panel',
+    'panel.restore': 'Restore panel width',
+    'panel.show': 'Show right panel',
+    'panel.toggle': 'Toggle right panel',
+    'profile.logOut': 'Log out',
+    'profile.settings': 'Settings',
+    'resize.rightPanel': 'Resize right panel',
+    'resize.sidebar': 'Resize sidebar',
+    'settings.appearance': 'Appearance',
+    'settings.backToApp': 'Back to app',
+    'settings.chinese': 'Chinese',
+    'settings.english': 'English',
+    'settings.language': 'Language',
+    'settings.navigation': 'Settings navigation',
+    'settings.settings': 'Settings',
+    'settings.theme': 'Theme',
+    'sidebar.hide': 'Hide sidebar',
+    'sidebar.show': 'Show sidebar',
+    'sidebar.toggle': 'Toggle sidebar',
+  },
+} as const;
+
+export function readLocale(value: string | null): AppLocale {
+  return value === 'en' ? 'en' : DEFAULT_LOCALE;
+}

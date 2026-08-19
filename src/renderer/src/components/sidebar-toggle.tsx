@@ -1,10 +1,13 @@
+import { useIntl } from 'react-intl';
+
 interface SidebarToggleProps {
   isSidebarVisible: boolean;
   onToggle: () => void;
 }
 
 export function SidebarToggle({ isSidebarVisible, onToggle }: SidebarToggleProps) {
-  const label = isSidebarVisible ? 'Hide sidebar' : 'Show sidebar';
+  const { formatMessage } = useIntl();
+  const label = formatMessage({ id: isSidebarVisible ? 'sidebar.hide' : 'sidebar.show' });
   const shortcut = navigator.platform.includes('Mac') ? '⌘B' : 'Ctrl+B';
 
   return (
@@ -18,7 +21,7 @@ export function SidebarToggle({ isSidebarVisible, onToggle }: SidebarToggleProps
     >
       <SidebarIcon isSidebarVisible={isSidebarVisible} />
       <span className="sidebar-trigger-tooltip" role="tooltip">
-        Toggle sidebar
+        {formatMessage({ id: 'sidebar.toggle' })}
         <kbd>{shortcut}</kbd>
       </span>
     </button>
