@@ -1,14 +1,33 @@
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
+import {
+  getPrimaryWindowBounds,
+  PRIMARY_WINDOW_MINIMUM_SIZE,
+  readPrimaryWindowState,
+  writePrimaryWindowState,
+} from './window-state';
+
+function getPrimaryWindowStatePath(): string {
+  return join(app.getPath('userData'), 'window-state.json');
+}
 
 function createWindow(): void {
+  const restoredBounds = getPrimaryWindowBounds(
+    readPrimaryWindowState(getPrimaryWindowStatePath()),
+    screen.getAllDisplays().map(display => display.workArea),
+    process.platform,
+    screen.getPrimaryDisplay().workArea,
+  );
+  const { isMaximized, ...windowBounds } = restoredBounds;
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    ...windowBounds,
+    minWidth: PRIMARY_WINDOW_MINIMUM_SIZE.width,
+    minHeight: PRIMARY_WINDOW_MINIMUM_SIZE.height,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'darwin'
@@ -40,7 +59,19 @@ function createWindow(): void {
   }
 
   mainWindow.on('ready-to-show', () => {
+    if (isMaximized)
+      mainWindow.maximize();
     mainWindow.show();
+  });
+
+  mainWindow.on('close', () => {
+    const bounds = mainWindow.getNormalBounds();
+    writePrimaryWindowState(getPrimaryWindowStatePath(), {
+      ...bounds,
+      width: Math.max(bounds.width, PRIMARY_WINDOW_MINIMUM_SIZE.width),
+      height: Math.max(bounds.height, PRIMARY_WINDOW_MINIMUM_SIZE.height),
+      isMaximized: mainWindow.isMaximized(),
+    });
   });
 
   mainWindow.on('enter-full-screen', () => {
