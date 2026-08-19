@@ -36,7 +36,7 @@ describe('settings view', () => {
     expect(onThemeChange).toHaveBeenCalledWith('dark');
   });
 
-  it('offers only Chinese and English language choices from General settings', () => {
+  it('opens an accessible language option list from General settings', () => {
     const onLocaleChange = vi.fn();
 
     render(
@@ -59,17 +59,27 @@ describe('settings view', () => {
     );
 
     expect(screen.getByRole('heading', { name: '常规' })).not.toBeNull();
-    fireEvent.change(screen.getByRole('combobox', { name: '语言' }), { target: { value: 'en' } });
+
+    fireEvent.click(screen.getByRole('combobox', { name: '语言' }));
+    expect(screen.getByRole('listbox')).not.toBeNull();
+
+    const englishOption = screen.getByRole('option', { name: '英语' });
+    fireEvent.pointerDown(englishOption);
+    fireEvent.click(englishOption);
     expect(onLocaleChange).toHaveBeenCalledWith('en');
   });
 
   it('uses Personal as the Chinese settings category', () => {
-    render(
+    const { container } = render(
       <IntlProvider locale="zh-CN" messages={messages['zh-CN']}>
         <SettingsSidebar activePath="/settings/general" onClose={vi.fn()} onNavigate={vi.fn()} />
       </IntlProvider>,
     );
 
     expect(screen.getByText('个人')).not.toBeNull();
+    expect(container.querySelector('svg.lucide-settings')).not.toBeNull();
+    expect(container.querySelector('svg.lucide-sliders-horizontal')).toBeNull();
+    expect(container.querySelector('svg.lucide-sun')).not.toBeNull();
+    expect(container.querySelector('svg.lucide-paintbrush')).toBeNull();
   });
 });

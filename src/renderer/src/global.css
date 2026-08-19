@@ -401,11 +401,8 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   font-size: 14px;
 }
 
-.settings-field select {
+.settings-language-select {
   min-width: 8rem;
-  padding: 4px 24px 4px 8px;
-  border: 0;
-  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--foreground) 6%, transparent);
   color: inherit;
   font: inherit;

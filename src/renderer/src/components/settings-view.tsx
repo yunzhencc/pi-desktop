@@ -1,6 +1,14 @@
 import type { AppLocale } from '../providers/i18n';
 import type { AppearanceTheme } from './appearance-settings';
-import { ArrowLeft, Paintbrush, SlidersHorizontal } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@pi-desktop/shadcn-ui/components/select';
+import { ArrowLeft, Settings, Sun } from 'lucide-react';
 import { useIntl } from 'react-intl';
 
 interface SettingsViewProps {
@@ -32,7 +40,7 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
         onClick={() => onNavigate('/settings/general')}
         type="button"
       >
-        <SlidersHorizontal aria-hidden="true" size={16} strokeWidth={1.75} />
+        <Settings aria-hidden="true" size={16} strokeWidth={1.75} />
         {formatMessage({ id: 'settings.general' })}
       </button>
       <button
@@ -41,7 +49,7 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
         onClick={() => onNavigate('/settings/appearance')}
         type="button"
       >
-        <Paintbrush aria-hidden="true" size={16} strokeWidth={1.75} />
+        <Sun aria-hidden="true" size={16} strokeWidth={1.75} />
         {formatMessage({ id: 'settings.appearance' })}
       </button>
     </nav>
@@ -94,14 +102,24 @@ export function GeneralSettingsView({ locale, onLocaleChange }: GeneralSettingsV
           <h2>{formatMessage({ id: 'settings.language' })}</h2>
           <label className="settings-field">
             <span>{formatMessage({ id: 'settings.language' })}</span>
-            <select
-              aria-label={formatMessage({ id: 'settings.language' })}
-              onChange={event => onLocaleChange(event.target.value as AppLocale)}
+            <Select
+              items={[
+                { label: formatMessage({ id: 'settings.chinese' }), value: 'zh-CN' },
+                { label: formatMessage({ id: 'settings.english' }), value: 'en' },
+              ]}
+              onValueChange={value => onLocaleChange(value as AppLocale)}
               value={locale}
             >
-              <option value="zh-CN">{formatMessage({ id: 'settings.chinese' })}</option>
-              <option value="en">{formatMessage({ id: 'settings.english' })}</option>
-            </select>
+              <SelectTrigger aria-label={formatMessage({ id: 'settings.language' })} className="settings-language-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end" alignItemWithTrigger={false}>
+                <SelectGroup>
+                  <SelectItem value="zh-CN">{formatMessage({ id: 'settings.chinese' })}</SelectItem>
+                  <SelectItem value="en">{formatMessage({ id: 'settings.english' })}</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </label>
         </div>
       </section>
