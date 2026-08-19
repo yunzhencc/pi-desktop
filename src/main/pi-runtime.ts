@@ -9,7 +9,8 @@ export interface TranscriptUpdate {
 }
 
 interface PiSession {
-  prompt: (text: string, options?: { images?: Array<{ type: 'image'; data: string; mimeType: string }> }) => Promise<void>;
+  isStreaming?: boolean;
+  prompt: (text: string, options?: { images?: Array<{ type: 'image'; data: string; mimeType: string }>; streamingBehavior?: 'steer' }) => Promise<void>;
   subscribe: (listener: (event: unknown) => void) => () => void;
   dispose?: () => void;
 }
@@ -21,6 +22,7 @@ export class PiRuntime {
   #sessionUnsubscribe: (() => void) | undefined;
   #listeners = new Set<(update: TranscriptUpdate) => void>();
   #configuration: DeepSeekConfiguration | undefined;
+  #streamedAssistantText = '';
 
   constructor(
     private readonly attachments: AttachmentStore,
@@ -44,11 +46,14 @@ export class PiRuntime {
     try {
       const attachments = await this.attachments.toPrompt(attachmentIds);
       const session = await this.#getSession();
-      await session.prompt(`${prompt}${attachments.text ? `\n${attachments.text}` : ''}`, attachments.images.length ? { images: attachments.images } : undefined);
+      const options = {
+        ...(attachments.images.length ? { images: attachments.images } : {}),
+        ...(session.isStreaming ? { streamingBehavior: 'steer' as const } : {}),
+      };
+      void Promise.resolve(session.prompt(`${prompt}${attachments.text ? `\n${attachments.text}` : ''}`, Object.keys(options).length ? options : undefined)).catch(error => this.#emitError(error));
     }
     catch (error) {
-      const text = error instanceof Error ? error.message : '无法发送消息。';
-      this.#emit({ type: 'error', text });
+      this.#emitError(error);
       throw error;
     }
   }
@@ -74,6 +79,11 @@ export class PiRuntime {
   }
 
   #handleEvent(event: unknown): void {
+    if (isAssistantTextDeltaEvent(event)) {
+      this.#streamedAssistantText += event.assistantMessageEvent.delta;
+      this.#emit({ done: false, text: this.#streamedAssistantText, type: 'assistant' });
+      return;
+    }
     if (!isAssistantMessageEvent(event))
       return;
 
@@ -82,6 +92,10 @@ export class PiRuntime {
       .map(content => content.text)
       .join('');
     this.#emit({ done: event.type === 'message_end', text, type: 'assistant' });
+  }
+
+  #emitError(error: unknown): void {
+    this.#emit({ type: 'error', text: error instanceof Error ? error.message : '无法发送消息。' });
   }
 
   #emit(update: TranscriptUpdate): void {
@@ -109,6 +123,9 @@ async function createDefaultSession(configuration: DeepSeekConfiguration): Promi
   const { session } = await createAgentSession({ cwd: process.cwd(), model, modelRuntime });
   return {
     dispose: () => session.dispose(),
+    get isStreaming() {
+      return session.isStreaming;
+    },
     prompt: (text, options) => session.prompt(text, options),
     subscribe: listener => session.subscribe(event => listener(event)),
   };
@@ -118,6 +135,14 @@ function isAssistantMessageEvent(event: unknown): event is { type: 'message_upda
   if (!isRecord(event) || (event.type !== 'message_update' && event.type !== 'message_end') || !isRecord(event.message))
     return false;
   return event.message.role === 'assistant' && Array.isArray(event.message.content);
+}
+
+function isAssistantTextDeltaEvent(event: unknown): event is { assistantMessageEvent: { delta: string; type: 'text_delta' }; type: 'message_update' } {
+  return isRecord(event)
+    && event.type === 'message_update'
+    && isRecord(event.assistantMessageEvent)
+    && event.assistantMessageEvent.type === 'text_delta'
+    && typeof event.assistantMessageEvent.delta === 'string';
 }
 
 function isTextContent(content: unknown): content is { type: 'text'; text: string } {

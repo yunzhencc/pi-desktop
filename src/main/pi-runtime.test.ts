@@ -67,4 +67,53 @@ describe('pi runtime', () => {
 
     expect(update).toHaveBeenCalledWith({ done: false, text: 'Hi there', type: 'assistant' });
   });
+
+  it('assembles delta-only assistant updates from current Pi sessions', async () => {
+    let listener: ((event: unknown) => void) | undefined;
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({
+      prompt: vi.fn(),
+      subscribe: (callback: (event: unknown) => void) => {
+        listener = callback;
+        return () => {};
+      },
+    }));
+    const update = vi.fn();
+    runtime.subscribe(update);
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+
+    await runtime.send('Hello', []);
+    listener?.({ assistantMessageEvent: { contentIndex: 0, delta: 'Hi', type: 'text_delta' }, type: 'message_update' });
+    listener?.({ assistantMessageEvent: { contentIndex: 0, delta: ' there', type: 'text_delta' }, type: 'message_update' });
+
+    expect(update).toHaveBeenLastCalledWith({ done: false, text: 'Hi there', type: 'assistant' });
+  });
+
+  it('queues a second message while Pi is still answering', async () => {
+    let streaming = false;
+    const prompt = vi.fn(() => {
+      streaming = true;
+      return new Promise<void>(() => {});
+    });
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({
+      get isStreaming() {
+        return streaming;
+      },
+      prompt,
+      subscribe: () => () => {},
+    }));
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+
+    let firstAccepted = false;
+    void runtime.send('First', []).then(() => {
+      firstAccepted = true;
+    });
+    await vi.waitFor(() => expect(prompt).toHaveBeenCalledOnce());
+    await Promise.resolve();
+    expect(firstAccepted).toBe(true);
+    void runtime.send('Second', []);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(prompt).toHaveBeenNthCalledWith(2, 'Second', { streamingBehavior: 'steer' });
+  });
 });

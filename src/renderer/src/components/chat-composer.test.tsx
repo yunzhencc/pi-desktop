@@ -56,6 +56,23 @@ describe('chat composer', () => {
     expect(screen.getByRole('textbox', { name: 'Message Pi' }).textContent).toBe('');
   });
 
+  it('shows a loading indicator until sending completes', async () => {
+    let finishSend: (() => void) | undefined;
+    composer.send.mockImplementation(() => new Promise<void>((resolve) => {
+      finishSend = resolve;
+    }));
+    const user = userEvent.setup();
+    renderComposer();
+
+    await user.type(screen.getByRole('textbox', { name: 'Message Pi' }), 'Hello Pi');
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
+
+    expect(screen.getByRole('button', { name: 'Sending message' }).querySelector('.lucide-loader-circle')).not.toBeNull();
+
+    finishSend?.();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send message' }).querySelector('.lucide-arrow-up')).not.toBeNull());
+  });
+
   it('sends typed text when Enter is pressed', async () => {
     const user = userEvent.setup();
     renderComposer();

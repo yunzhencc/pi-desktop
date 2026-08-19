@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { ChatComposer } from '../components/chat-composer';
+import { MarkdownMessage } from '../components/markdown-message';
 import { ThreadScrollLayout } from '../components/thread-scroll-layout';
 
 interface Message {
+  completedAtMs?: number;
   id: number;
   role: 'assistant' | 'error' | 'user';
+  startedAtMs?: number;
   text: string;
   done?: boolean;
 }
@@ -18,7 +21,11 @@ export function HomePage() {
         return [...current, { id: Date.now(), role: 'error', text: update.text }];
 
       const last = current.at(-1);
-      const message = { done: update.done, id: last?.role === 'assistant' ? last.id : Date.now(), role: 'assistant' as const, text: update.text };
+      const now = Date.now();
+      const startedAtMs = last?.role === 'assistant'
+        ? last.startedAtMs
+        : current.findLast(message => message.role === 'user')?.startedAtMs ?? now;
+      const message = { completedAtMs: update.done ? now : undefined, done: update.done, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, startedAtMs, text: update.text };
       return last?.role === 'assistant' && !last.done ? [...current.slice(0, -1), message] : [...current, message];
     });
   }), []);
@@ -34,12 +41,49 @@ export function HomePage() {
           )
         : (
             <ThreadScrollLayout turns={messages.map(message => ({ key: String(message.id), message }))}>
-              {({ message }) => <article className={`chat-message chat-message-${message.role}`}>{message.text}</article>}
+              {({ message }) => (
+                <article className={`chat-message chat-message-${message.role}`}>
+                  {message.role === 'assistant'
+                    ? (
+                        <>
+                          <WorkedFor completedAtMs={message.completedAtMs} startedAtMs={message.startedAtMs} />
+                          <MarkdownMessage>{message.text}</MarkdownMessage>
+                        </>
+                      )
+                    : message.text}
+                </article>
+              )}
             </ThreadScrollLayout>
           )}
       <div className="chat-composer-wrap">
-        <ChatComposer onSubmitted={text => setMessages(current => [...current, { id: Date.now(), role: 'user', text }])} />
+        <ChatComposer onSubmitted={(text) => {
+          const startedAtMs = Date.now();
+          setMessages(current => [...current, { id: startedAtMs, role: 'user', startedAtMs, text }]);
+        }}
+        />
       </div>
     </section>
   );
+}
+
+function WorkedFor({ completedAtMs, startedAtMs }: Pick<Message, 'completedAtMs' | 'startedAtMs'>) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (startedAtMs == null || completedAtMs != null)
+      return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [completedAtMs, startedAtMs]);
+
+  if (startedAtMs == null)
+    return null;
+  const elapsedMs = Math.max(0, (completedAtMs ?? now) - startedAtMs);
+  const label = completedAtMs != null ? 'Worked for' : elapsedMs >= 1000 ? 'Working for' : 'Working';
+  return <p className="chat-worked-for">{label === 'Working' ? label : `${label} ${formatDuration(elapsedMs)}`}</p>;
+}
+
+function formatDuration(durationMs: number) {
+  const seconds = Math.floor(durationMs / 1000);
+  return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { ArrowUp, FileText, X } from 'lucide-react';
+import { ArrowUp, FileText, LoaderCircle, X } from 'lucide-react';
 import { baseKeymap, splitBlock } from 'prosemirror-commands';
 import { history } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -179,7 +179,9 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
       )}
       <div className="chat-composer-editor" ref={editorHostRef} />
       <div className="chat-composer-actions">
-        <button aria-label="Send message" className="chat-composer-send" disabled={!canSend} title="Send message" type="submit"><ArrowUp aria-hidden="true" size={16} /></button>
+        <button aria-label={isSending ? 'Sending message' : 'Send message'} className="chat-composer-send" disabled={!canSend} title={isSending ? 'Sending message' : 'Send message'} type="submit">
+          {isSending ? <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /> : <ArrowUp aria-hidden="true" size={16} />}
+        </button>
       </div>
       {error && <p aria-live="polite" className="chat-composer-error" role="status">{error}</p>}
     </form>
