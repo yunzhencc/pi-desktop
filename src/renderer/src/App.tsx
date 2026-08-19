@@ -29,6 +29,7 @@ export function App() {
   const isSettingsPage = useRouterState({ select: state => state.location.pathname.startsWith('/settings/') });
   const isMac = navigator.platform.includes('Mac');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isWindowOpaque, setIsWindowOpaque] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     return readSidebarWidth(
@@ -89,6 +90,30 @@ export function App() {
     window.api.windowControls.getIsFullscreen().then(setIsFullscreen);
     return window.api.windowControls.onFullscreenChange(setIsFullscreen);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    let receivedChange = false;
+    const stopListening = window.api.windowControls.onOpaqueSurfaceChange((opaque) => {
+      receivedChange = true;
+      setIsWindowOpaque(opaque);
+    });
+
+    window.api.windowControls.getIsOpaqueSurface().then((opaque) => {
+      if (active && !receivedChange)
+        setIsWindowOpaque(opaque);
+    });
+
+    return () => {
+      active = false;
+      stopListening();
+    };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('electron-opaque', isWindowOpaque);
+    return () => document.documentElement.classList.remove('electron-opaque');
+  }, [isWindowOpaque]);
 
   useEffect(() => {
     const updateViewportSize = () => {

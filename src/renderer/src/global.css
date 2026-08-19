@@ -6,6 +6,13 @@ body,
   background: transparent;
 }
 
+html.electron-opaque,
+html.electron-opaque body,
+html.electron-opaque #root {
+  background-color: var(--surface-under);
+  background-image: none;
+}
+
 .draggable {
   -webkit-app-region: drag;
   user-select: none;
@@ -261,7 +268,7 @@ body,
   display: flex;
   height: 100%;
   flex-direction: column;
-  padding: 64px 8px 18px;
+  padding: 48px 8px 18px;
 }
 
 .settings-navigation-title {

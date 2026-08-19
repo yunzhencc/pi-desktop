@@ -10,6 +10,8 @@ import {
   writePrimaryWindowState,
 } from './window-state';
 
+let isPrimaryWindowOpaque = false;
+
 function getPrimaryWindowStatePath(): string {
   return join(app.getPath('userData'), 'window-state.json');
 }
@@ -51,10 +53,12 @@ function createWindow(): void {
   if (process.platform === 'darwin') {
     const syncWindowBackdrop = () => {
       const opaque = !mainWindow.isFocused();
+      isPrimaryWindowOpaque = opaque;
       mainWindow.setBackgroundColor(opaque
         ? nativeTheme.shouldUseDarkColors ? '#000000' : '#f9f9f9'
         : '#00000000');
       mainWindow.setVibrancy(opaque ? null : 'menu');
+      mainWindow.webContents.send('window-opaque-surface-changed', opaque);
     };
     const syncTrafficLightPosition = () => {
       mainWindow.setWindowButtonPosition({
@@ -62,7 +66,10 @@ function createWindow(): void {
         y: Math.round((46 * mainWindow.webContents.getZoomFactor() - 14) / 2),
       });
     };
-    mainWindow.webContents.on('did-finish-load', syncTrafficLightPosition);
+    mainWindow.webContents.on('did-finish-load', () => {
+      syncTrafficLightPosition();
+      mainWindow.webContents.send('window-opaque-surface-changed', isPrimaryWindowOpaque);
+    });
     mainWindow.webContents.on('zoom-changed', syncTrafficLightPosition);
     mainWindow.on('focus', syncWindowBackdrop);
     mainWindow.on('blur', syncWindowBackdrop);
@@ -127,6 +134,7 @@ app.whenReady().then(() => {
   // eslint-disable-next-line no-console
   ipcMain.on('ping', () => console.log('pong'));
   ipcMain.handle('window:is-full-screen', event => BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false);
+  ipcMain.handle('window:is-opaque-surface', () => isPrimaryWindowOpaque);
 
   createWindow();
 

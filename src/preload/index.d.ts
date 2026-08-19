@@ -7,6 +7,8 @@ declare global {
       windowControls: {
         getIsFullscreen: () => Promise<boolean>;
         onFullscreenChange: (callback: (isFullscreen: boolean) => void) => () => void;
+        getIsOpaqueSurface: () => Promise<boolean>;
+        onOpaqueSurfaceChange: (callback: (opaque: boolean) => void) => () => void;
       };
     };
   }
