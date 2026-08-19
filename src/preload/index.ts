@@ -23,7 +23,6 @@ const api = {
   },
   composer: {
     addDroppedAttachments: (paths: string[]): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipcRenderer.invoke('composer:add-attachments', paths),
-    chooseAttachments: (): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipcRenderer.invoke('composer:choose-attachments'),
     removeAttachment: (id: string): Promise<void> => ipcRenderer.invoke('composer:remove-attachment', id),
     send: (prompt: string, attachmentIds: string[]): Promise<void> => ipcRenderer.invoke('composer:send', prompt, attachmentIds),
     onUpdate: (callback: (update: TranscriptUpdate) => void) => {

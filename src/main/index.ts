@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, screen, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeTheme, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
 import { AttachmentStore } from './attachments';
 import { createComposerHandlers } from './composer-ipc';
@@ -158,24 +158,12 @@ app.whenReady().then(() => {
   const composer = createComposerHandlers(
     attachmentStore,
     (prompt, attachmentIds) => piRuntime.send(prompt, attachmentIds),
-    async () => {
-      const result = await dialog.showOpenDialog({
-        filters: [
-          { extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'], name: 'Images' },
-          { extensions: ['txt', 'md', 'ts', 'tsx', 'js', 'jsx', 'json', 'css', 'html', 'yaml', 'yml', 'py', 'go', 'rs', 'java', 'c', 'cpp', 'sql'], name: 'Text and code' },
-          { extensions: ['*'], name: 'All files' },
-        ],
-        properties: ['openFile', 'multiSelections'],
-      });
-      return result.canceled ? [] : result.filePaths;
-    },
   );
   ipcMain.handle('composer:add-attachments', (_event, paths: unknown) => {
     if (!Array.isArray(paths) || !paths.every(path => typeof path === 'string'))
       throw new TypeError('Invalid attachment paths');
     return composer.addAttachments(paths);
   });
-  ipcMain.handle('composer:choose-attachments', () => composer.chooseAttachments());
   ipcMain.handle('composer:remove-attachment', (_event, id: unknown) => {
     if (typeof id !== 'string')
       throw new TypeError('Invalid attachment ID');

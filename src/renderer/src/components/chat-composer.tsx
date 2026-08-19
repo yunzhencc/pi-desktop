@@ -1,4 +1,5 @@
-import { FileText, Paperclip, SendHorizontal, X } from 'lucide-react';
+import type { CSSProperties } from 'react';
+import { ArrowUp, FileText, X } from 'lucide-react';
 import { baseKeymap } from 'prosemirror-commands';
 import { history } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -6,11 +7,13 @@ import { schema } from 'prosemirror-schema-basic';
 import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { useEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 
-type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['chooseAttachments']>>['attachments'][number];
-type SelectionResult = Awaited<ReturnType<Window['api']['composer']['chooseAttachments']>>;
+type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>['attachments'][number];
+type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
 
 export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => void }) {
+  const { formatMessage } = useIntl();
   const editorHostRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView | null>(null);
   const submitRef = useRef<() => void>(() => {});
@@ -19,6 +22,7 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
   const [isSending, setIsSending] = useState(false);
   const [text, setText] = useState('');
   const canSend = Boolean(text.trim() || attachments.length) && !isSending;
+  const placeholder = formatMessage({ id: 'composer.placeholder' });
 
   useEffect(() => {
     if (!editorHostRef.current)
@@ -65,15 +69,6 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
     setError(result.failures.map(failure => `${failure.name}: ${failure.reason}`).join('\n'));
   };
 
-  const addFromPicker = async () => {
-    try {
-      addSelection(await window.api.composer.chooseAttachments());
-    }
-    catch {
-      setError('无法打开文件选择器。');
-    }
-  };
-
   const removeAttachment = async (id: string) => {
     await window.api.composer.removeAttachment(id);
     setAttachments(current => current.filter(attachment => attachment.id !== id));
@@ -107,6 +102,7 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
     <form
       aria-label="Message Pi"
       className="chat-composer"
+      style={{ '--chat-composer-placeholder': JSON.stringify(placeholder) } as CSSProperties}
       onDragOver={event => event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault();
@@ -115,7 +111,7 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
           return typeof path === 'string' ? [path] : [];
         });
         if (paths.length === 0) {
-          setError('当前环境无法读取拖入文件，请使用添加附件。');
+          setError('当前环境无法读取拖入文件。');
           return;
         }
         window.api.composer.addDroppedAttachments(paths).then(addSelection).catch(() => setError('无法读取拖入文件。'));
@@ -140,9 +136,7 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
       )}
       <div className="chat-composer-editor" ref={editorHostRef} />
       <div className="chat-composer-actions">
-        <button aria-label="Add attachment" className="chat-composer-action" onClick={() => void addFromPicker()} title="Add attachment" type="button"><Paperclip aria-hidden="true" size={17} /></button>
-        <span className="chat-composer-hint">{isSending ? 'Sending…' : '⌘↵ to send'}</span>
-        <button aria-label="Send message" className="chat-composer-send" disabled={!canSend} title="Send message" type="submit"><SendHorizontal aria-hidden="true" size={17} /></button>
+        <button aria-label="Send message" className="chat-composer-send" disabled={!canSend} title="Send message" type="submit"><ArrowUp aria-hidden="true" size={16} /></button>
       </div>
       {error && <p aria-live="polite" className="chat-composer-error" role="status">{error}</p>}
     </form>

@@ -20,23 +20,11 @@ afterEach(async () => {
 });
 
 describe('composer IPC handlers', () => {
-  it('returns attachment metadata but never paths from file selection', async () => {
-    const handlers = createComposerHandlers(new AttachmentStore(), vi.fn(), async () => [await fixture('notes.md', '# Notes')]);
-
-    const result = await handlers.chooseAttachments();
-
-    expect(result).toEqual({
-      attachments: [expect.objectContaining({ kind: 'text', name: 'notes.md' })],
-      failures: [],
-    });
-    expect(result.attachments[0]).not.toHaveProperty('path');
-  });
-
   it('forwards only prompt text and opaque attachment IDs to the runtime', async () => {
     const attachments = new AttachmentStore();
     const selected = await attachments.add([await fixture('notes.txt', 'Hello')]);
     const send = vi.fn();
-    const handlers = createComposerHandlers(attachments, send, async () => []);
+    const handlers = createComposerHandlers(attachments, send);
 
     await handlers.send('Summarize this', [selected.attachments[0]!.id]);
     handlers.removeAttachment(selected.attachments[0]!.id);
@@ -46,7 +34,7 @@ describe('composer IPC handlers', () => {
   });
 
   it('uses the same validation path for dropped file paths', async () => {
-    const handlers = createComposerHandlers(new AttachmentStore(), vi.fn(), async () => []);
+    const handlers = createComposerHandlers(new AttachmentStore(), vi.fn());
 
     const result = await handlers.addAttachments([await fixture('notes.txt', 'Hello')]);
 

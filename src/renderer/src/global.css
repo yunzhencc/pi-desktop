@@ -483,9 +483,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   object-fit: cover;
 }
 
-.chat-composer-chip button,
-.chat-composer-action,
-.chat-composer-send {
+.chat-composer-chip button {
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -496,8 +494,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   color: var(--text-tertiary);
 }
 
-.chat-composer-chip button:hover,
-.chat-composer-action:hover {
+.chat-composer-chip button:hover {
   background: color-mix(in srgb, var(--foreground) 8%, transparent);
   color: var(--foreground);
 }
@@ -519,7 +516,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .chat-composer-editor .ProseMirror[data-empty='true']::before {
   position: absolute;
   color: var(--text-tertiary);
-  content: 'Message Pi…';
+  content: var(--chat-composer-placeholder);
   pointer-events: none;
 }
 
@@ -535,27 +532,22 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   padding: 0 8px 8px;
 }
 
-.chat-composer-action,
 .chat-composer-send {
-  width: 30px;
-  height: 30px;
-  color: var(--text-secondary);
-}
-
-.chat-composer-hint {
   margin-left: auto;
-  color: var(--text-tertiary);
-  font-size: 11px;
-}
-
-.chat-composer-send {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 2px;
+  place-items: center;
+  border-radius: 9999px;
   background: var(--foreground);
   color: var(--background);
+  transition: opacity 150ms ease;
 }
 
 .chat-composer-send:disabled {
-  background: color-mix(in srgb, var(--foreground) 10%, transparent);
-  color: var(--text-tertiary);
+  cursor: default;
+  opacity: 0.5;
 }
 
 .chat-composer-error {
