@@ -40,11 +40,15 @@ export function SidebarProfile({ name, onLogOut, onOpenSettings }: SidebarProfil
   return (
     <div className="sidebar-profile" ref={rootRef}>
       <div aria-hidden={!isOpen} className="sidebar-profile-menu" data-open={isOpen} id="sidebar-profile-menu" role="menu">
+        <div className="sidebar-profile-menu-identity">
+          <span aria-hidden="true" className="sidebar-profile-avatar">{getProfileInitials(name)}</span>
+          <span>{name}</span>
+        </div>
+        <div className="sidebar-profile-menu-separator" role="separator" />
         <button onClick={() => select(onOpenSettings)} role="menuitem" type="button">
           <Settings aria-hidden="true" size={16} strokeWidth={1.75} />
           {formatMessage({ id: 'profile.settings' })}
         </button>
-        <div className="sidebar-profile-menu-separator" role="separator" />
         <button onClick={() => select(onLogOut)} role="menuitem" type="button">
           <LogOut aria-hidden="true" size={16} strokeWidth={1.75} />
           {formatMessage({ id: 'profile.logOut' })}

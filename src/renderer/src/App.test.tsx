@@ -6,10 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { messages } from './providers/i18n/locale';
 
-vi.mock('@tanstack/react-hotkeys', () => ({ useHotkey: () => {} }));
+const { hotkeys, navigate } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>(), navigate: vi.fn() }));
+
+vi.mock('@tanstack/react-hotkeys', () => ({ useHotkey: (key: string, handler: () => void) => hotkeys.set(key, handler) }));
 vi.mock('@tanstack/react-router', () => ({
   Outlet: () => null,
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
   useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => string }) => select({ location: { pathname: '/' } }),
 }));
 
@@ -19,6 +21,8 @@ let opaqueSurfaceListener: OpaqueSurfaceListener | undefined;
 
 describe('app window surface', () => {
   beforeEach(() => {
+    hotkeys.clear();
+    navigate.mockClear();
     opaqueSurfaceListener = undefined;
     document.documentElement.classList.remove('electron-opaque');
     Object.defineProperty(window, 'api', {
@@ -73,5 +77,16 @@ describe('app window surface', () => {
 
     expect(screen.getByRole('button', { name: '新对话' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '快速聊天' })).toBeTruthy();
+  });
+
+  it('opens settings with Codex’s shortcut', () => {
+    render(
+      <IntlProvider locale="en" messages={messages.en}>
+        <App />
+      </IntlProvider>,
+    );
+
+    hotkeys.get('Mod+,')?.();
+    expect(navigate).toHaveBeenCalledWith({ to: '/settings/general' });
   });
 });

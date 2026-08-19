@@ -61,6 +61,7 @@ export function App() {
       setIsSidebarVisible(visible => !visible);
   };
   const startNewConversation = () => navigate({ to: '/' });
+  const openSettings = () => navigate({ to: '/settings/general' });
   const headerLeftWidth = isSidebarVisible ? sidebarWidth : toolbarInset + 32;
   const mainContentWidth = viewportSize.width - (isSidebarVisible ? sidebarWidth : 0);
   const rightPanelWidth = readRightPanelWidth(
@@ -89,6 +90,7 @@ export function App() {
   useHotkey('Mod+B', toggleSidebar, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
   useHotkey('Mod+N', startNewConversation, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
   useHotkey('Mod+Shift+O', startNewConversation, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
+  useHotkey('Mod+,', openSettings, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
 
   useEffect(() => {
     window.api.windowControls.getIsFullscreen().then(setIsFullscreen);
@@ -228,7 +230,7 @@ export function App() {
                         </svg>
                       </button>
                     </div>
-                    <SidebarProfile name="Wang Xingkang" onOpenSettings={() => navigate({ to: '/settings/general' })} />
+                    <SidebarProfile name="Wang Xingkang" onOpenSettings={openSettings} />
                   </>
                 )}
           </>
