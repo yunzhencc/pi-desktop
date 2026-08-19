@@ -1,8 +1,11 @@
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, nativeTheme, screen, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
+import { AttachmentStore } from './attachments';
+import { createComposerHandlers } from './composer-ipc';
+import { PiRuntime } from './pi-runtime';
 import {
   getPrimaryWindowBounds,
   PRIMARY_WINDOW_MINIMUM_SIZE,
@@ -12,6 +15,8 @@ import {
 
 let isPrimaryWindowOpaque = false;
 let syncPrimaryWindowBackdrop: (() => void) | undefined;
+const attachmentStore = new AttachmentStore();
+const piRuntime = new PiRuntime(attachmentStore);
 
 function getPrimaryWindowStatePath(): string {
   return join(app.getPath('userData'), 'window-state.json');
@@ -150,6 +155,42 @@ app.whenReady().then(() => {
   });
   nativeTheme.on('updated', () => syncPrimaryWindowBackdrop?.());
 
+  const composer = createComposerHandlers(
+    attachmentStore,
+    (prompt, attachmentIds) => piRuntime.send(prompt, attachmentIds),
+    async () => {
+      const result = await dialog.showOpenDialog({
+        filters: [
+          { extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'], name: 'Images' },
+          { extensions: ['txt', 'md', 'ts', 'tsx', 'js', 'jsx', 'json', 'css', 'html', 'yaml', 'yml', 'py', 'go', 'rs', 'java', 'c', 'cpp', 'sql'], name: 'Text and code' },
+          { extensions: ['*'], name: 'All files' },
+        ],
+        properties: ['openFile', 'multiSelections'],
+      });
+      return result.canceled ? [] : result.filePaths;
+    },
+  );
+  ipcMain.handle('composer:add-attachments', (_event, paths: unknown) => {
+    if (!Array.isArray(paths) || !paths.every(path => typeof path === 'string'))
+      throw new TypeError('Invalid attachment paths');
+    return composer.addAttachments(paths);
+  });
+  ipcMain.handle('composer:choose-attachments', () => composer.chooseAttachments());
+  ipcMain.handle('composer:remove-attachment', (_event, id: unknown) => {
+    if (typeof id !== 'string')
+      throw new TypeError('Invalid attachment ID');
+    composer.removeAttachment(id);
+  });
+  ipcMain.handle('composer:send', (_event, prompt: unknown, attachmentIds: unknown) => {
+    if (typeof prompt !== 'string' || !Array.isArray(attachmentIds) || !attachmentIds.every(id => typeof id === 'string'))
+      throw new TypeError('Invalid composer input');
+    return composer.send(prompt, attachmentIds);
+  });
+  piRuntime.subscribe((update) => {
+    for (const window of BrowserWindow.getAllWindows())
+      window.webContents.send('composer:update', update);
+  });
+
   createWindow();
 
   app.on('activate', () => {
@@ -168,6 +209,8 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+app.once('before-quit', () => piRuntime.dispose());
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

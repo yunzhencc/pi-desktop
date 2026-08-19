@@ -373,6 +373,199 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   background-color: var(--surface);
 }
 
+.chat-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: 46px;
+}
+
+.chat-transcript {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  overflow: auto;
+  padding: 48px max(24px, calc((100% - 720px) / 2));
+}
+
+.chat-empty-state {
+  width: min(100%, 34rem);
+  margin: auto;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.chat-empty-state p {
+  margin: 0 0 8px;
+  color: var(--foreground);
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.chat-empty-state span {
+  font-size: 14px;
+}
+
+.chat-message {
+  width: fit-content;
+  max-width: min(100%, 44rem);
+  white-space: pre-wrap;
+}
+
+.chat-message-user {
+  align-self: flex-end;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.chat-message-assistant {
+  padding: 4px 0;
+}
+
+.chat-message-error {
+  color: var(--destructive);
+}
+
+.chat-composer-wrap {
+  width: min(100% - 32px, 720px);
+  margin: 0 auto;
+  padding: 0 0 22px;
+}
+
+.chat-composer {
+  position: relative;
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  background: var(--surface-elevated);
+  box-shadow: 0 10px 28px color-mix(in srgb, #000 8%, transparent);
+}
+
+.chat-composer:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 30%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 25%, transparent), 0 10px 28px color-mix(in srgb, #000 8%, transparent);
+}
+
+.chat-composer-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 12px 0;
+}
+
+.chat-composer-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 15rem;
+  height: 30px;
+  padding: 3px 5px 3px 7px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.chat-composer-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-composer-chip-image {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.chat-composer-chip button,
+.chat-composer-action,
+.chat-composer-send {
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+}
+
+.chat-composer-chip button {
+  padding: 2px;
+  color: var(--text-tertiary);
+}
+
+.chat-composer-chip button:hover,
+.chat-composer-action:hover {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--foreground);
+}
+
+.chat-composer-editor {
+  min-height: 76px;
+  padding: 12px 14px 4px;
+}
+
+.chat-composer-editor .ProseMirror {
+  min-height: 60px;
+  outline: none;
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.chat-composer-editor .ProseMirror[data-empty='true']::before {
+  position: absolute;
+  color: var(--text-tertiary);
+  content: 'Message Pi…';
+  pointer-events: none;
+}
+
+.chat-composer-editor .ProseMirror p {
+  margin: 0;
+}
+
+.chat-composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 8px 8px;
+}
+
+.chat-composer-action,
+.chat-composer-send {
+  width: 30px;
+  height: 30px;
+  color: var(--text-secondary);
+}
+
+.chat-composer-hint {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.chat-composer-send {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.chat-composer-send:disabled {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: var(--text-tertiary);
+}
+
+.chat-composer-error {
+  margin: 0;
+  padding: 0 12px 10px;
+  color: var(--destructive);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
 .settings-view {
   height: 100%;
   padding-top: 46px;

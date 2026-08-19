@@ -3,6 +3,7 @@ import { createHashHistory, createMemoryHistory, createRootRoute, createRoute, c
 import { App } from './App';
 import { AppearanceSettingsPage } from './components/appearance-settings-page';
 import { GeneralSettingsPage } from './components/general-settings-page';
+import { HomePage } from './pages/home';
 
 export const settingsAppearancePath = '/settings/appearance';
 export const settingsGeneralPath = '/settings/general';
@@ -11,7 +12,7 @@ const rootRoute = createRootRoute({ component: App });
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => null,
+  component: HomePage,
 });
 const appearanceSettingsRoute = createRoute({
   getParentRoute: () => rootRoute,
