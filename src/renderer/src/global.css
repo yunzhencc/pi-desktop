@@ -817,6 +817,48 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   font-size: 14px;
 }
 
+.settings-provider-description,
+.settings-provider-status {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+.settings-provider-status {
+  color: var(--foreground);
+}
+
+.settings-provider-form,
+.settings-provider-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-provider-form {
+  align-items: flex-start;
+}
+
+.settings-provider-field {
+  width: min(100%, 28rem);
+  font-size: 14px;
+}
+
+.settings-provider-field input {
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+  padding: 8px 10px;
+}
+
+.settings-provider-form button {
+  border-radius: 6px;
+  background: var(--foreground);
+  color: var(--background);
+  padding: 7px 12px;
+}
+
 .shortcut-settings-heading,
 .shortcut-command,
 .shortcut-command-controls,

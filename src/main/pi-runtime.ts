@@ -1,4 +1,5 @@
 import type { AttachmentStore } from './attachments';
+import type { DeepSeekConfiguration } from './deepseek-settings';
 import process from 'node:process';
 
 export interface TranscriptUpdate {
@@ -13,12 +14,13 @@ interface PiSession {
   dispose?: () => void;
 }
 
-type SessionFactory = () => Promise<PiSession>;
+type SessionFactory = (configuration: DeepSeekConfiguration) => Promise<PiSession>;
 
 export class PiRuntime {
   #session: PiSession | undefined;
   #sessionUnsubscribe: (() => void) | undefined;
   #listeners = new Set<(update: TranscriptUpdate) => void>();
+  #configuration: DeepSeekConfiguration | undefined;
 
   constructor(
     private readonly attachments: AttachmentStore,
@@ -28,6 +30,14 @@ export class PiRuntime {
   subscribe(listener: (update: TranscriptUpdate) => void): () => void {
     this.#listeners.add(listener);
     return () => this.#listeners.delete(listener);
+  }
+
+  configureDeepSeek(configuration: DeepSeekConfiguration | undefined): void {
+    this.#configuration = configuration;
+    this.#sessionUnsubscribe?.();
+    this.#session?.dispose?.();
+    this.#session = undefined;
+    this.#sessionUnsubscribe = undefined;
   }
 
   async send(prompt: string, attachmentIds: string[]): Promise<void> {
@@ -54,8 +64,10 @@ export class PiRuntime {
   async #getSession(): Promise<PiSession> {
     if (this.#session)
       return this.#session;
+    if (!this.#configuration)
+      throw new Error('请先在设置中配置 DeepSeek API Key');
 
-    const session = await this.createSession();
+    const session = await this.createSession(this.#configuration);
     this.#sessionUnsubscribe = session.subscribe(event => this.#handleEvent(event));
     this.#session = session;
     return session;
@@ -78,9 +90,23 @@ export class PiRuntime {
   }
 }
 
-async function createDefaultSession(): Promise<PiSession> {
-  const { createAgentSession } = await import('@earendil-works/pi-coding-agent');
-  const { session } = await createAgentSession({ cwd: process.cwd() });
+async function createDefaultSession(configuration: DeepSeekConfiguration): Promise<PiSession> {
+  const { createAgentSession, ModelRuntime } = await import('@earendil-works/pi-coding-agent');
+  const modelRuntime = await ModelRuntime.create({ modelsPath: null, refreshOnCreate: false });
+  modelRuntime.registerProvider('deepseek', {
+    api: 'openai-completions',
+    baseUrl: 'https://api.deepseek.com',
+    models: [
+      { contextWindow: 128000, id: 'deepseek-v4-flash', input: ['text'], maxTokens: 16384, name: 'DeepSeek V4 Flash', reasoning: true },
+      { contextWindow: 128000, id: 'deepseek-v4-pro', input: ['text'], maxTokens: 16384, name: 'DeepSeek V4 Pro', reasoning: true },
+    ],
+    name: 'DeepSeek',
+  });
+  await modelRuntime.setRuntimeApiKey('deepseek', configuration.apiKey);
+  const model = modelRuntime.getModel('deepseek', configuration.model);
+  if (!model)
+    throw new Error('无法找到所选的 DeepSeek 模型');
+  const { session } = await createAgentSession({ cwd: process.cwd(), model, modelRuntime });
   return {
     dispose: () => session.dispose(),
     prompt: (text, options) => session.prompt(text, options),

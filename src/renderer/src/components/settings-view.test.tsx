@@ -98,6 +98,7 @@ describe('settings view', () => {
     );
 
     expect(screen.getByText('个人')).not.toBeNull();
+    expect(screen.getByRole('button', { name: '模型提供商' })).not.toBeNull();
     expect(container.querySelector('svg.lucide-settings')).not.toBeNull();
     expect(container.querySelector('svg.lucide-sliders-horizontal')).toBeNull();
     expect(container.querySelector('svg.lucide-sun')).not.toBeNull();

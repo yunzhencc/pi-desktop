@@ -1,5 +1,6 @@
 import type { ElectronAPI } from '@electron-toolkit/preload';
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
+import type { DeepSeekModel, DeepSeekSettingsSnapshot } from '../main/deepseek-settings';
 import type { TranscriptUpdate } from '../main/pi-runtime';
 
 declare global {
@@ -19,6 +20,10 @@ declare global {
         removeAttachment: (id: string) => Promise<void>;
         send: (prompt: string, attachmentIds: string[]) => Promise<void>;
         onUpdate: (callback: (update: TranscriptUpdate) => void) => () => void;
+      };
+      providers: {
+        getDeepSeek: () => Promise<DeepSeekSettingsSnapshot>;
+        saveDeepSeek: (apiKey: string, model: DeepSeekModel) => Promise<DeepSeekSettingsSnapshot>;
       };
     };
   }

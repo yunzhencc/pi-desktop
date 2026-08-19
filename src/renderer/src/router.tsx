@@ -2,6 +2,7 @@ import type { RouterHistory } from '@tanstack/react-router';
 import { createHashHistory, createMemoryHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 import { App } from './App';
 import { AppearanceSettingsPage } from './components/appearance-settings-page';
+import { DeepSeekSettingsPage } from './components/deepseek-settings-page';
 import { GeneralSettingsPage } from './components/general-settings-page';
 import { KeyboardShortcutsPage } from './components/keyboard-shortcuts-page';
 import { HomePage } from './pages/home';
@@ -9,6 +10,7 @@ import { HomePage } from './pages/home';
 export const settingsAppearancePath = '/settings/appearance';
 export const settingsGeneralPath = '/settings/general';
 export const settingsKeyboardShortcutsPath = '/settings/keyboard-shortcuts';
+export const settingsProvidersPath = '/settings/providers';
 
 const rootRoute = createRootRoute({ component: App });
 const indexRoute = createRoute({
@@ -31,7 +33,12 @@ const keyboardShortcutsSettingsRoute = createRoute({
   path: settingsKeyboardShortcutsPath,
   component: KeyboardShortcutsPage,
 });
-const routeTree = rootRoute.addChildren([indexRoute, generalSettingsRoute, appearanceSettingsRoute, keyboardShortcutsSettingsRoute]);
+const providersSettingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: settingsProvidersPath,
+  component: DeepSeekSettingsPage,
+});
+const routeTree = rootRoute.addChildren([indexRoute, generalSettingsRoute, appearanceSettingsRoute, keyboardShortcutsSettingsRoute, providersSettingsRoute]);
 
 export function createAppRouter(history: RouterHistory = getDefaultHistory()) {
   return createRouter({ history, routeTree });

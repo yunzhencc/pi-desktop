@@ -1,4 +1,5 @@
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
+import type { DeepSeekModel, DeepSeekSettingsSnapshot } from '../main/deepseek-settings';
 import type { TranscriptUpdate } from '../main/pi-runtime';
 import process from 'node:process';
 import { electronAPI } from '@electron-toolkit/preload';
@@ -31,6 +32,10 @@ const api = {
       ipcRenderer.on('composer:update', listener);
       return () => ipcRenderer.removeListener('composer:update', listener);
     },
+  },
+  providers: {
+    getDeepSeek: (): Promise<DeepSeekSettingsSnapshot> => ipcRenderer.invoke('providers:deepseek:get'),
+    saveDeepSeek: (apiKey: string, model: DeepSeekModel): Promise<DeepSeekSettingsSnapshot> => ipcRenderer.invoke('providers:deepseek:save', apiKey, model),
   },
 };
 

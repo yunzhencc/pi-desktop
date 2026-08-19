@@ -1,10 +1,12 @@
+import type { DeepSeekModel } from './deepseek-settings';
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, nativeTheme, screen, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeTheme, safeStorage, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
 import { AttachmentStore } from './attachments';
 import { createComposerHandlers } from './composer-ipc';
+import { DeepSeekSettings } from './deepseek-settings';
 import { PiRuntime } from './pi-runtime';
 import {
   getPrimaryWindowBounds,
@@ -17,9 +19,14 @@ let isPrimaryWindowOpaque = false;
 let syncPrimaryWindowBackdrop: (() => void) | undefined;
 const attachmentStore = new AttachmentStore();
 const piRuntime = new PiRuntime(attachmentStore);
+let deepseekSettings: DeepSeekSettings;
 
 function getPrimaryWindowStatePath(): string {
   return join(app.getPath('userData'), 'window-state.json');
+}
+
+function getDeepSeekSettingsPath(): string {
+  return join(app.getPath('userData'), 'providers', 'deepseek.json');
 }
 
 function createWindow(): void {
@@ -130,9 +137,11 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron');
+  deepseekSettings = new DeepSeekSettings(getDeepSeekSettingsPath(), safeStorage);
+  piRuntime.configureDeepSeek(await deepseekSettings.load());
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -152,6 +161,17 @@ app.whenReady().then(() => {
 
     nativeTheme.themeSource = themeSource;
     syncPrimaryWindowBackdrop?.();
+  });
+  ipcMain.handle('providers:deepseek:get', () => deepseekSettings.snapshot());
+  ipcMain.handle('providers:deepseek:save', async (_event, apiKey: unknown, model: unknown) => {
+    if (!safeStorage.isEncryptionAvailable())
+      throw new Error('系统密钥存储不可用，无法保存 DeepSeek API Key');
+    if (typeof apiKey !== 'string' || (model !== 'deepseek-v4-flash' && model !== 'deepseek-v4-pro'))
+      throw new TypeError('无效的 DeepSeek 配置');
+
+    const snapshot = await deepseekSettings.save(apiKey, model as DeepSeekModel);
+    piRuntime.configureDeepSeek(deepseekSettings.configuration());
+    return snapshot;
   });
   nativeTheme.on('updated', () => syncPrimaryWindowBackdrop?.());
 

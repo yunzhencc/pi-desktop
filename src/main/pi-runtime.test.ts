@@ -22,6 +22,12 @@ afterEach(async () => {
 });
 
 describe('pi runtime', () => {
+  it('rejects sends until DeepSeek has been configured', async () => {
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({ prompt: vi.fn(), subscribe: () => () => {} }));
+
+    await expect(runtime.send('Hello', [])).rejects.toThrow('请先在设置中配置 DeepSeek API Key');
+  });
+
   it('passes Pi image content and text-file content to a session prompt', async () => {
     const attachments = new AttachmentStore();
     const result = await attachments.add([
@@ -30,6 +36,7 @@ describe('pi runtime', () => {
     ]);
     const prompt = vi.fn();
     const runtime = new PiRuntime(attachments, async () => ({ prompt, subscribe: () => () => {} }));
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
 
     await runtime.send('Explain these files', result.attachments.map(attachment => attachment.id));
 
@@ -50,6 +57,7 @@ describe('pi runtime', () => {
     }));
     const update = vi.fn();
     runtime.subscribe(update);
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
 
     await runtime.send('Hello', []);
     listener?.({

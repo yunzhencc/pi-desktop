@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
 import { useHotkeys } from '@tanstack/react-hotkeys';
-import { ArrowLeft, Keyboard, Search, Settings, Sun, X } from 'lucide-react';
+import { ArrowLeft, Bot, Keyboard, Search, Settings, Sun, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { useShortcutSettings } from '../shortcuts/shortcut-context';
@@ -22,7 +22,7 @@ interface SettingsViewProps {
 
 const themeOptions: AppearanceTheme[] = ['system', 'light', 'dark'];
 
-type SettingsPath = '/settings/general' | '/settings/appearance' | '/settings/keyboard-shortcuts';
+type SettingsPath = '/settings/general' | '/settings/appearance' | '/settings/keyboard-shortcuts' | '/settings/providers';
 
 interface SettingsSearchTarget {
   messages: string[];
@@ -53,6 +53,11 @@ const settingsSearchTargets: SettingsSearchTarget[] = [
     messages: ['shortcuts.title', 'shortcut.newConversation.title', 'shortcut.toggleSidebar.title', 'shortcut.openSettings.title'],
     panel: 'shortcuts.title',
     path: '/settings/keyboard-shortcuts',
+  },
+  {
+    messages: ['providers.title', 'providers.deepseek.title'],
+    panel: 'providers.title',
+    path: '/settings/providers',
   },
 ];
 
@@ -158,6 +163,15 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
               >
                 <Keyboard aria-hidden="true" size={16} strokeWidth={1.75} />
                 {formatMessage({ id: 'shortcuts.title' })}
+              </button>
+              <button
+                aria-current={activePath === '/settings/providers' ? 'page' : undefined}
+                className="settings-navigation-item"
+                onClick={() => onNavigate('/settings/providers')}
+                type="button"
+              >
+                <Bot aria-hidden="true" size={16} strokeWidth={1.75} />
+                {formatMessage({ id: 'providers.title' })}
               </button>
             </>
           )}
