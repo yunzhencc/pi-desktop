@@ -66,7 +66,12 @@ html.electron-opaque #root {
   position: relative;
   z-index: 1;
   margin-top: auto;
-  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 8px;
+  border-top: 0.5px solid color-mix(in srgb, var(--foreground) 10%, transparent);
 }
 
 .sidebar-new-conversation {
@@ -129,8 +134,9 @@ html.electron-opaque #root {
 
 .sidebar-profile-trigger {
   gap: 8px;
-  height: 36px;
-  padding: 6px 8px;
+  flex: 1;
+  height: 30px;
+  padding: 0 8px;
 }
 
 .sidebar-profile-trigger:hover,
@@ -148,22 +154,45 @@ html.electron-opaque #root {
 .sidebar-profile-avatar {
   display: grid;
   flex: none;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   place-items: center;
   border-radius: 999px;
-  background: color-mix(in srgb, #8b5cf6 18%, transparent);
+  background: color-mix(in srgb, #8b5cf6 10%, transparent);
   color: #8b5cf6;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sidebar-profile-name {
   overflow: hidden;
-  font-size: 13px;
-  font-weight: 500;
+  flex: 1;
+  font-size: 14px;
+  font-weight: 400;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sidebar-profile-help {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
+}
+
+.sidebar-profile-help:hover,
+.sidebar-profile-help:focus-visible {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.sidebar-profile-help:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 0;
 }
 
 .sidebar-profile-menu {

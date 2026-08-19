@@ -1,4 +1,4 @@
-import { LogOut, Settings } from 'lucide-react';
+import { CircleHelp, LogOut, Settings } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { getProfileInitials } from './sidebar-profile-utils';
@@ -61,6 +61,9 @@ export function SidebarProfile({ name, onLogOut, onOpenSettings }: SidebarProfil
         <span aria-hidden="true" className="sidebar-profile-avatar">{getProfileInitials(name)}</span>
         <span className="sidebar-profile-name">{name}</span>
       </button>
+      <a aria-label={formatMessage({ id: 'profile.help' })} className="sidebar-profile-help" href="https://learn.chatgpt.com/docs/quickstart" rel="noreferrer" target="_blank" title={formatMessage({ id: 'profile.help' })}>
+        <CircleHelp aria-hidden="true" size={16} strokeWidth={1.75} />
+      </a>
     </div>
   );
 }
