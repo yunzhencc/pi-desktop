@@ -6,7 +6,11 @@ import { useIntl } from 'react-intl';
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 type PiSessionSummary = Awaited<ReturnType<Window['api']['sessions']['list']>>[number];
 
-export function WorkspaceSidebar() {
+interface WorkspaceSidebarProps {
+  onOpenSession?: (workspacePath: string, sessionPath: string) => void;
+}
+
+export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
   const { formatMessage } = useIntl();
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
   const [sessionsByWorkspace, setSessionsByWorkspace] = useState<Record<string, PiSessionSummary[]>>({});
@@ -18,11 +22,14 @@ export function WorkspaceSidebar() {
   useEffect(() => {
     void window.api.workspaces.get().then(setWorkspace);
     const onWorkspaceChanged = (event: Event) => setWorkspace((event as CustomEvent<WorkspaceSnapshot>).detail);
+    const onSessionChanged = (event: Event) => setSelectedSessionPath((event as CustomEvent<{ path: string }>).detail.path);
     const openCreateProject = () => setIsCreating(true);
     window.addEventListener('workspace-changed', onWorkspaceChanged);
+    window.addEventListener('session-changed', onSessionChanged);
     window.addEventListener('create-project', openCreateProject);
     return () => {
       window.removeEventListener('workspace-changed', onWorkspaceChanged);
+      window.removeEventListener('session-changed', onSessionChanged);
       window.removeEventListener('create-project', openCreateProject);
     };
   }, []);
@@ -55,6 +62,10 @@ export function WorkspaceSidebar() {
   };
 
   const openSession = async (workspacePath: string, sessionPath: string) => {
+    if (onOpenSession) {
+      onOpenSession(workspacePath, sessionPath);
+      return;
+    }
     const { session, workspace } = await window.api.sessions.open(workspacePath, sessionPath);
     update(workspace);
     setSelectedSessionPath(sessionPath);

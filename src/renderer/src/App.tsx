@@ -1,7 +1,17 @@
+import type { AppHistory, AppLocation } from './components/app-history';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
+import {
+  canGoBack,
+  canGoForward,
+  createAppHistory,
+  currentAppLocation,
+  moveAppHistory,
+  pushAppHistory,
+} from './components/app-history';
 import {
   getExpandedRightPanelWidth,
   getRightPanelExpansionAfterToggle,
@@ -39,6 +49,9 @@ function AppShell() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isWindowOpaque, setIsWindowOpaque] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const historyRef = useRef<AppHistory>(createAppHistory({ kind: 'home' }));
+  const navigationIdRef = useRef(0);
+  const [appHistory, setAppHistory] = useState(historyRef.current);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     return readSidebarWidth(
       localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY),
@@ -67,11 +80,54 @@ function AppShell() {
     if (!isSettingsPage)
       setIsSidebarVisible(visible => !visible);
   };
-  const startNewConversation = () => {
-    void Promise.resolve(navigate({ to: '/' })).then(() => window.dispatchEvent(new Event('new-conversation')));
+  const commitHistory = (next: AppHistory) => {
+    historyRef.current = next;
+    setAppHistory(next);
   };
-  const openSettings = () => navigate({ to: '/settings/general' });
-  const headerLeftWidth = isSidebarVisible ? sidebarWidth : toolbarInset + 32;
+  const restoreLocation = async (location: AppLocation, navigationId: number) => {
+    if (location.kind === 'home') {
+      await Promise.resolve(navigate({ to: '/' }));
+      if (navigationId !== navigationIdRef.current)
+        return false;
+      window.dispatchEvent(new Event('new-conversation'));
+      return true;
+    }
+    if (location.kind === 'settings') {
+      await Promise.resolve(navigate({ to: location.path }));
+      return navigationId === navigationIdRef.current;
+    }
+
+    try {
+      const { session, workspace } = await window.api.sessions.open(location.workspacePath, location.sessionPath);
+      if (navigationId !== navigationIdRef.current)
+        return false;
+      window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: workspace }));
+      window.dispatchEvent(new CustomEvent('session-changed', { detail: session }));
+      return true;
+    }
+    catch {
+      return false;
+    }
+  };
+  const visitLocation = async (location: AppLocation) => {
+    const next = pushAppHistory(historyRef.current, location);
+    const navigationId = ++navigationIdRef.current;
+    if (await restoreLocation(location, navigationId))
+      commitHistory(next);
+  };
+  const navigateHistory = async (direction: -1 | 1) => {
+    const next = moveAppHistory(historyRef.current, direction);
+    if (next === historyRef.current)
+      return;
+    const navigationId = ++navigationIdRef.current;
+    if (await restoreLocation(currentAppLocation(next), navigationId))
+      commitHistory(next);
+  };
+  const startNewConversation = () => {
+    void visitLocation({ kind: 'home' });
+  };
+  const openSettings = () => void visitLocation({ kind: 'settings', path: '/settings/general' });
+  const headerLeftWidth = isSidebarVisible ? sidebarWidth : toolbarInset + 96;
   const mainContentWidth = viewportSize.width - (isSidebarVisible ? sidebarWidth : 0);
   const rightPanelWidth = readRightPanelWidth(
     String(rightPanelWidthRatio),
@@ -101,6 +157,8 @@ function AppShell() {
       ...bindings.newConversation.map(hotkey => ({ callback: startNewConversation, hotkey })),
       ...bindings.toggleSidebar.map(hotkey => ({ callback: toggleSidebar, hotkey })),
       ...bindings.openSettings.map(hotkey => ({ callback: openSettings, hotkey })),
+      { callback: () => void navigateHistory(-1), hotkey: 'Mod+[' },
+      { callback: () => void navigateHistory(1), hotkey: 'Mod+]' },
     ],
     { ignoreInputs: true, preventDefault: true, stopPropagation: false },
   );
@@ -154,6 +212,26 @@ function AppShell() {
           }}
         >
           {!isSettingsPage && <SidebarToggle isSidebarVisible={isSidebarVisible} onToggle={toggleSidebar} />}
+          <button
+            aria-label={formatMessage({ id: 'navigation.back' })}
+            className="sidebar-trigger flex size-8 items-center justify-center disabled:pointer-events-none disabled:opacity-35"
+            disabled={!canGoBack(appHistory)}
+            onClick={() => void navigateHistory(-1)}
+            title={formatMessage({ id: 'navigation.back' })}
+            type="button"
+          >
+            <ChevronLeft aria-hidden="true" className="size-4" />
+          </button>
+          <button
+            aria-label={formatMessage({ id: 'navigation.forward' })}
+            className="sidebar-trigger flex size-8 items-center justify-center disabled:pointer-events-none disabled:opacity-35"
+            disabled={!canGoForward(appHistory)}
+            onClick={() => void navigateHistory(1)}
+            title={formatMessage({ id: 'navigation.forward' })}
+            type="button"
+          >
+            <ChevronRight aria-hidden="true" className="size-4" />
+          </button>
         </div>
         <div className="min-w-0 flex-1" />
         <div
@@ -222,8 +300,8 @@ function AppShell() {
               ? (
                   <SettingsSidebar
                     activePath={settingsPath}
-                    onClose={() => navigate({ to: '/' })}
-                    onNavigate={to => navigate({ to })}
+                    onClose={startNewConversation}
+                    onNavigate={to => void visitLocation({ kind: 'settings', path: to })}
                   />
                 )
               : (
@@ -243,7 +321,7 @@ function AppShell() {
                         </svg>
                       </button>
                     </div>
-                    <WorkspaceSidebar />
+                    <WorkspaceSidebar onOpenSession={(workspacePath, sessionPath) => void visitLocation({ kind: 'session', sessionPath, workspacePath })} />
                     <SidebarProfile name="Wang Xingkang" onOpenSettings={openSettings} />
                   </>
                 )}

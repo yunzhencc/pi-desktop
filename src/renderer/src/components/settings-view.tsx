@@ -22,7 +22,7 @@ interface SettingsViewProps {
 
 const themeOptions: AppearanceTheme[] = ['system', 'light', 'dark'];
 
-type SettingsPath = '/settings/general' | '/settings/appearance' | '/settings/keyboard-shortcuts' | '/settings/providers';
+export type SettingsPath = '/settings/general' | '/settings/appearance' | '/settings/keyboard-shortcuts' | '/settings/providers';
 
 interface SettingsSearchTarget {
   messages: string[];

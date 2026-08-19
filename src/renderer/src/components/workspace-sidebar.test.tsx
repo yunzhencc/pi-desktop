@@ -73,6 +73,36 @@ describe('workspace sidebar', () => {
     await waitFor(() => expect(window.api.sessions.open).toHaveBeenCalledWith(weather.path, session.path));
   });
 
+  it('delegates a session selection to application navigation when provided', async () => {
+    const onOpenSession = vi.fn();
+    window.api.sessions.list.mockResolvedValue([session]);
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar onOpenSession={onOpenSession} />
+      </I18nProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'Summarize the forecast' });
+    fireEvent.click(screen.getByRole('button', { name: 'Summarize the forecast' }));
+
+    expect(onOpenSession).toHaveBeenCalledWith(weather.path, session.path);
+    expect(window.api.sessions.open).not.toHaveBeenCalled();
+  });
+
+  it('marks a session selected when application navigation restores it', async () => {
+    window.api.sessions.list.mockResolvedValue([session]);
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    const sessionButton = await screen.findByRole('button', { name: 'Summarize the forecast' });
+    fireEvent(window, new CustomEvent('session-changed', { detail: { messages: [], path: session.path } }));
+
+    expect(sessionButton.getAttribute('aria-current')).toBe('page');
+  });
+
   it('collapses and expands a project session history from its project row', async () => {
     window.api.sessions.list.mockResolvedValue([session]);
     render(

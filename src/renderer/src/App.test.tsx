@@ -51,6 +51,10 @@ describe('app window surface', () => {
           pick: () => Promise.resolve({ workspaces: [] }),
           select: () => Promise.resolve({ workspaces: [] }),
         },
+        sessions: {
+          list: () => Promise.resolve([]),
+          open: () => Promise.resolve({ session: { messages: [], path: '/sessions/default.jsonl' }, workspace: { workspaces: [] } }),
+        },
       },
     });
   });
@@ -91,6 +95,48 @@ describe('app window surface', () => {
 
     expect(screen.getByRole('button', { name: '新对话' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '快速聊天' })).toBeTruthy();
+  });
+
+  it('shows disabled application-history controls before any navigation', () => {
+    render(
+      <IntlProvider
+        locale="zh-CN"
+        messages={messages['zh-CN']}
+      >
+        <App />
+      </IntlProvider>,
+    );
+
+    expect(screen.getByRole('button', { name: '后退' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: '前进' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('ignores a slower session navigation after a newer selection', async () => {
+    const first = deferred<{ session: { messages: []; path: string }; workspace: { workspaces: [] } }>();
+    const second = deferred<{ session: { messages: []; path: string }; workspace: { workspaces: [] } }>();
+    const openedSessions: string[] = [];
+    window.api.sessions.list = () => Promise.resolve([
+      { firstMessage: 'First', id: 'first', modifiedAt: '2026-08-20T00:00:00.000Z', path: '/sessions/first.jsonl' },
+      { firstMessage: 'Second', id: 'second', modifiedAt: '2026-08-20T00:00:00.000Z', path: '/sessions/second.jsonl' },
+    ]);
+    window.api.sessions.open = (_workspacePath, sessionPath) => sessionPath === '/sessions/first.jsonl' ? first.promise : second.promise;
+    const onSessionChanged = (event: Event) => openedSessions.push((event as CustomEvent<{ path: string }>).detail.path);
+    window.addEventListener('session-changed', onSessionChanged);
+
+    render(
+      <IntlProvider locale="en" messages={messages.en}>
+        <App />
+      </IntlProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'First' });
+    screen.getByRole('button', { name: 'First' }).click();
+    screen.getByRole('button', { name: 'Second' }).click();
+    await act(async () => second.resolve({ session: { messages: [], path: '/sessions/second.jsonl' }, workspace: { workspaces: [] } }));
+    await act(async () => first.resolve({ session: { messages: [], path: '/sessions/first.jsonl' }, workspace: { workspaces: [] } }));
+
+    expect(openedSessions).toEqual(['/sessions/second.jsonl']);
+    window.removeEventListener('session-changed', onSessionChanged);
   });
 
   it('shows projects and an add-project entry in the sidebar', async () => {
@@ -144,3 +190,11 @@ describe('app window surface', () => {
     expect(hotkeyOptions[0]).toMatchObject({ ignoreInputs: true });
   });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
