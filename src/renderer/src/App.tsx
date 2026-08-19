@@ -1,4 +1,4 @@
-import { useHotkey } from '@tanstack/react-hotkeys';
+import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -19,15 +19,21 @@ import {
 import { SidebarResizeHandle } from './components/sidebar-resize-handle';
 import { SidebarToggle } from './components/sidebar-toggle';
 import { getToolbarInset } from './components/toolbar-inset';
+import { ShortcutSettingsProvider, useShortcutSettings } from './shortcuts/shortcut-context';
 
 const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
 
 export function App() {
+  return <ShortcutSettingsProvider><AppShell /></ShortcutSettingsProvider>;
+}
+
+function AppShell() {
   const { formatMessage } = useIntl();
   const navigate = useNavigate();
   const settingsPath = useRouterState({ select: state => state.location.pathname });
   const isSettingsPage = settingsPath.startsWith('/settings/');
+  const { bindings } = useShortcutSettings();
   const isMac = navigator.platform.includes('Mac');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isWindowOpaque, setIsWindowOpaque] = useState(false);
@@ -87,10 +93,14 @@ export function App() {
     setIsRightPanelOpen(open => !open);
   };
   const toggleRightPanelExpanded = () => setIsRightPanelExpanded(expanded => !expanded);
-  useHotkey('Mod+B', toggleSidebar, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
-  useHotkey('Mod+N', startNewConversation, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
-  useHotkey('Mod+Shift+O', startNewConversation, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
-  useHotkey('Mod+,', openSettings, { ignoreInputs: false, preventDefault: true, stopPropagation: false });
+  useHotkeys(
+    [
+      ...bindings.newConversation.map(hotkey => ({ callback: startNewConversation, hotkey })),
+      ...bindings.toggleSidebar.map(hotkey => ({ callback: toggleSidebar, hotkey })),
+      ...bindings.openSettings.map(hotkey => ({ callback: openSettings, hotkey })),
+    ],
+    { ignoreInputs: true, preventDefault: true, stopPropagation: false },
+  );
 
   useEffect(() => {
     window.api.windowControls.getIsFullscreen().then(setIsFullscreen);

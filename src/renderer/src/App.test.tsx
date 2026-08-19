@@ -6,9 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { messages } from './providers/i18n/locale';
 
-const { hotkeys, navigate } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>(), navigate: vi.fn() }));
+const { hotkeys, hotkeyOptions, navigate } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>(), hotkeyOptions: [] as Array<{ ignoreInputs?: boolean }>, navigate: vi.fn() }));
 
-vi.mock('@tanstack/react-hotkeys', () => ({ useHotkey: (key: string, handler: () => void) => hotkeys.set(key, handler) }));
+vi.mock('@tanstack/react-hotkeys', () => ({
+  useHotkeys: (definitions: Array<{ hotkey: string; callback: () => void }>, options: { ignoreInputs?: boolean }) => {
+    hotkeyOptions.push(options);
+    definitions.forEach(({ callback, hotkey }) => hotkeys.set(hotkey, callback));
+  },
+}));
 vi.mock('@tanstack/react-router', () => ({
   Outlet: () => null,
   useNavigate: () => navigate,
@@ -22,6 +27,7 @@ let opaqueSurfaceListener: OpaqueSurfaceListener | undefined;
 describe('app window surface', () => {
   beforeEach(() => {
     hotkeys.clear();
+    hotkeyOptions.length = 0;
     navigate.mockClear();
     opaqueSurfaceListener = undefined;
     document.documentElement.classList.remove('electron-opaque');
@@ -88,5 +94,15 @@ describe('app window surface', () => {
 
     hotkeys.get('Mod+,')?.();
     expect(navigate).toHaveBeenCalledWith({ to: '/settings/general' });
+  });
+
+  it('does not register global shortcuts for focused inputs', () => {
+    render(
+      <IntlProvider locale="en" messages={messages.en}>
+        <App />
+      </IntlProvider>,
+    );
+
+    expect(hotkeyOptions[0]).toMatchObject({ ignoreInputs: true });
   });
 });

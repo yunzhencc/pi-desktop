@@ -10,6 +10,18 @@ const { hotkeys } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>() }
 
 vi.mock('@tanstack/react-hotkeys', () => ({
   useHotkey: (key: string, handler: () => void) => hotkeys.set(key, handler),
+  useHotkeys: (definitions: Array<{ hotkey: string; callback: () => void }>) => definitions.forEach(({ callback, hotkey }) => hotkeys.set(hotkey, callback)),
+}));
+
+vi.mock('../shortcuts/shortcut-context', () => ({
+  useShortcutSettings: () => ({
+    bindings: {
+      focusSettingsSearch: ['Mod+F'],
+      newConversation: ['Mod+N', 'Mod+Shift+O'],
+      openSettings: ['Mod+,'],
+      toggleSidebar: ['Mod+B'],
+    },
+  }),
 }));
 
 describe('settings view', () => {

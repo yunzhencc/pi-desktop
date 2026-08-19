@@ -3,10 +3,12 @@ import { createHashHistory, createMemoryHistory, createRootRoute, createRoute, c
 import { App } from './App';
 import { AppearanceSettingsPage } from './components/appearance-settings-page';
 import { GeneralSettingsPage } from './components/general-settings-page';
+import { KeyboardShortcutsPage } from './components/keyboard-shortcuts-page';
 import { HomePage } from './pages/home';
 
 export const settingsAppearancePath = '/settings/appearance';
 export const settingsGeneralPath = '/settings/general';
+export const settingsKeyboardShortcutsPath = '/settings/keyboard-shortcuts';
 
 const rootRoute = createRootRoute({ component: App });
 const indexRoute = createRoute({
@@ -24,7 +26,12 @@ const generalSettingsRoute = createRoute({
   path: settingsGeneralPath,
   component: GeneralSettingsPage,
 });
-const routeTree = rootRoute.addChildren([indexRoute, generalSettingsRoute, appearanceSettingsRoute]);
+const keyboardShortcutsSettingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: settingsKeyboardShortcutsPath,
+  component: KeyboardShortcutsPage,
+});
+const routeTree = rootRoute.addChildren([indexRoute, generalSettingsRoute, appearanceSettingsRoute, keyboardShortcutsSettingsRoute]);
 
 export function createAppRouter(history: RouterHistory = getDefaultHistory()) {
   return createRouter({ history, routeTree });

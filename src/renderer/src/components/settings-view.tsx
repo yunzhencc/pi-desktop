@@ -9,10 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
-import { useHotkey } from '@tanstack/react-hotkeys';
-import { ArrowLeft, Search, Settings, Sun, X } from 'lucide-react';
+import { useHotkeys } from '@tanstack/react-hotkeys';
+import { ArrowLeft, Keyboard, Search, Settings, Sun, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { useShortcutSettings } from '../shortcuts/shortcut-context';
 
 interface SettingsViewProps {
   onThemeChange: (theme: AppearanceTheme) => void;
@@ -21,7 +22,7 @@ interface SettingsViewProps {
 
 const themeOptions: AppearanceTheme[] = ['system', 'light', 'dark'];
 
-type SettingsPath = '/settings/general' | '/settings/appearance';
+type SettingsPath = '/settings/general' | '/settings/appearance' | '/settings/keyboard-shortcuts';
 
 interface SettingsSearchTarget {
   messages: string[];
@@ -48,6 +49,11 @@ const settingsSearchTargets: SettingsSearchTarget[] = [
     panel: 'settings.appearance',
     path: '/settings/appearance',
   },
+  {
+    messages: ['shortcuts.title', 'shortcut.newConversation.title', 'shortcut.toggleSidebar.title', 'shortcut.openSettings.title'],
+    panel: 'shortcuts.title',
+    path: '/settings/keyboard-shortcuts',
+  },
 ];
 
 interface SettingsSidebarProps {
@@ -61,13 +67,14 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
   const [query, setQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { bindings } = useShortcutSettings();
   const results = useMemo(() => searchSettings(query, formatMessage), [formatMessage, query]);
   const focusSearch = () => {
     searchInputRef.current?.focus();
     searchInputRef.current?.select();
   };
 
-  useHotkey('Mod+F', focusSearch, { ignoreInputs: false, preventDefault: true });
+  useHotkeys(bindings.focusSettingsSearch.map(hotkey => ({ callback: focusSearch, hotkey })), { ignoreInputs: true, preventDefault: true });
 
   return (
     <nav className="settings-navigation" aria-label={formatMessage({ id: 'settings.navigation' })}>
@@ -142,6 +149,15 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
               >
                 <Sun aria-hidden="true" size={16} strokeWidth={1.75} />
                 {formatMessage({ id: 'settings.appearance' })}
+              </button>
+              <button
+                aria-current={activePath === '/settings/keyboard-shortcuts' ? 'page' : undefined}
+                className="settings-navigation-item"
+                onClick={() => onNavigate('/settings/keyboard-shortcuts')}
+                type="button"
+              >
+                <Keyboard aria-hidden="true" size={16} strokeWidth={1.75} />
+                {formatMessage({ id: 'shortcuts.title' })}
               </button>
             </>
           )}
