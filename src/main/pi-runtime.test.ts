@@ -160,4 +160,30 @@ describe('pi runtime', () => {
 
     expect(prompt).toHaveBeenNthCalledWith(2, 'Second', { streamingBehavior: 'steer' });
   });
+
+  it('keeps the composer running until Pi settles and can abort the active turn', async () => {
+    let listener: ((event: unknown) => void) | undefined;
+    const abort = vi.fn();
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({
+      abort,
+      prompt: vi.fn(),
+      subscribe: (callback: (event: unknown) => void) => {
+        listener = callback;
+        return () => {};
+      },
+    }));
+    const update = vi.fn();
+    runtime.subscribe(update);
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+
+    await runtime.send('Hello', []);
+    await runtime.abort();
+    listener?.({ type: 'agent_settled' });
+
+    expect(update.mock.calls.map(([event]) => event)).toEqual([
+      { status: 'running', type: 'status' },
+      { status: 'settled', type: 'status' },
+    ]);
+    expect(abort).toHaveBeenCalledOnce();
+  });
 });

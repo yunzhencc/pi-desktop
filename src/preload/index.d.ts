@@ -19,6 +19,7 @@ declare global {
         addPastedImage: (name: string, data: string) => Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }>;
         removeAttachment: (id: string) => Promise<void>;
         send: (prompt: string, attachmentIds: string[]) => Promise<void>;
+        stop: () => Promise<void>;
         onUpdate: (callback: (update: TranscriptUpdate) => void) => () => void;
       };
       providers: {

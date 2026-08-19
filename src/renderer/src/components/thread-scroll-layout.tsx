@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { ThreadLayout, ThreadTurn } from './thread-virtualizer';
+import { ArrowDown } from 'lucide-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { buildThreadLayout, preserveAnchorDistance, visibleThreadRange } from './thread-virtualizer';
 
@@ -7,8 +8,9 @@ const DEFAULT_TURN_HEIGHT = 72;
 const FOLLOW_THRESHOLD = 24;
 const TURN_GAP = 16;
 
-export function ThreadScrollLayout<T extends ThreadTurn>({ children, turns }: {
+export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, turns }: {
   children: (turn: T) => ReactNode;
+  footer?: ReactNode;
   turns: T[];
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -18,6 +20,7 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, turns }: {
   const followsBottomRef = useRef(true);
   const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(() => new Map());
   const [scrollMetrics, setScrollMetrics] = useState({ distanceFromBottomPx: 0, viewportHeightPx: 0 });
+  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const layout = useMemo(() => buildThreadLayout(turns, measuredHeights, TURN_GAP, DEFAULT_TURN_HEIGHT), [measuredHeights, turns]);
   const range = scrollMetrics.viewportHeightPx > 0
     ? visibleThreadRange({ distanceFromBottomPx: scrollMetrics.distanceFromBottomPx, layout, overscanCount: 2, viewportHeightPx: scrollMetrics.viewportHeightPx })
@@ -80,33 +83,55 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, turns }: {
     return () => observer.disconnect();
   }, [range.endIndex, range.startIndex, turns]);
 
+  const scrollToBottom = () => {
+    const element = scrollRef.current;
+    if (element == null)
+      return;
+    followsBottomRef.current = true;
+    element.scrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
+    setShowJumpToBottom(false);
+    setScrollMetrics({ distanceFromBottomPx: 0, viewportHeightPx: element.clientHeight });
+  };
+
   return (
-    <div
-      aria-live="polite"
-      className="thread-scroll-layout"
-      onScroll={() => {
-        const element = scrollRef.current;
-        if (element == null)
-          return;
-        const distance = distanceFromBottom(element);
-        followsBottomRef.current = distance <= FOLLOW_THRESHOLD;
-        const nextRange = visibleThreadRange({ distanceFromBottomPx: distance, layout, overscanCount: 2, viewportHeightPx: element.clientHeight });
-        anchorKeyRef.current = layout.turnKeys[nextRange.startIndex] ?? null;
-        setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
-          ? current
-          : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
-      }}
-      ref={scrollRef}
-      role="log"
-    >
-      <div aria-hidden="true" style={{ height: topSpacerPx }} />
-      {visibleTurns.map((turn, index) => (
-        <div data-thread-turn={turn.key} key={turn.key} style={{ marginBottom: index === visibleTurns.length - 1 ? 0 : TURN_GAP }}>
-          {children(turn)}
+    <>
+      <div
+        aria-live="polite"
+        className="thread-scroll-layout"
+        onScroll={() => {
+          const element = scrollRef.current;
+          if (element == null)
+            return;
+          const distance = distanceFromBottom(element);
+          const followsBottom = distance <= FOLLOW_THRESHOLD;
+          followsBottomRef.current = followsBottom;
+          setShowJumpToBottom(!followsBottom);
+          const nextRange = visibleThreadRange({ distanceFromBottomPx: distance, layout, overscanCount: 2, viewportHeightPx: element.clientHeight });
+          anchorKeyRef.current = layout.turnKeys[nextRange.startIndex] ?? null;
+          setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
+            ? current
+            : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
+        }}
+        ref={scrollRef}
+        role="log"
+      >
+        <div className="thread-scroll-content">
+          <div aria-hidden="true" style={{ height: topSpacerPx }} />
+          {visibleTurns.map((turn, index) => (
+            <div data-thread-turn={turn.key} key={turn.key} style={{ marginBottom: index === visibleTurns.length - 1 ? 0 : TURN_GAP }}>
+              {children(turn)}
+            </div>
+          ))}
+          <div aria-hidden="true" style={{ height: bottomSpacerPx }} />
         </div>
-      ))}
-      <div aria-hidden="true" style={{ height: bottomSpacerPx }} />
-    </div>
+        {footer && <div className="thread-scroll-footer">{footer}</div>}
+      </div>
+      {showJumpToBottom && (
+        <button aria-label="Jump to latest" className="thread-scroll-to-bottom" onClick={scrollToBottom} title="Jump to latest" type="button">
+          <ArrowDown aria-hidden="true" size={16} />
+        </button>
+      )}
+    </>
   );
 }
 

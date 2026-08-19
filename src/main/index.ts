@@ -199,6 +199,7 @@ app.whenReady().then(async () => {
       throw new TypeError('Invalid composer input');
     return composer.send(prompt, attachmentIds);
   });
+  ipcMain.handle('composer:stop', () => piRuntime.abort());
   piRuntime.subscribe((update) => {
     for (const window of BrowserWindow.getAllWindows())
       window.webContents.send('composer:update', update);

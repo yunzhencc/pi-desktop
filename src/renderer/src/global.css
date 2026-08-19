@@ -385,13 +385,35 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .thread-scroll-layout {
   position: absolute;
   inset: 46px 0 0;
+  display: flex;
+  flex-direction: column;
   overflow: auto;
-  padding: 16px max(16px, calc((100% - 720px) / 2)) var(--thread-scroll-padding-bottom, 32px);
   scroll-padding-bottom: var(--thread-scroll-padding-bottom, 32px);
 }
 
-.thread-scroll-layout > [data-thread-turn] {
+.thread-scroll-content {
+  flex: 1 0 auto;
+  padding: 16px max(16px, calc((100% - 720px) / 2)) var(--thread-scroll-padding-bottom, 32px);
+}
+
+.thread-scroll-content > [data-thread-turn] {
   display: flex;
+}
+
+.thread-scroll-to-bottom {
+  position: absolute;
+  right: max(16px, calc((100% - 720px) / 2));
+  bottom: var(--thread-scroll-padding-bottom, 32px);
+  z-index: 2;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
+  background: var(--surface-elevated);
+  color: var(--foreground);
+  box-shadow: 0 4px 12px color-mix(in srgb, #000 12%, transparent);
 }
 
 .chat-empty-state {
@@ -544,6 +566,15 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .markdown-message td {
   padding: 6px 10px;
   border: 1px solid var(--border-subtle);
+}
+
+.thread-scroll-footer {
+  position: sticky;
+  z-index: 1;
+  bottom: 0;
+  margin-top: auto;
+  padding-bottom: 16px;
+  background: var(--surface);
 }
 
 .chat-composer-footer {

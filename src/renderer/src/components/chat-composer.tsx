@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { ArrowUp, FileText, LoaderCircle, X } from 'lucide-react';
+import { ArrowUp, FileText, LoaderCircle, Square, X } from 'lucide-react';
 import { baseKeymap, splitBlock } from 'prosemirror-commands';
 import { history } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -12,7 +12,7 @@ import { useIntl } from 'react-intl';
 type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>['attachments'][number];
 type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
 
-export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => void }) {
+export function ChatComposer({ isRunning, onStop, onSubmitted }: { isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) {
   const { formatMessage } = useIntl();
   const editorHostRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView | null>(null);
@@ -21,7 +21,7 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [text, setText] = useState('');
-  const canSend = Boolean(text.trim() || attachments.length) && !isSending;
+  const canSend = Boolean(text.trim() || attachments.length) && !isSending && !isRunning;
   const placeholder = formatMessage({ id: 'composer.placeholder' });
 
   useEffect(() => {
@@ -179,8 +179,15 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
       )}
       <div className="chat-composer-editor" ref={editorHostRef} />
       <div className="chat-composer-actions">
-        <button aria-label={isSending ? 'Sending message' : 'Send message'} className="chat-composer-send" disabled={!canSend} title={isSending ? 'Sending message' : 'Send message'} type="submit">
-          {isSending ? <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /> : <ArrowUp aria-hidden="true" size={16} />}
+        <button
+          aria-label={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
+          className="chat-composer-send"
+          disabled={isRunning ? false : !canSend}
+          onClick={isRunning ? () => onStop() : undefined}
+          title={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
+          type={isRunning ? 'button' : 'submit'}
+        >
+          {isRunning ? <Square aria-hidden="true" fill="currentColor" size={12} /> : isSending ? <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /> : <ArrowUp aria-hidden="true" size={16} />}
         </button>
       </div>
       {error && <p aria-live="polite" className="chat-composer-error" role="status">{error}</p>}

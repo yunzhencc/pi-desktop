@@ -27,6 +27,7 @@ const api = {
     addPastedImage: (name: string, data: string): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipcRenderer.invoke('composer:add-pasted-image', name, data),
     removeAttachment: (id: string): Promise<void> => ipcRenderer.invoke('composer:remove-attachment', id),
     send: (prompt: string, attachmentIds: string[]): Promise<void> => ipcRenderer.invoke('composer:send', prompt, attachmentIds),
+    stop: (): Promise<void> => ipcRenderer.invoke('composer:stop'),
     onUpdate: (callback: (update: TranscriptUpdate) => void) => {
       const listener = (_: Electron.IpcRendererEvent, update: TranscriptUpdate) => callback(update);
       ipcRenderer.on('composer:update', listener);

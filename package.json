@@ -35,9 +35,11 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
+    "@earendil-works/pi-agent-core": "catalog:core",
     "@earendil-works/pi-ai": "catalog:core",
     "@earendil-works/pi-coding-agent": "catalog:core",
     "@earendil-works/pi-telemetry": "catalog:core",
+    "@earendil-works/pi-tui": "catalog:core",
     "@electron-toolkit/preload": "catalog:core",
     "@electron-toolkit/utils": "catalog:core",
     "@pi-desktop/shadcn-ui": "workspace:*",

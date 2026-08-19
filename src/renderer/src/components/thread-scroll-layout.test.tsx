@@ -44,6 +44,18 @@ describe('thread scroll layout', () => {
     expect(transcript.scrollTop).toBe(232);
   });
 
+  it('lets the reader jump back to the latest turn after scrolling away', () => {
+    render(<Transcript turns={[{ key: 'first' }, { key: 'second' }]} />);
+    const transcript = screen.getByRole('log');
+    setScrollMetrics(transcript, 260);
+    transcript.scrollTop = 20;
+    fireEvent.scroll(transcript);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to latest' }));
+
+    expect(transcript.scrollTop).toBe(160);
+  });
+
   it('renders the turns reached after scrolling away from the bottom', () => {
     const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
     const originalScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');

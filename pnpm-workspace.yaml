@@ -24,9 +24,11 @@ allowBuilds:
 catalogs:
   core:
     '@base-ui/react': 1.7.0
+    '@earendil-works/pi-agent-core': 0.84.2
     '@earendil-works/pi-ai': 0.84.2
     '@earendil-works/pi-coding-agent': 0.84.2
     '@earendil-works/pi-telemetry': 0.84.2
+    '@earendil-works/pi-tui': 0.84.2
     '@electron-toolkit/preload': 3.0.2
     '@electron-toolkit/utils': 4.0.0
     '@tanstack/react-hotkeys': ^0.10.0

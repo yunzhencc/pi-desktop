@@ -4,11 +4,23 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HomePage } from './home';
 
+let animationFrames: FrameRequestCallback[];
+
 vi.mock('../components/chat-composer', () => ({
-  ChatComposer: ({ onSubmitted }: { onSubmitted: (text: string) => void }) => <button onClick={() => onSubmitted('Build this')}>Fake composer</button>,
+  ChatComposer: ({ isRunning, onStop, onSubmitted }: { isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) => (
+    <button aria-label={isRunning ? 'Stop generating' : 'Fake composer'} onClick={() => isRunning ? onStop() : onSubmitted('Build this')}>
+      {isRunning ? 'Stop' : 'Fake composer'}
+    </button>
+  ),
 }));
 
 beforeEach(() => {
+  animationFrames = [];
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    animationFrames.push(callback);
+    return animationFrames.length;
+  });
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
   vi.stubGlobal('api', { composer: { onUpdate: vi.fn(() => () => {}) } });
 });
 
@@ -38,7 +50,16 @@ describe('home page', () => {
     expect(screen.getByRole('log').textContent).toContain('Build this');
 
     act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Working', type: 'assistant' }));
+    act(() => animationFrames.at(-1)?.(0));
     expect(screen.getByRole('log').textContent).toContain('Working');
+  });
+
+  it('keeps the composer inside the transcript scroll container', () => {
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+
+    expect(screen.getByRole('log').contains(screen.getByRole('button', { name: 'Fake composer' }))).toBe(true);
   });
 
   it('shows the completed assistant work duration', () => {
@@ -61,7 +82,37 @@ describe('home page', () => {
     const { container } = render(<HomePage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Use **bold** text.', type: 'assistant' }));
+    act(() => animationFrames.at(-1)?.(0));
 
     expect(container.querySelector('.chat-message-assistant strong')?.textContent).toBe('bold');
+  });
+
+  it('renders only the latest streamed snapshot in an animation frame', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('api', { composer: { onUpdate } });
+    render(<HomePage />);
+
+    act(() => {
+      onUpdate.mock.calls[0]![0]({ done: false, text: 'First', type: 'assistant' });
+      onUpdate.mock.calls[0]![0]({ done: false, text: 'Second', type: 'assistant' });
+    });
+
+    expect(screen.queryByRole('log')).toBeNull();
+    act(() => animationFrames.at(-1)?.(0));
+    expect(screen.getByRole('log').textContent).toContain('Second');
+  });
+
+  it('keeps the composer active until the agent settles and can stop it', () => {
+    const onUpdate = vi.fn(() => () => {});
+    const stop = vi.fn();
+    vi.stubGlobal('api', { composer: { onUpdate, stop } });
+    render(<HomePage />);
+
+    act(() => onUpdate.mock.calls[0]![0]({ status: 'running', type: 'status' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stop generating' }));
+    expect(stop).toHaveBeenCalledOnce();
+
+    act(() => onUpdate.mock.calls[0]![0]({ status: 'settled', type: 'status' }));
+    expect(screen.getByRole('button', { name: 'Fake composer' })).not.toBeNull();
   });
 });

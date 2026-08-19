@@ -9,6 +9,9 @@ catalogs:
     '@base-ui/react':
       specifier: 1.7.0
       version: 1.7.0
+    '@earendil-works/pi-agent-core':
+      specifier: 0.84.2
+      version: 0.84.2
     '@earendil-works/pi-ai':
       specifier: 0.84.2
       version: 0.84.2
@@ -16,6 +19,9 @@ catalogs:
       specifier: 0.84.2
       version: 0.84.2
     '@earendil-works/pi-telemetry':
+      specifier: 0.84.2
+      version: 0.84.2
+    '@earendil-works/pi-tui':
       specifier: 0.84.2
       version: 0.84.2
     '@electron-toolkit/preload':
@@ -221,6 +227,9 @@ importers:
 
   .:
     dependencies:
+      '@earendil-works/pi-agent-core':
+        specifier: catalog:core
+        version: 0.84.2(@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.4.3))(supports-color@7.2.0)(ws@8.21.3)(zod@4.4.3)
       '@earendil-works/pi-ai':
         specifier: catalog:core
         version: 0.84.2(@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.4.3))(supports-color@7.2.0)(ws@8.21.3)(zod@4.4.3)
@@ -228,6 +237,9 @@ importers:
         specifier: catalog:core
         version: 0.84.2(@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.4.3))(supports-color@7.2.0)(ws@8.21.3)(zod@4.4.3)
       '@earendil-works/pi-telemetry':
+        specifier: catalog:core
+        version: 0.84.2
+      '@earendil-works/pi-tui':
         specifier: catalog:core
         version: 0.84.2
       '@electron-toolkit/preload':

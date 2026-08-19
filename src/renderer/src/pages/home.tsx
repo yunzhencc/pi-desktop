@@ -15,7 +15,10 @@ interface Message {
 
 export function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
   const composerFooterRef = useRef<HTMLDivElement>(null);
+  const pendingAssistantRef = useRef<{ done: boolean; text: string } | null>(null);
+  const streamingFrameRef = useRef<number | null>(null);
   const [composerFooterHeightPx, setComposerFooterHeightPx] = useState(0);
 
   useLayoutEffect(() => {
@@ -34,22 +37,68 @@ export function HomePage() {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
+  }, [messages.length]);
+
+  useEffect(() => {
+    const appendAssistant = (text: string, done: boolean) => {
+      setMessages((current) => {
+        const last = current.at(-1);
+        const now = Date.now();
+        const startedAtMs = last?.role === 'assistant'
+          ? last.startedAtMs
+          : current.findLast(message => message.role === 'user')?.startedAtMs ?? now;
+        const message = { completedAtMs: done ? now : undefined, done, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, startedAtMs, text };
+        return last?.role === 'assistant' && !last.done ? [...current.slice(0, -1), message] : [...current, message];
+      });
+    };
+    const flushAssistant = () => {
+      streamingFrameRef.current = null;
+      const pending = pendingAssistantRef.current;
+      pendingAssistantRef.current = null;
+      if (pending != null)
+        appendAssistant(pending.text, pending.done);
+    };
+    const discardPendingAssistant = () => {
+      if (streamingFrameRef.current != null)
+        cancelAnimationFrame(streamingFrameRef.current);
+      streamingFrameRef.current = null;
+      pendingAssistantRef.current = null;
+    };
+    const unsubscribe = window.api.composer.onUpdate((update) => {
+      if (update.type === 'status') {
+        setIsRunning(update.status === 'running');
+        return;
+      }
+      if (update.type === 'error') {
+        flushAssistant();
+        setMessages(current => [...current, { id: Date.now(), role: 'error', text: update.text }]);
+        return;
+      }
+      if (update.done) {
+        discardPendingAssistant();
+        appendAssistant(update.text, true);
+        return;
+      }
+
+      pendingAssistantRef.current = { done: false, text: update.text };
+      streamingFrameRef.current ??= requestAnimationFrame(flushAssistant);
+    });
+    return () => {
+      discardPendingAssistant();
+      unsubscribe();
+    };
   }, []);
 
-  useEffect(() => window.api.composer.onUpdate((update) => {
-    setMessages((current) => {
-      if (update.type === 'error')
-        return [...current, { id: Date.now(), role: 'error', text: update.text }];
-
-      const last = current.at(-1);
-      const now = Date.now();
-      const startedAtMs = last?.role === 'assistant'
-        ? last.startedAtMs
-        : current.findLast(message => message.role === 'user')?.startedAtMs ?? now;
-      const message = { completedAtMs: update.done ? now : undefined, done: update.done, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, startedAtMs, text: update.text };
-      return last?.role === 'assistant' && !last.done ? [...current.slice(0, -1), message] : [...current, message];
-    });
-  }), []);
+  const composer = (
+    <ChatComposer
+      isRunning={isRunning}
+      onStop={() => void window.api.composer.stop()}
+      onSubmitted={(text) => {
+        const startedAtMs = Date.now();
+        setMessages(current => [...current, { id: startedAtMs, role: 'user', startedAtMs, text }]);
+      }}
+    />
+  );
 
   return (
     <section className="chat-page" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
@@ -61,7 +110,10 @@ export function HomePage() {
             </div>
           )
         : (
-            <ThreadScrollLayout turns={messages.map(message => ({ key: String(message.id), message }))}>
+            <ThreadScrollLayout
+              footer={<div className="chat-composer-wrap" ref={composerFooterRef}>{composer}</div>}
+              turns={messages.map(message => ({ key: String(message.id), message }))}
+            >
               {({ message }) => (
                 <article className={`chat-message chat-message-${message.role}`}>
                   {message.role === 'assistant'
@@ -76,15 +128,11 @@ export function HomePage() {
               )}
             </ThreadScrollLayout>
           )}
-      <div className="chat-composer-footer" ref={composerFooterRef}>
-        <div className="chat-composer-wrap">
-          <ChatComposer onSubmitted={(text) => {
-            const startedAtMs = Date.now();
-            setMessages(current => [...current, { id: startedAtMs, role: 'user', startedAtMs, text }]);
-          }}
-          />
+      {messages.length === 0 && (
+        <div className="chat-composer-footer" ref={composerFooterRef}>
+          <div className="chat-composer-wrap">{composer}</div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

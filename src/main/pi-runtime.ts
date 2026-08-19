@@ -2,13 +2,13 @@ import type { AttachmentStore } from './attachments';
 import type { DeepSeekConfiguration } from './deepseek-settings';
 import process from 'node:process';
 
-export interface TranscriptUpdate {
-  type: 'assistant' | 'error';
-  text: string;
-  done?: boolean;
-}
+export type TranscriptUpdate
+  = | { done?: boolean; text: string; type: 'assistant' }
+    | { text: string; type: 'error' }
+    | { status: 'running' | 'settled'; type: 'status' };
 
 interface PiSession {
+  abort?: () => Promise<void>;
   isStreaming?: boolean;
   prompt: (text: string, options?: { images?: Array<{ type: 'image'; data: string; mimeType: string }>; streamingBehavior?: 'steer' }) => Promise<void>;
   subscribe: (listener: (event: unknown) => void) => () => void;
@@ -68,9 +68,12 @@ export class PiRuntime {
         ...(this.#promptActive || session.isStreaming ? { streamingBehavior: 'steer' as const } : {}),
       };
       this.#promptActive = true;
+      this.#emit({ status: 'running', type: 'status' });
       void Promise.resolve(session.prompt(`${prompt}${attachments.text ? `\n${attachments.text}` : ''}`, Object.keys(options).length ? options : undefined)).catch((error) => {
-        if (!session.isStreaming)
+        if (!session.isStreaming) {
           this.#promptActive = false;
+          this.#emit({ status: 'settled', type: 'status' });
+        }
         this.#emitError(error);
       });
     }
@@ -89,6 +92,28 @@ export class PiRuntime {
     this.#promptActive = false;
   }
 
+  async abort(): Promise<void> {
+    const session = this.#session;
+    if (session == null || (!this.#promptActive && !session.isStreaming))
+      return;
+
+    if (session.abort == null) {
+      this.#promptActive = false;
+      this.#emit({ status: 'settled', type: 'status' });
+      return;
+    }
+
+    try {
+      await session.abort();
+    }
+    catch (error) {
+      this.#promptActive = false;
+      this.#emit({ status: 'settled', type: 'status' });
+      this.#emitError(error);
+      throw error;
+    }
+  }
+
   async #getSession(): Promise<PiSession> {
     if (this.#session)
       return this.#session;
@@ -104,6 +129,7 @@ export class PiRuntime {
   #handleEvent(event: unknown): void {
     if (isAgentSettledEvent(event)) {
       this.#promptActive = false;
+      this.#emit({ status: 'settled', type: 'status' });
       return;
     }
     if (isAssistantMessageStartEvent(event)) {
@@ -155,6 +181,7 @@ async function createDefaultSession(configuration: DeepSeekConfiguration, agentD
     throw new Error('无法找到所选的 DeepSeek 模型');
   const { session } = await createAgentSession({ agentDir, cwd: process.cwd(), model, modelRuntime });
   return {
+    abort: () => session.abort(),
     dispose: () => session.dispose(),
     get isStreaming() {
       return session.isStreaming;

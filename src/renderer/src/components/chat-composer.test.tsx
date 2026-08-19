@@ -73,6 +73,20 @@ describe('chat composer', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Send message' }).querySelector('.lucide-arrow-up')).not.toBeNull());
   });
 
+  it('uses the send control to stop an active Pi turn', async () => {
+    const user = userEvent.setup();
+    const onStop = vi.fn();
+    render(
+      <I18nProvider>
+        <ChatComposer isRunning onStop={onStop} onSubmitted={vi.fn()} />
+      </I18nProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Stop generating' }));
+
+    expect(onStop).toHaveBeenCalledOnce();
+  });
+
   it('records the user message before the send request settles', async () => {
     composer.send.mockImplementation(() => new Promise<void>(() => {}));
     const user = userEvent.setup();
