@@ -21,6 +21,11 @@ export function ThemeProvider(props: ThemeProviderProps) {
   );
 }
 
+export function useOverlayScrollbarsTheme() {
+  const { resolvedTheme } = useTheme();
+  return resolvedTheme === 'dark' ? 'os-theme-dark' : 'os-theme-light';
+}
+
 function NativeThemeSourceSync() {
   const { theme } = useTheme();
 

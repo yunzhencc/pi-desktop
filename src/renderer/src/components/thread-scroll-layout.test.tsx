@@ -15,12 +15,25 @@ function setScrollMetrics(element: HTMLElement, scrollHeight: number) {
   });
 }
 
+function transcriptViewport() {
+  const viewport = screen.getByRole('log').querySelector<HTMLElement>('[data-overlayscrollbars-viewport]');
+  if (viewport == null)
+    throw new Error('Transcript viewport is not initialized');
+  return viewport;
+}
+
 afterEach(cleanup);
 
 describe('thread scroll layout', () => {
+  it('uses an overlay scrollbar viewport for the transcript', () => {
+    render(<Transcript turns={[{ key: 'first' }]} />);
+
+    expect(screen.getByRole('log').querySelector('[data-overlayscrollbars-viewport]')).not.toBeNull();
+  });
+
   it('does not force the reader back to bottom after they scroll away', () => {
     const { rerender } = render(<Transcript turns={[{ key: 'first' }, { key: 'second' }]} />);
-    const transcript = screen.getByRole('log');
+    const transcript = transcriptViewport();
     setScrollMetrics(transcript, 260);
     transcript.scrollTop = 20;
     fireEvent.scroll(transcript);
@@ -33,7 +46,7 @@ describe('thread scroll layout', () => {
 
   it('pins new content to the bottom while the reader is at the bottom', () => {
     const { rerender } = render(<Transcript turns={[{ key: 'first' }, { key: 'second' }]} />);
-    const transcript = screen.getByRole('log');
+    const transcript = transcriptViewport();
     setScrollMetrics(transcript, 260);
     transcript.scrollTop = 160;
     fireEvent.scroll(transcript);
@@ -46,7 +59,7 @@ describe('thread scroll layout', () => {
 
   it('lets the reader jump back to the latest turn after scrolling away', () => {
     render(<Transcript turns={[{ key: 'first' }, { key: 'second' }]} />);
-    const transcript = screen.getByRole('log');
+    const transcript = transcriptViewport();
     setScrollMetrics(transcript, 260);
     transcript.scrollTop = 20;
     fireEvent.scroll(transcript);
@@ -58,7 +71,7 @@ describe('thread scroll layout', () => {
 
   it('anchors the jump button above the composer footer', () => {
     const { container } = render(<Transcript footer={<div>Composer</div>} turns={[{ key: 'first' }, { key: 'second' }]} />);
-    const transcript = screen.getByRole('log');
+    const transcript = transcriptViewport();
     setScrollMetrics(transcript, 260);
     transcript.scrollTop = 20;
     fireEvent.scroll(transcript);
@@ -83,7 +96,7 @@ describe('thread scroll layout', () => {
 
     try {
       render(<Transcript turns={Array.from({ length: 10 }, (_, index) => ({ key: `turn-${index}` }))} />);
-      const transcript = screen.getByRole('log');
+      const transcript = transcriptViewport();
       transcript.scrollTop = 0;
       fireEvent.scroll(transcript);
 

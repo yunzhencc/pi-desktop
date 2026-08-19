@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import type { ThreadLayout, ThreadTurn } from './thread-virtualizer';
 import { ArrowDown } from 'lucide-react';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useOverlayScrollbarsTheme } from '../providers/theme';
 import { buildThreadLayout, preserveAnchorDistance, visibleThreadRange } from './thread-virtualizer';
 
 const DEFAULT_TURN_HEIGHT = 72;
@@ -13,12 +15,14 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
   footer?: ReactNode;
   turns: T[];
 }) {
+  const overlayScrollbarsTheme = useOverlayScrollbarsTheme();
   const scrollRef = useRef<HTMLDivElement>(null);
   const previousLayoutRef = useRef<ThreadLayout | null>(null);
   const previousTurnKeysRef = useRef<string[]>([]);
   const anchorKeyRef = useRef<string | null>(null);
   const followsBottomRef = useRef(true);
   const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(() => new Map());
+  const [scrollbarInitialized, setScrollbarInitialized] = useState(false);
   const [scrollMetrics, setScrollMetrics] = useState({ distanceFromBottomPx: 0, viewportHeightPx: 0 });
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const layout = useMemo(() => buildThreadLayout(turns, measuredHeights, TURN_GAP, DEFAULT_TURN_HEIGHT), [measuredHeights, turns]);
@@ -57,7 +61,7 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
     setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
       ? current
       : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
-  }, [layout]);
+  }, [layout, scrollbarInitialized]);
 
   useLayoutEffect(() => {
     const element = scrollRef.current;
@@ -92,6 +96,18 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
     setShowJumpToBottom(false);
     setScrollMetrics({ distanceFromBottomPx: 0, viewportHeightPx: element.clientHeight });
   };
+  const handleScroll = (element: HTMLElement) => {
+    scrollRef.current = element;
+    const distance = distanceFromBottom(element);
+    const followsBottom = distance <= FOLLOW_THRESHOLD;
+    followsBottomRef.current = followsBottom;
+    setShowJumpToBottom(!followsBottom);
+    const nextRange = visibleThreadRange({ distanceFromBottomPx: distance, layout, overscanCount: 2, viewportHeightPx: element.clientHeight });
+    anchorKeyRef.current = layout.turnKeys[nextRange.startIndex] ?? null;
+    setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
+      ? current
+      : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
+  };
   const jumpToBottomButton = showJumpToBottom && (
     <button aria-label="Jump to latest" className="thread-scroll-to-bottom" onClick={scrollToBottom} title="Jump to latest" type="button">
       <ArrowDown aria-hidden="true" size={16} />
@@ -100,24 +116,17 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
 
   return (
     <>
-      <div
+      <OverlayScrollbarsComponent
         aria-live="polite"
         className="thread-scroll-layout"
-        onScroll={() => {
-          const element = scrollRef.current;
-          if (element == null)
-            return;
-          const distance = distanceFromBottom(element);
-          const followsBottom = distance <= FOLLOW_THRESHOLD;
-          followsBottomRef.current = followsBottom;
-          setShowJumpToBottom(!followsBottom);
-          const nextRange = visibleThreadRange({ distanceFromBottomPx: distance, layout, overscanCount: 2, viewportHeightPx: element.clientHeight });
-          anchorKeyRef.current = layout.turnKeys[nextRange.startIndex] ?? null;
-          setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
-            ? current
-            : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
+        events={{
+          initialized: (instance) => {
+            scrollRef.current = instance.elements().viewport;
+            setScrollbarInitialized(true);
+          },
+          scroll: instance => handleScroll(instance.elements().viewport),
         }}
-        ref={scrollRef}
+        options={{ scrollbars: { autoHide: 'leave', theme: overlayScrollbarsTheme } }}
         role="log"
       >
         <div className="thread-scroll-content">
@@ -135,7 +144,7 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
             {footer}
           </div>
         )}
-      </div>
+      </OverlayScrollbarsComponent>
       {!footer && jumpToBottomButton}
     </>
   );

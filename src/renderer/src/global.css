@@ -397,7 +397,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   inset: 46px 0 0;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
   scroll-padding-bottom: var(--thread-scroll-padding-bottom, 32px);
 }
 
