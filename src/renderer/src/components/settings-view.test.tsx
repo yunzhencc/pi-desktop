@@ -82,4 +82,64 @@ describe('settings view', () => {
     expect(container.querySelector('svg.lucide-sun')).not.toBeNull();
     expect(container.querySelector('svg.lucide-paintbrush')).toBeNull();
   });
+
+  it('searches setting content and navigates to the matched panel', () => {
+    const onNavigate = vi.fn();
+
+    render(
+      <IntlProvider locale="zh-CN" messages={messages['zh-CN']}>
+        <SettingsSidebar activePath="/settings/general" onClose={vi.fn()} onNavigate={onNavigate} />
+      </IntlProvider>,
+    );
+
+    fireEvent.change(screen.getByRole('searchbox', { name: '搜索设置' }), { target: { value: '主题' } });
+    fireEvent.click(screen.getByRole('button', { name: '主题，外观' }));
+
+    expect(onNavigate).toHaveBeenCalledWith('/settings/appearance');
+  });
+
+  it('clears settings search with Escape', () => {
+    render(
+      <IntlProvider locale="zh-CN" messages={messages['zh-CN']}>
+        <SettingsSidebar activePath="/settings/general" onClose={vi.fn()} onNavigate={vi.fn()} />
+      </IntlProvider>,
+    );
+
+    const search = screen.getByRole('searchbox', { name: '搜索设置' }) as HTMLInputElement;
+    fireEvent.change(search, { target: { value: '主题' } });
+    fireEvent.keyDown(search, { key: 'Escape' });
+
+    expect(search.value).toBe('');
+    expect(screen.getByRole('button', { name: '外观' })).not.toBeNull();
+  });
+
+  it('focuses settings search with the find shortcut', () => {
+    render(
+      <IntlProvider locale="zh-CN" messages={messages['zh-CN']}>
+        <SettingsSidebar activePath="/settings/general" onClose={vi.fn()} onNavigate={vi.fn()} />
+      </IntlProvider>,
+    );
+
+    const search = screen.getByRole('searchbox', { name: '搜索设置' });
+    fireEvent.keyDown(window, { key: 'f', metaKey: true });
+
+    expect(document.activeElement).toBe(search);
+  });
+
+  it('opens the highlighted search result with Enter', () => {
+    const onNavigate = vi.fn();
+
+    render(
+      <IntlProvider locale="zh-CN" messages={messages['zh-CN']}>
+        <SettingsSidebar activePath="/settings/general" onClose={vi.fn()} onNavigate={onNavigate} />
+      </IntlProvider>,
+    );
+
+    const search = screen.getByRole('searchbox', { name: '搜索设置' });
+    fireEvent.change(search, { target: { value: '主题' } });
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 'Enter' });
+
+    expect(onNavigate).toHaveBeenCalledWith('/settings/appearance');
+  });
 });
