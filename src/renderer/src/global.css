@@ -435,7 +435,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .chat-composer-wrap {
   width: min(100% - 32px, 720px);
   margin: 0 auto;
-  padding: 0 0 22px;
+  padding: 0 0 16px;
 }
 
 .chat-composer {
