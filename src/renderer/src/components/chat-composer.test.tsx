@@ -238,6 +238,8 @@ describe('chat composer', () => {
     const onClearProject = vi.fn();
     renderNewConversationToolbar({ onClearProject });
 
+    expect(screen.getByRole('button', { name: '清理项目' }).querySelector('svg')?.getAttribute('width')).toBe('16');
+
     await user.click(screen.getByRole('button', { name: '清理项目' }));
 
     expect(onClearProject).toHaveBeenCalledOnce();

@@ -998,7 +998,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   position: absolute;
   z-index: 1;
   inset-block: 0;
-  inset-inline-start: 0;
+  inset-inline-start: 6px;
   display: flex;
   aspect-ratio: 1;
   align-items: center;

@@ -89,6 +89,12 @@ describe('app shell surfaces', () => {
     expect(styles).toMatch(/\.new-conversation-toolbar-item:hover\s*\{\s*background: color-mix\(in srgb, var\(--foreground\) 5%, transparent\);/);
   });
 
+  it('keeps the project clear icon centered over the default project icon', () => {
+    const clearRule = styles.match(/\.project-picker-clear\s*\{([\s\S]*?)\}/)?.[1];
+
+    expect(clearRule).toContain('inset-inline-start: 6px;');
+  });
+
   it('reveals user message metadata only on hover or keyboard focus', () => {
     const footerRule = styles.match(/\.chat-message-user-footer\s*\{([\s\S]*?)\}/)?.[1];
 

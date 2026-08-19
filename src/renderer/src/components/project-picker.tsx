@@ -70,7 +70,7 @@ export function ProjectPicker({ children, className, onClearProject, onCreatePro
           }}
           type="button"
         >
-          <X aria-hidden="true" size={14} />
+          <X aria-hidden="true" size={16} />
         </button>
       )}
       <button aria-expanded={open} aria-haspopup="dialog" className={triggerClassName} onClick={toggle} ref={triggerRef} type="button">
