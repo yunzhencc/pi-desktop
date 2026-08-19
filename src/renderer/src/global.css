@@ -172,6 +172,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 
 .app-shell-right-panel {
   background: var(--surface);
+  border-inline-end: 1px solid var(--border-subtle);
   border-inline-start: 1px solid var(--border-subtle);
   overflow: hidden;
   box-shadow: -8px 0 16px -8px rgb(0 0 0 / 18%);
@@ -179,6 +180,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 }
 
 .app-shell-right-panel[data-open='false'] {
+  border-inline-end-color: transparent;
   border-inline-start-color: transparent;
   box-shadow: none;
 }

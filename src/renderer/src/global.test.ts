@@ -23,6 +23,12 @@ describe('app shell surfaces', () => {
     expect(lightOpaqueSidebarRule).toContain('background: #fafafa;');
   });
 
+  it('keeps the light right panel bounded at the window edge', () => {
+    const rightPanelRule = styles.match(/\.app-shell-right-panel\s*\{([\s\S]*?)\}/)?.[1];
+
+    expect(rightPanelRule).toContain('border-inline-end: 1px solid var(--border-subtle);');
+  });
+
   it('highlights only the active settings navigation item', () => {
     const navigationRule = styles.match(/\.settings-back-button,\s*\.settings-navigation-item\s*\{([\s\S]*?)\}/)?.[1];
     const activeNavigationRule = styles.match(/\.settings-navigation-item\[aria-current='page'\]\s*\{([\s\S]*?)\}/)?.[1];
