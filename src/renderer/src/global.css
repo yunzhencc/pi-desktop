@@ -500,24 +500,31 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 }
 
 .chat-composer-editor {
-  min-height: 76px;
-  padding: 12px 14px 4px;
+  min-height: 0;
+  margin-bottom: 4px;
+  padding: 0 12px;
 }
 
 .chat-composer-editor .ProseMirror {
-  min-height: 60px;
+  box-sizing: border-box;
+  min-height: 2.75rem;
+  max-height: 25dvh;
+  overflow-y: auto;
   outline: none;
+  padding-top: 12px;
   color: var(--foreground);
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 20px;
   white-space: pre-wrap;
 }
 
-.chat-composer-editor .ProseMirror[data-empty='true']::before {
-  position: absolute;
+.chat-composer-editor .ProseMirror[data-empty='true'] p::before {
   color: var(--text-tertiary);
   content: var(--chat-composer-placeholder);
+  opacity: 0.5;
   pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
 }
 
 .chat-composer-editor .ProseMirror p {
@@ -528,7 +535,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 0;
   padding: 0 8px 8px;
 }
 
