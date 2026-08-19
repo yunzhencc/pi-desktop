@@ -532,6 +532,24 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   flex: 0 0 auto;
 }
 
+.workspace-sidebar-project-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.workspace-sidebar-project-name svg {
+  flex: 0 0 auto;
+}
+
+.workspace-sidebar-project > button {
+  padding-left: 28px;
+}
+
 .workspace-sidebar-list button:hover,
 .workspace-sidebar-list button[aria-current='page'] {
   background: color-mix(in srgb, var(--foreground) 6%, transparent);
@@ -901,40 +919,26 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   background: color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
-.new-conversation-toolbar-trigger,
-.new-conversation-project-menu [data-slot='dropdown-menu-item'] {
+.new-conversation-toolbar-project {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
-  border-radius: 7px;
   color: var(--text-secondary);
   font-size: 14px;
 }
 
-.new-conversation-toolbar-trigger {
-  gap: 8px;
+.new-conversation-toolbar-project {
   max-width: 100%;
-  margin: 0 -6px;
-  padding: 5px 6px;
 }
 
-.new-conversation-toolbar-trigger:hover,
-.new-conversation-toolbar-trigger:focus-visible,
-.new-conversation-project-menu [data-slot='dropdown-menu-item']:focus,
-.new-conversation-project-menu [data-slot='dropdown-menu-item'][aria-current='true'] {
-  background: color-mix(in srgb, var(--foreground) 7%, transparent);
-  color: var(--foreground);
-}
-
-.new-conversation-toolbar-trigger span,
-.new-conversation-project-menu span {
+.new-conversation-toolbar-project span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.new-conversation-toolbar-trigger svg {
+.new-conversation-toolbar-project svg {
   flex: 0 0 auto;
 }
 
@@ -944,19 +948,6 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   gap: 8px;
   color: var(--text-secondary);
   font-size: 14px;
-}
-
-.new-conversation-project-menu {
-  min-width: 180px;
-  max-width: min(300px, calc(100vw - 32px));
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-elevated);
-}
-
-.new-conversation-project-menu [data-slot='dropdown-menu-item'] {
-  width: 100%;
-  padding: 7px 8px;
-  text-align: left;
 }
 
 .chat-composer-attachments {

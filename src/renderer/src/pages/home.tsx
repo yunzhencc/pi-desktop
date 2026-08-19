@@ -14,6 +14,7 @@ interface Message {
 }
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
+type PiSessionSnapshot = Awaited<ReturnType<Window['api']['sessions']['open']>>['session'];
 
 export function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -57,8 +58,21 @@ export function HomePage() {
       setMessages([]);
       void window.api.composer.newConversation();
     };
+    const openSession = (event: Event) => {
+      if (streamingFrameRef.current != null)
+        cancelAnimationFrame(streamingFrameRef.current);
+      streamingFrameRef.current = null;
+      pendingAssistantRef.current = null;
+      setIsRunning(false);
+      const session = (event as CustomEvent<PiSessionSnapshot>).detail;
+      setMessages(session.messages.map((message, index) => ({ done: true, id: index, role: message.role, text: message.text })));
+    };
     window.addEventListener('new-conversation', startNewConversation);
-    return () => window.removeEventListener('new-conversation', startNewConversation);
+    window.addEventListener('session-changed', openSession);
+    return () => {
+      window.removeEventListener('new-conversation', startNewConversation);
+      window.removeEventListener('session-changed', openSession);
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -132,6 +146,7 @@ export function HomePage() {
   const composer = (
     <ChatComposer
       isRunning={isRunning}
+      onSent={() => window.dispatchEvent(new Event('sessions-changed'))}
       onStop={() => void window.api.composer.stop()}
       onSubmitted={(text) => {
         const startedAtMs = Date.now();
@@ -143,12 +158,6 @@ export function HomePage() {
 
   const newConversationToolbar = (
     <NewConversationToolbar
-      onWorkspaceChange={(next) => {
-        if (next.selectedWorkspacePath !== workspaceRef.current?.selectedWorkspacePath)
-          setMessages([]);
-        workspaceRef.current = next;
-        setWorkspace(next);
-      }}
       workspace={workspace}
     />
   );

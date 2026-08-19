@@ -28,7 +28,7 @@ describe('app window surface', () => {
   beforeEach(() => {
     hotkeys.clear();
     hotkeyOptions.length = 0;
-    navigate.mockClear();
+    navigate.mockReset();
     opaqueSurfaceListener = undefined;
     document.documentElement.classList.remove('electron-opaque');
     Object.defineProperty(window, 'api', {
@@ -100,8 +100,27 @@ describe('app window surface', () => {
       </IntlProvider>,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'weather' })).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('weather')).toBeTruthy());
     expect(screen.getByRole('button', { name: 'Add project' })).toBeTruthy();
+  });
+
+  it('starts a new conversation after navigation reaches the home page', async () => {
+    const onNewConversation = vi.fn();
+    window.addEventListener('new-conversation', onNewConversation);
+    navigate.mockImplementation(() => {
+      expect(onNewConversation).not.toHaveBeenCalled();
+      return Promise.resolve();
+    });
+
+    render(
+      <IntlProvider locale="en" messages={messages.en}>
+        <App />
+      </IntlProvider>,
+    );
+    screen.getByRole('button', { name: 'New chat' }).click();
+
+    await waitFor(() => expect(onNewConversation).toHaveBeenCalledOnce());
+    window.removeEventListener('new-conversation', onNewConversation);
   });
 
   it('opens settings with Codex’s shortcut', () => {

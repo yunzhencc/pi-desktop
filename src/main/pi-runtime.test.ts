@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -36,7 +36,53 @@ describe('pi runtime', () => {
 
     await runtime.send('Hello', []);
 
-    expect(createSession).toHaveBeenCalledWith({ apiKey: 'sk-test', model: 'deepseek-v4-flash' }, '/tmp/pi-desktop-agent', '/tmp/project');
+    expect(createSession).toHaveBeenCalledWith({ apiKey: 'sk-test', model: 'deepseek-v4-flash' }, '/tmp/pi-desktop-agent', '/tmp/project', undefined);
+  });
+
+  it('lists persisted sessions for a workspace', async () => {
+    const listSessions = vi.fn(async () => [{ firstMessage: 'Hello', id: 'session-1', modifiedAt: '2026-08-19T00:00:00.000Z', path: '/sessions/session-1.jsonl' }]);
+    const runtime = new PiRuntime(new AttachmentStore(), { agentDir: '/tmp/pi-desktop-agent', listSessions });
+
+    await expect(runtime.listWorkspaceSessions('/tmp/project')).resolves.toEqual([{ firstMessage: 'Hello', id: 'session-1', modifiedAt: '2026-08-19T00:00:00.000Z', path: '/sessions/session-1.jsonl' }]);
+    expect(listSessions).toHaveBeenCalledWith('/tmp/project', '/tmp/pi-desktop-agent');
+  });
+
+  it('lists sessions persisted in the app agent directory', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-desktop-sessions-'));
+    directories.push(root);
+    const workspace = join(root, 'workspace');
+    const agentDir = join(root, 'agent');
+    await mkdir(workspace);
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const sessionDir = join(agentDir, 'sessions', `--${workspace.slice(1).replace(/[/:]/g, '-')}--`);
+    const session = SessionManager.create(workspace, sessionDir);
+    await writeFile(session.getSessionFile()!, `${JSON.stringify(session.getHeader())}\n${JSON.stringify({ id: 'message-1', message: { content: 'Hello', role: 'user', timestamp: Date.now() }, parentId: null, timestamp: new Date().toISOString(), type: 'message' })}\n`);
+    const runtime = new PiRuntime(new AttachmentStore(), { agentDir, createSession: async () => ({ prompt: vi.fn(), subscribe: () => () => {} }) });
+
+    await expect(runtime.listWorkspaceSessions(workspace)).resolves.toEqual([
+      expect.objectContaining({ id: session.getSessionId(), path: session.getSessionFile() }),
+    ]);
+  });
+
+  it('loads persisted user and assistant messages when opening a session', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-desktop-session-history-'));
+    directories.push(root);
+    const workspace = join(root, 'workspace');
+    const agentDir = join(root, 'agent');
+    await mkdir(workspace);
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const sessionDir = join(agentDir, 'sessions', `--${workspace.slice(1).replace(/[/:]/g, '-')}--`);
+    const session = SessionManager.create(workspace, sessionDir);
+    await writeFile(session.getSessionFile()!, `${JSON.stringify(session.getHeader())}\n${JSON.stringify({ id: 'message-1', message: { content: 'Earlier request', role: 'user', timestamp: 1000 }, parentId: null, timestamp: new Date().toISOString(), type: 'message' })}\n${JSON.stringify({ id: 'message-2', message: { content: [{ text: 'Earlier reply', type: 'text' }], role: 'assistant', timestamp: 2000 }, parentId: 'message-1', timestamp: new Date().toISOString(), type: 'message' })}\n`);
+    const runtime = new PiRuntime(new AttachmentStore(), { agentDir });
+
+    await expect(runtime.openSession(session.getSessionFile()!)).resolves.toEqual({
+      messages: [
+        { role: 'user', text: 'Earlier request', timestamp: 1000 },
+        { role: 'assistant', text: 'Earlier reply', timestamp: 2000 },
+      ],
+      path: session.getSessionFile(),
+    });
   });
 
   it('disposes the active Pi context before a new conversation', async () => {

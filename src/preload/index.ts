@@ -1,6 +1,6 @@
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
 import type { DeepSeekModel, DeepSeekSettingsSnapshot } from '../main/deepseek-settings';
-import type { TranscriptUpdate } from '../main/pi-runtime';
+import type { PiSessionSnapshot, PiSessionSummary, TranscriptUpdate } from '../main/pi-runtime';
 import type { WorkspaceSnapshot } from '../main/workspaces';
 import process from 'node:process';
 import { electronAPI } from '@electron-toolkit/preload';
@@ -39,6 +39,10 @@ const api = {
   providers: {
     getDeepSeek: (): Promise<DeepSeekSettingsSnapshot> => ipcRenderer.invoke('providers:deepseek:get'),
     saveDeepSeek: (apiKey: string, model: DeepSeekModel): Promise<DeepSeekSettingsSnapshot> => ipcRenderer.invoke('providers:deepseek:save', apiKey, model),
+  },
+  sessions: {
+    list: (workspacePath: string): Promise<PiSessionSummary[]> => ipcRenderer.invoke('sessions:list', workspacePath),
+    open: (workspacePath: string, sessionPath: string): Promise<{ session: PiSessionSnapshot; workspace: WorkspaceSnapshot }> => ipcRenderer.invoke('sessions:open', workspacePath, sessionPath),
   },
   workspaces: {
     get: (): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:get'),

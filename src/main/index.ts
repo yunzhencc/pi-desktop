@@ -194,6 +194,20 @@ app.whenReady().then(async () => {
       throw new TypeError('无效的工作区路径');
     return getWorkspaceGitBranch(path);
   });
+  ipcMain.handle('sessions:list', (_event, workspacePath: unknown) => {
+    if (typeof workspacePath !== 'string' || !workspacePath.trim())
+      throw new TypeError('无效的工作区路径');
+    return piRuntime.listWorkspaceSessions(workspacePath);
+  });
+  ipcMain.handle('sessions:open', async (_event, workspacePath: unknown, sessionPath: unknown) => {
+    if (typeof workspacePath !== 'string' || !workspacePath.trim() || typeof sessionPath !== 'string' || !sessionPath.trim())
+      throw new TypeError('无效的会话');
+    const sessions = await piRuntime.listWorkspaceSessions(workspacePath);
+    if (!sessions.some(session => session.path === sessionPath))
+      throw new TypeError('会话不属于该工作区');
+    const snapshot = await selectWorkspace(workspacePath);
+    return { session: await piRuntime.openSession(sessionPath), workspace: snapshot };
+  });
   ipcMain.handle('workspaces:pick-directory', async (event) => {
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender) ?? undefined, {
       properties: ['openDirectory'],

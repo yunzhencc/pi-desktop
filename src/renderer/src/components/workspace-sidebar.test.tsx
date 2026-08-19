@@ -6,9 +6,14 @@ import { I18nProvider } from '../providers/i18n';
 import { WorkspaceSidebar } from './workspace-sidebar';
 
 const weather = { displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' };
+const session = { firstMessage: 'Summarize the forecast', id: 'session-1', modifiedAt: '2026-08-19T00:00:00.000Z', path: '/sessions/session-1.jsonl' };
 
 beforeEach(() => {
   vi.stubGlobal('api', {
+    sessions: {
+      list: vi.fn(() => Promise.resolve([])),
+      open: vi.fn(() => Promise.resolve({ session: { messages: [], path: session.path }, workspace: { selectedWorkspacePath: weather.path, workspaces: [weather] } })),
+    },
     workspaces: {
       get: vi.fn(() => Promise.resolve({ selectedWorkspacePath: weather.path, workspaces: [weather] })),
       pickDirectory: vi.fn(() => Promise.resolve('/projects/weather')),
@@ -31,7 +36,8 @@ describe('workspace sidebar', () => {
       </I18nProvider>,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'weather' })).not.toBeNull());
+    await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
+    expect(screen.queryByRole('button', { name: 'weather' })).toBeNull();
     expect(screen.getByRole('navigation', { name: '项目' })).not.toBeNull();
     expect(screen.getByRole('button', { name: '添加项目' })).not.toBeNull();
   });
@@ -43,29 +49,28 @@ describe('workspace sidebar', () => {
       </I18nProvider>,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'weather' })).not.toBeNull());
+    await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
     const toggle = screen.getByRole('button', { name: '项目' });
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
 
     fireEvent.click(toggle);
 
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('button', { name: 'weather' })).toBeNull();
+    expect(screen.queryByText('weather')).toBeNull();
   });
 
-  it('reflects a project selected from the new-conversation composer', async () => {
+  it('opens a session instead of selecting its project', async () => {
+    window.api.sessions.list.mockResolvedValue([session]);
     render(
       <I18nProvider>
         <WorkspaceSidebar />
       </I18nProvider>,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'weather' })).not.toBeNull());
-    window.dispatchEvent(new CustomEvent('workspace-changed', {
-      detail: { selectedWorkspacePath: '/projects/notes', workspaces: [{ ...weather, displayName: 'notes', path: '/projects/notes' }, weather] },
-    }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Summarize the forecast' })).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Summarize the forecast' }));
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'notes' }).getAttribute('aria-current')).toBe('page'));
+    await waitFor(() => expect(window.api.sessions.open).toHaveBeenCalledWith(weather.path, session.path));
   });
 
   it('opens the create-project step and persists only after confirmation', async () => {
@@ -75,8 +80,7 @@ describe('workspace sidebar', () => {
       </I18nProvider>,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'weather' })).not.toBeNull());
-    expect(screen.getByRole('button', { name: 'weather' }).getAttribute('aria-current')).toBe('page');
+    await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: '添加项目' }));
 
     expect(screen.getByRole('dialog', { name: '创建项目' })).not.toBeNull();

@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
+type PiSessionSummary = Awaited<ReturnType<Window['api']['sessions']['list']>>[number];
 
 export function WorkspaceSidebar() {
   const { formatMessage } = useIntl();
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
+  const [sessionsByWorkspace, setSessionsByWorkspace] = useState<Record<string, PiSessionSummary[]>>({});
+  const [selectedSessionPath, setSelectedSessionPath] = useState<string>();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -18,12 +21,39 @@ export function WorkspaceSidebar() {
     return () => window.removeEventListener('workspace-changed', onWorkspaceChanged);
   }, []);
 
+  useEffect(() => {
+    if (!workspace)
+      return;
+    let active = true;
+    const refresh = () => Promise.all(workspace.workspaces.map(async item => [item.path, await window.api.sessions.list(item.path)] as const)).then((entries) => {
+      if (active)
+        setSessionsByWorkspace(Object.fromEntries(entries));
+    }).catch(() => {
+      if (active)
+        setSessionsByWorkspace({});
+    });
+    const clearSelectedSession = () => setSelectedSessionPath(undefined);
+    void refresh();
+    window.addEventListener('sessions-changed', refresh);
+    window.addEventListener('new-conversation', clearSelectedSession);
+    return () => {
+      active = false;
+      window.removeEventListener('sessions-changed', refresh);
+      window.removeEventListener('new-conversation', clearSelectedSession);
+    };
+  }, [workspace]);
+
   const update = (next: WorkspaceSnapshot) => {
     setWorkspace(next);
     window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next }));
   };
 
-  const select = async (path: string) => update(await window.api.workspaces.select(path));
+  const openSession = async (workspacePath: string, sessionPath: string) => {
+    const { session, workspace } = await window.api.sessions.open(workspacePath, sessionPath);
+    update(workspace);
+    setSelectedSessionPath(sessionPath);
+    window.dispatchEvent(new CustomEvent('session-changed', { detail: session }));
+  };
 
   return (
     <nav aria-label={formatMessage({ id: 'projects.title' })} className="workspace-sidebar">
@@ -37,10 +67,17 @@ export function WorkspaceSidebar() {
       {!isCollapsed && (
         <div className="workspace-sidebar-list">
           {workspace?.workspaces.map(item => (
-            <button aria-current={item.path === workspace.selectedWorkspacePath ? 'page' : undefined} key={item.path} onClick={() => void select(item.path)} type="button">
-              <CodexFolder aria-hidden="true" />
-              <span>{item.displayName}</span>
-            </button>
+            <div className="workspace-sidebar-project" key={item.path}>
+              <div className="workspace-sidebar-project-name">
+                <CodexFolder aria-hidden="true" />
+                <span>{item.displayName}</span>
+              </div>
+              {sessionsByWorkspace[item.path]?.map(session => (
+                <button aria-current={session.path === selectedSessionPath ? 'page' : undefined} key={session.path} onClick={() => void openSession(item.path, session.path)} type="button">
+                  <span>{session.firstMessage || '新对话'}</span>
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}

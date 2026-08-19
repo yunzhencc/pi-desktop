@@ -1,13 +1,5 @@
 import type { CSSProperties } from 'react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@pi-desktop/shadcn-ui/components/dropdown-menu';
-import { ArrowUp, FileText, Folder, FolderPlus, GitBranch, Laptop, LoaderCircle, Square, X } from 'lucide-react';
+import { ArrowUp, FileText, Folder, GitBranch, Laptop, LoaderCircle, Square, X } from 'lucide-react';
 import { baseKeymap, splitBlock } from 'prosemirror-commands';
 import { history } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -16,16 +8,13 @@ import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { CreateProjectDialog } from './workspace-sidebar';
 
 type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>['attachments'][number];
 type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 
-export function NewConversationToolbar({ onWorkspaceChange, workspace }: { onWorkspaceChange: (workspace: WorkspaceSnapshot) => void; workspace?: WorkspaceSnapshot }) {
-  const { formatMessage } = useIntl();
+export function NewConversationToolbar({ workspace }: { workspace?: WorkspaceSnapshot }) {
   const [branchResult, setBranchResult] = useState<{ branch?: string; path: string }>();
-  const [isCreatingProject, setIsCreatingProject] = useState(false);
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
 
   useEffect(() => {
@@ -37,47 +26,12 @@ export function NewConversationToolbar({ onWorkspaceChange, workspace }: { onWor
 
   const branch = selectedWorkspace && selectedWorkspace.path === branchResult?.path ? branchResult?.branch : undefined;
 
-  const selectWorkspace = async (path: string) => {
-    const next = await window.api.workspaces.select(path);
-    onWorkspaceChange(next);
-    window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next }));
-  };
-
-  const createProject = (next: WorkspaceSnapshot) => {
-    onWorkspaceChange(next);
-    window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next }));
-    setIsCreatingProject(false);
-  };
-
   return (
     <div aria-label="新会话项目上下文" className="new-conversation-toolbar" data-has-project={Boolean(selectedWorkspace)} role="toolbar">
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={(
-            <button className="new-conversation-toolbar-trigger" type="button">
-              <Folder aria-hidden="true" size={18} />
-              <span>{selectedWorkspace?.displayName ?? '选择项目'}</span>
-            </button>
-          )}
-        />
-        <DropdownMenuContent aria-label={formatMessage({ id: 'projects.title' })} className="new-conversation-project-menu">
-          <DropdownMenuGroup>
-            {workspace?.workspaces.map(item => (
-              <DropdownMenuItem aria-current={item.path === selectedWorkspace?.path ? 'true' : undefined} key={item.path} onClick={() => void selectWorkspace(item.path)}>
-                <Folder aria-hidden="true" size={14} />
-                <span>{item.displayName}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => setIsCreatingProject(true)}>
-              <FolderPlus aria-hidden="true" size={14} />
-              <span>{formatMessage({ id: 'projects.new' })}</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <span className="new-conversation-toolbar-project">
+        <Folder aria-hidden="true" size={18} />
+        <span>{selectedWorkspace?.displayName ?? '选择项目'}</span>
+      </span>
       {selectedWorkspace && (
         <>
           <span className="new-conversation-toolbar-item">
@@ -92,13 +46,13 @@ export function NewConversationToolbar({ onWorkspaceChange, workspace }: { onWor
           )}
         </>
       )}
-      {isCreatingProject && <CreateProjectDialog onClose={() => setIsCreatingProject(false)} onCreated={createProject} />}
     </div>
   );
 }
 
-export function ChatComposer({ isRunning = false, onStop = () => {}, onSubmitted, workspace }: {
+export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = () => {}, onSubmitted, workspace }: {
   isRunning?: boolean;
+  onSent?: () => void;
   onStop?: () => void;
   onSubmitted: (text: string) => void;
   workspace?: WorkspaceSnapshot;
@@ -212,6 +166,7 @@ export function ChatComposer({ isRunning = false, onStop = () => {}, onSubmitted
     onSubmitted(text);
     try {
       await window.api.composer.send(text, attachments.map(attachment => attachment.id));
+      onSent();
       editorViewRef.current?.dispatch(editorViewRef.current.state.tr.delete(0, editorViewRef.current.state.doc.content.size));
       setAttachments([]);
     }

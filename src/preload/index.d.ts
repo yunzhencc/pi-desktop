@@ -1,7 +1,7 @@
 import type { ElectronAPI } from '@electron-toolkit/preload';
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
 import type { DeepSeekModel, DeepSeekSettingsSnapshot } from '../main/deepseek-settings';
-import type { TranscriptUpdate } from '../main/pi-runtime';
+import type { PiSessionSnapshot, PiSessionSummary, TranscriptUpdate } from '../main/pi-runtime';
 import type { WorkspaceSnapshot } from '../main/workspaces';
 
 declare global {
@@ -27,6 +27,10 @@ declare global {
       providers: {
         getDeepSeek: () => Promise<DeepSeekSettingsSnapshot>;
         saveDeepSeek: (apiKey: string, model: DeepSeekModel) => Promise<DeepSeekSettingsSnapshot>;
+      };
+      sessions: {
+        list: (workspacePath: string) => Promise<PiSessionSummary[]>;
+        open: (workspacePath: string, sessionPath: string) => Promise<{ session: PiSessionSnapshot; workspace: WorkspaceSnapshot }>;
       };
       workspaces: {
         get: () => Promise<WorkspaceSnapshot>;

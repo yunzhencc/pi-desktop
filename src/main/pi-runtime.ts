@@ -1,10 +1,23 @@
 import type { AttachmentStore } from './attachments';
 import type { DeepSeekConfiguration } from './deepseek-settings';
+import { join, resolve } from 'node:path';
 
 export type TranscriptUpdate
   = | { done?: boolean; text: string; type: 'assistant' }
     | { text: string; type: 'error' }
     | { status: 'running' | 'settled'; type: 'status' };
+
+export interface PiSessionSummary {
+  firstMessage: string;
+  id: string;
+  modifiedAt: string;
+  path: string;
+}
+
+export interface PiSessionSnapshot {
+  messages: Array<{ role: 'assistant' | 'user'; text: string; timestamp: number }>;
+  path: string;
+}
 
 interface PiSession {
   abort?: () => Promise<void>;
@@ -14,11 +27,13 @@ interface PiSession {
   dispose?: () => void;
 }
 
-type SessionFactory = (configuration: DeepSeekConfiguration, agentDir?: string, workspacePath?: string) => Promise<PiSession>;
+type SessionFactory = (configuration: DeepSeekConfiguration, agentDir?: string, workspacePath?: string, sessionPath?: string) => Promise<PiSession>;
+type SessionLister = (workspacePath: string, agentDir?: string) => Promise<PiSessionSummary[]>;
 
 interface PiRuntimeOptions {
   agentDir?: string;
   createSession?: SessionFactory;
+  listSessions?: SessionLister;
 }
 
 export class PiRuntime {
@@ -28,9 +43,11 @@ export class PiRuntime {
   #configuration: DeepSeekConfiguration | undefined;
   #promptActive = false;
   #streamedAssistantText = '';
+  #sessionPath: string | undefined;
   #workspacePath: string | undefined;
   private readonly agentDir: string | undefined;
   private readonly createSession: SessionFactory;
+  private readonly listSessions: SessionLister;
 
   constructor(
     private readonly attachments: AttachmentStore,
@@ -38,10 +55,12 @@ export class PiRuntime {
   ) {
     if (typeof optionsOrCreateSession === 'function') {
       this.createSession = optionsOrCreateSession;
+      this.listSessions = listDefaultSessions;
     }
     else {
       this.agentDir = optionsOrCreateSession.agentDir;
       this.createSession = optionsOrCreateSession.createSession ?? createDefaultSession;
+      this.listSessions = optionsOrCreateSession.listSessions ?? listDefaultSessions;
     }
   }
 
@@ -61,11 +80,32 @@ export class PiRuntime {
     if (this.#workspacePath === path)
       return;
     this.#workspacePath = path;
+    this.#sessionPath = undefined;
     this.#resetSession();
   }
 
   startNewConversation(): void {
+    this.#sessionPath = undefined;
     this.#resetSession();
+  }
+
+  async listWorkspaceSessions(path: string): Promise<PiSessionSummary[]> {
+    if (!path.trim())
+      throw new TypeError('工作区路径不能为空');
+    return this.listSessions(path, this.agentDir);
+  }
+
+  async openSession(path: string): Promise<PiSessionSnapshot> {
+    if (!path.trim())
+      throw new TypeError('会话路径不能为空');
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const session = SessionManager.open(path);
+    this.#sessionPath = path;
+    this.#resetSession();
+    return {
+      messages: session.getBranch().flatMap(toPiSessionMessage),
+      path,
+    };
   }
 
   #resetSession(): void {
@@ -139,7 +179,7 @@ export class PiRuntime {
     if (!this.#workspacePath)
       throw new Error('请先选择工作区');
 
-    const session = await this.createSession(this.#configuration, this.agentDir, this.#workspacePath);
+    const session = await this.createSession(this.#configuration, this.agentDir, this.#workspacePath, this.#sessionPath);
     this.#sessionUnsubscribe = session.subscribe(event => this.#handleEvent(event));
     this.#session = session;
     return session;
@@ -182,8 +222,8 @@ export class PiRuntime {
   }
 }
 
-async function createDefaultSession(configuration: DeepSeekConfiguration, agentDir?: string, workspacePath?: string): Promise<PiSession> {
-  const { createAgentSession, ModelRuntime } = await import('@earendil-works/pi-coding-agent');
+async function createDefaultSession(configuration: DeepSeekConfiguration, agentDir?: string, workspacePath?: string, sessionPath?: string): Promise<PiSession> {
+  const { createAgentSession, ModelRuntime, SessionManager } = await import('@earendil-works/pi-coding-agent');
   const modelRuntime = await ModelRuntime.create({ modelsPath: null, refreshOnCreate: false });
   modelRuntime.registerProvider('deepseek', {
     api: 'openai-completions',
@@ -198,7 +238,13 @@ async function createDefaultSession(configuration: DeepSeekConfiguration, agentD
   const model = modelRuntime.getModel('deepseek', configuration.model);
   if (!model)
     throw new Error('无法找到所选的 DeepSeek 模型');
-  const { session } = await createAgentSession({ agentDir, cwd: workspacePath, model, modelRuntime });
+  const { session } = await createAgentSession({
+    agentDir,
+    cwd: workspacePath,
+    model,
+    modelRuntime,
+    ...(sessionPath ? { sessionManager: SessionManager.open(sessionPath, undefined, workspacePath) } : {}),
+  });
   return {
     abort: () => session.abort(),
     dispose: () => session.dispose(),
@@ -208,6 +254,22 @@ async function createDefaultSession(configuration: DeepSeekConfiguration, agentD
     prompt: (text, options) => session.prompt(text, options),
     subscribe: listener => session.subscribe(event => listener(event)),
   };
+}
+
+async function listDefaultSessions(workspacePath: string, agentDir?: string): Promise<PiSessionSummary[]> {
+  const { getAgentDir, SessionManager } = await import('@earendil-works/pi-coding-agent');
+  const sessions = await SessionManager.list(workspacePath, getSessionDirectory(workspacePath, agentDir ?? getAgentDir()));
+  return sessions.map(session => ({
+    firstMessage: session.firstMessage,
+    id: session.id,
+    modifiedAt: session.modified.toISOString(),
+    path: session.path,
+  }));
+}
+
+function getSessionDirectory(workspacePath: string, agentDir: string): string {
+  const safeWorkspacePath = resolve(workspacePath).replace(/^[\\/]/, '').replace(/[\\/:]/g, '-');
+  return join(resolve(agentDir), 'sessions', `--${safeWorkspacePath}--`);
 }
 
 function isAssistantMessageEvent(event: unknown): event is { type: 'message_update' | 'message_end'; message: { content: unknown[] } } {
@@ -234,6 +296,24 @@ function isAssistantTextDeltaEvent(event: unknown): event is { assistantMessageE
 
 function isTextContent(content: unknown): content is { type: 'text'; text: string } {
   return isRecord(content) && content.type === 'text' && typeof content.text === 'string';
+}
+
+function toPiSessionMessage(entry: unknown): PiSessionSnapshot['messages'][number][] {
+  if (!isRecord(entry) || entry.type !== 'message' || !isRecord(entry.message))
+    return [];
+  const { message } = entry;
+  if (message.role !== 'assistant' && message.role !== 'user')
+    return [];
+  const text = typeof message.content === 'string'
+    ? message.content
+    : Array.isArray(message.content) ? message.content.filter(isTextContent).map(content => content.text).join('') : '';
+  if (!text)
+    return [];
+  return [{
+    role: message.role,
+    text,
+    timestamp: typeof message.timestamp === 'number' ? message.timestamp : 0,
+  }];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -72,6 +72,24 @@ describe('home page', () => {
     expect(screen.getByText('What can I help you build?')).not.toBeNull();
   });
 
+  it('replaces the pending transcript with the selected session history', () => {
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
+      detail: {
+        messages: [
+          { role: 'user', text: 'Earlier request' },
+          { role: 'assistant', text: 'Earlier reply' },
+        ],
+      },
+    })));
+
+    expect(screen.queryByText('Build this')).toBeNull();
+    expect(screen.getByText('Earlier request')).not.toBeNull();
+    expect(screen.getByText('Earlier reply')).not.toBeNull();
+  });
+
   it('shows project controls only while the conversation is new', () => {
     render(<HomePage />);
 

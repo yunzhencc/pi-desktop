@@ -52,7 +52,7 @@ function renderComposer(onSubmitted = vi.fn(), props: Partial<Parameters<typeof 
 function renderNewConversationToolbar(props: Partial<Parameters<typeof NewConversationToolbar>[0]> = {}) {
   return render(
     <I18nProvider>
-      <NewConversationToolbar onWorkspaceChange={vi.fn()} workspace={{ selectedWorkspacePath: weather.path, workspaces: [weather, notes] }} {...props} />
+      <NewConversationToolbar workspace={{ selectedWorkspacePath: weather.path, workspaces: [weather, notes] }} {...props} />
     </I18nProvider>,
   );
 }
@@ -174,34 +174,11 @@ describe('chat composer', () => {
     expect(screen.queryByRole('button', { name: 'weather' })).toBeNull();
   });
 
-  it('renders the project picker when no project is selected', () => {
+  it('renders the project as static context when no project is selected', () => {
     renderNewConversationToolbar({ workspace: { workspaces: [weather, notes] } });
 
-    expect(screen.getByRole('button', { name: '选择项目' })).not.toBeNull();
-  });
-
-  it('switches the new conversation to a selected project', async () => {
-    const onWorkspaceChange = vi.fn();
-    const user = userEvent.setup();
-    renderNewConversationToolbar({ onWorkspaceChange });
-
-    await user.click(screen.getByRole('button', { name: 'weather' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'notes' }));
-
-    expect(workspaces.select).toHaveBeenCalledWith(notes.path);
-    await waitFor(() => expect(onWorkspaceChange).toHaveBeenCalledWith({ selectedWorkspacePath: notes.path, workspaces: [notes, weather] }));
-  });
-
-  it('dismisses the project picker with Escape', async () => {
-    const user = userEvent.setup();
-    renderNewConversationToolbar();
-
-    await user.click(screen.getByRole('button', { name: 'weather' }));
-    expect(await screen.findByRole('menu')).not.toBeNull();
-
-    await user.keyboard('{Escape}');
-
-    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+    expect(screen.getByText('选择项目')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: '选择项目' })).toBeNull();
   });
 
   it('shows the active local Git context above a new conversation', async () => {
@@ -211,16 +188,6 @@ describe('chat composer', () => {
     expect(toolbar.textContent).toContain('weather');
     expect(toolbar.textContent).toContain('本地');
     expect(toolbar.textContent).toContain('main');
-  });
-
-  it('opens project creation from the new-conversation project picker', async () => {
-    const user = userEvent.setup();
-    renderNewConversationToolbar();
-
-    await user.click(screen.getByRole('button', { name: 'weather' }));
-    await user.click(await screen.findByRole('menuitem', { name: '新建项目' }));
-
-    expect(screen.getByRole('dialog', { name: '创建项目' })).not.toBeNull();
   });
 
   it('uses the drop attachment command for Electron file paths', async () => {
