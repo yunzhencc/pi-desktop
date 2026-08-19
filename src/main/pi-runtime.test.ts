@@ -88,16 +88,30 @@ describe('pi runtime', () => {
     expect(update).toHaveBeenLastCalledWith({ done: false, text: 'Hi there', type: 'assistant' });
   });
 
-  it('queues a second message while Pi is still answering', async () => {
-    let streaming = false;
-    const prompt = vi.fn(() => {
-      streaming = true;
-      return new Promise<void>(() => {});
-    });
+  it('does not carry delta text into the next assistant message', async () => {
+    let listener: ((event: unknown) => void) | undefined;
     const runtime = new PiRuntime(new AttachmentStore(), async () => ({
-      get isStreaming() {
-        return streaming;
+      prompt: vi.fn(),
+      subscribe: (callback: (event: unknown) => void) => {
+        listener = callback;
+        return () => {};
       },
+    }));
+    const update = vi.fn();
+    runtime.subscribe(update);
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+
+    await runtime.send('Hello', []);
+    listener?.({ assistantMessageEvent: { contentIndex: 0, delta: 'First', type: 'text_delta' }, type: 'message_update' });
+    listener?.({ message: { content: [], role: 'assistant' }, type: 'message_start' });
+    listener?.({ assistantMessageEvent: { contentIndex: 0, delta: 'Second', type: 'text_delta' }, type: 'message_update' });
+
+    expect(update).toHaveBeenLastCalledWith({ done: false, text: 'Second', type: 'assistant' });
+  });
+
+  it('queues a second message while Pi is still answering', async () => {
+    const prompt = vi.fn(() => new Promise<void>(() => {}));
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({
       prompt,
       subscribe: () => () => {},
     }));

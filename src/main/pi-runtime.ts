@@ -22,6 +22,7 @@ export class PiRuntime {
   #sessionUnsubscribe: (() => void) | undefined;
   #listeners = new Set<(update: TranscriptUpdate) => void>();
   #configuration: DeepSeekConfiguration | undefined;
+  #promptActive = false;
   #streamedAssistantText = '';
 
   constructor(
@@ -40,6 +41,7 @@ export class PiRuntime {
     this.#session?.dispose?.();
     this.#session = undefined;
     this.#sessionUnsubscribe = undefined;
+    this.#promptActive = false;
   }
 
   async send(prompt: string, attachmentIds: string[]): Promise<void> {
@@ -48,9 +50,14 @@ export class PiRuntime {
       const session = await this.#getSession();
       const options = {
         ...(attachments.images.length ? { images: attachments.images } : {}),
-        ...(session.isStreaming ? { streamingBehavior: 'steer' as const } : {}),
+        ...(this.#promptActive || session.isStreaming ? { streamingBehavior: 'steer' as const } : {}),
       };
-      void Promise.resolve(session.prompt(`${prompt}${attachments.text ? `\n${attachments.text}` : ''}`, Object.keys(options).length ? options : undefined)).catch(error => this.#emitError(error));
+      this.#promptActive = true;
+      void Promise.resolve(session.prompt(`${prompt}${attachments.text ? `\n${attachments.text}` : ''}`, Object.keys(options).length ? options : undefined)).catch((error) => {
+        if (!session.isStreaming)
+          this.#promptActive = false;
+        this.#emitError(error);
+      });
     }
     catch (error) {
       this.#emitError(error);
@@ -64,6 +71,7 @@ export class PiRuntime {
     this.#listeners.clear();
     this.#session = undefined;
     this.#sessionUnsubscribe = undefined;
+    this.#promptActive = false;
   }
 
   async #getSession(): Promise<PiSession> {
@@ -79,6 +87,14 @@ export class PiRuntime {
   }
 
   #handleEvent(event: unknown): void {
+    if (isAgentSettledEvent(event)) {
+      this.#promptActive = false;
+      return;
+    }
+    if (isAssistantMessageStartEvent(event)) {
+      this.#streamedAssistantText = '';
+      return;
+    }
     if (isAssistantTextDeltaEvent(event)) {
       this.#streamedAssistantText += event.assistantMessageEvent.delta;
       this.#emit({ done: false, text: this.#streamedAssistantText, type: 'assistant' });
@@ -91,6 +107,7 @@ export class PiRuntime {
       .filter(isTextContent)
       .map(content => content.text)
       .join('');
+    this.#streamedAssistantText = text;
     this.#emit({ done: event.type === 'message_end', text, type: 'assistant' });
   }
 
@@ -135,6 +152,14 @@ function isAssistantMessageEvent(event: unknown): event is { type: 'message_upda
   if (!isRecord(event) || (event.type !== 'message_update' && event.type !== 'message_end') || !isRecord(event.message))
     return false;
   return event.message.role === 'assistant' && Array.isArray(event.message.content);
+}
+
+function isAssistantMessageStartEvent(event: unknown): event is { message: { role: 'assistant' }; type: 'message_start' } {
+  return isRecord(event) && event.type === 'message_start' && isRecord(event.message) && event.message.role === 'assistant';
+}
+
+function isAgentSettledEvent(event: unknown): event is { type: 'agent_settled' } {
+  return isRecord(event) && event.type === 'agent_settled';
 }
 
 function isAssistantTextDeltaEvent(event: unknown): event is { assistantMessageEvent: { delta: string; type: 'text_delta' }; type: 'message_update' } {

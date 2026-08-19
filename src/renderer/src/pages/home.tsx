@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChatComposer } from '../components/chat-composer';
 import { MarkdownMessage } from '../components/markdown-message';
 import { ThreadScrollLayout } from '../components/thread-scroll-layout';
@@ -14,6 +15,26 @@ interface Message {
 
 export function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const [composerHeightPx, setComposerHeightPx] = useState(0);
+
+  useLayoutEffect(() => {
+    const composer = composerRef.current;
+    if (composer == null)
+      return;
+
+    const updateHeight = () => setComposerHeightPx(composer.offsetHeight);
+    const frame = requestAnimationFrame(updateHeight);
+    if (typeof ResizeObserver === 'undefined')
+      return () => cancelAnimationFrame(frame);
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(composer);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => window.api.composer.onUpdate((update) => {
     setMessages((current) => {
@@ -31,7 +52,7 @@ export function HomePage() {
   }), []);
 
   return (
-    <section className="chat-page">
+    <section className="chat-page" style={{ '--thread-scroll-padding-bottom': `${composerHeightPx + 16}px` } as CSSProperties}>
       {messages.length === 0
         ? (
             <div className="chat-empty-state">
@@ -55,7 +76,7 @@ export function HomePage() {
               )}
             </ThreadScrollLayout>
           )}
-      <div className="chat-composer-wrap">
+      <div className="chat-composer-wrap" ref={composerRef}>
         <ChatComposer onSubmitted={(text) => {
           const startedAtMs = Date.now();
           setMessages(current => [...current, { id: startedAtMs, role: 'user', startedAtMs, text }]);

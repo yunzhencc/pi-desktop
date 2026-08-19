@@ -43,4 +43,37 @@ describe('thread scroll layout', () => {
 
     expect(transcript.scrollTop).toBe(232);
   });
+
+  it('renders the turns reached after scrolling away from the bottom', () => {
+    const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+    const originalScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
+    const originalScrollTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTop');
+    const scrollTops = new WeakMap<HTMLElement, number>();
+    Object.defineProperties(HTMLElement.prototype, {
+      clientHeight: { configurable: true, get: () => 100 },
+      scrollHeight: { configurable: true, get: () => 864 },
+      scrollTop: {
+        configurable: true,
+        get(this: HTMLElement) { return scrollTops.get(this) ?? 0; },
+        set(this: HTMLElement, value: number) { scrollTops.set(this, value); },
+      },
+    });
+
+    try {
+      render(<Transcript turns={Array.from({ length: 10 }, (_, index) => ({ key: `turn-${index}` }))} />);
+      const transcript = screen.getByRole('log');
+      transcript.scrollTop = 0;
+      fireEvent.scroll(transcript);
+
+      expect(screen.getByText('turn-0')).not.toBeNull();
+    }
+    finally {
+      for (const [name, descriptor] of Object.entries({ clientHeight: originalClientHeight, scrollHeight: originalScrollHeight, scrollTop: originalScrollTop })) {
+        if (descriptor)
+          Object.defineProperty(HTMLElement.prototype, name, descriptor);
+        else
+          delete (HTMLElement.prototype as Record<string, unknown>)[name];
+      }
+    }
+  });
 });

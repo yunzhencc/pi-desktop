@@ -118,9 +118,9 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
 
     setError('');
     setIsSending(true);
+    onSubmitted(text);
     try {
       await window.api.composer.send(text, attachments.map(attachment => attachment.id));
-      onSubmitted(text);
       editorViewRef.current?.dispatch(editorViewRef.current.state.tr.delete(0, editorViewRef.current.state.doc.content.size));
       setAttachments([]);
     }

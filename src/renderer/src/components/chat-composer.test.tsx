@@ -73,6 +73,18 @@ describe('chat composer', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Send message' }).querySelector('.lucide-arrow-up')).not.toBeNull());
   });
 
+  it('records the user message before the send request settles', async () => {
+    composer.send.mockImplementation(() => new Promise<void>(() => {}));
+    const user = userEvent.setup();
+    const onSubmitted = vi.fn();
+    renderComposer(onSubmitted);
+
+    await user.type(screen.getByRole('textbox', { name: 'Message Pi' }), 'Hello Pi');
+    await user.click(screen.getByRole('button', { name: 'Send message' }));
+
+    expect(onSubmitted).toHaveBeenCalledWith('Hello Pi');
+  });
+
   it('sends typed text when Enter is pressed', async () => {
     const user = userEvent.setup();
     renderComposer();

@@ -17,10 +17,10 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, turns }: {
   const anchorKeyRef = useRef<string | null>(null);
   const followsBottomRef = useRef(true);
   const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(() => new Map());
-  const [viewportHeightPx, setViewportHeightPx] = useState(0);
+  const [scrollMetrics, setScrollMetrics] = useState({ distanceFromBottomPx: 0, viewportHeightPx: 0 });
   const layout = useMemo(() => buildThreadLayout(turns, measuredHeights, TURN_GAP, DEFAULT_TURN_HEIGHT), [measuredHeights, turns]);
-  const range = viewportHeightPx > 0
-    ? visibleThreadRange({ distanceFromBottomPx: distanceFromBottom(scrollRef.current), layout, overscanCount: 2, viewportHeightPx })
+  const range = scrollMetrics.viewportHeightPx > 0
+    ? visibleThreadRange({ distanceFromBottomPx: scrollMetrics.distanceFromBottomPx, layout, overscanCount: 2, viewportHeightPx: scrollMetrics.viewportHeightPx })
     : { endIndex: turns.length, startIndex: 0 };
   const visibleTurns = turns.slice(range.startIndex, range.endIndex);
   const topSpacerPx = range.startIndex === 0 ? 0 : layout.totalHeightPx - layout.bottomOffsetsPx[range.startIndex]! - layout.heightsPx[range.startIndex]!;
@@ -50,7 +50,10 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, turns }: {
 
     previousLayoutRef.current = layout;
     previousTurnKeysRef.current = layout.turnKeys;
-    setViewportHeightPx(current => current === element.clientHeight ? current : element.clientHeight);
+    const distance = distanceFromBottom(element);
+    setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
+      ? current
+      : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
   }, [layout]);
 
   useLayoutEffect(() => {
@@ -89,7 +92,9 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, turns }: {
         followsBottomRef.current = distance <= FOLLOW_THRESHOLD;
         const nextRange = visibleThreadRange({ distanceFromBottomPx: distance, layout, overscanCount: 2, viewportHeightPx: element.clientHeight });
         anchorKeyRef.current = layout.turnKeys[nextRange.startIndex] ?? null;
-        setViewportHeightPx(current => current === element.clientHeight ? current : element.clientHeight);
+        setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
+          ? current
+          : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
       }}
       ref={scrollRef}
       role="log"
