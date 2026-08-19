@@ -40,9 +40,10 @@ describe('app shell surfaces', () => {
     const backRule = styles.match(/\.settings-back-button\s*\{([\s\S]*?)\}/)?.[1];
     const itemRule = styles.match(/\.settings-back-button,\s*\.settings-navigation-item\s*\{([\s\S]*?)\}/)?.[1];
 
-    expect(titleRule).toContain('font-size: 16px;');
+    expect(titleRule).toContain('font-size: 14px;');
     expect(titleRule).toContain('font-weight: 400;');
     expect(titleRule).toContain('color: var(--text-tertiary);');
+    expect(backRule).toContain('font-size: 14px;');
     expect(backRule).toContain('font-weight: 400;');
     expect(backRule).toContain('color: var(--text-tertiary);');
     expect(itemRule).toContain('height: 28px;');

@@ -276,13 +276,13 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   display: flex;
   height: 100%;
   flex-direction: column;
-  padding: 48px 8px 18px;
+  padding: 48px 12px 18px;
 }
 
 .settings-navigation-title {
   padding: 16px 8px 8px;
   color: var(--text-tertiary);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
 }
 
@@ -307,7 +307,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   padding: 0 8px;
   background: transparent;
   color: var(--text-tertiary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
 }
 
