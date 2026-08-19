@@ -1,10 +1,13 @@
+import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
-import { WorkspaceRegistry } from './workspaces';
+import { getWorkspaceGitBranch, WorkspaceRegistry } from './workspaces';
 
 const directories: string[] = [];
+const execFileAsync = promisify(execFile);
 
 async function registryPath(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'pi-desktop-workspaces-'));
@@ -60,5 +63,14 @@ describe('workspace registry', () => {
     await registry.load();
 
     await expect(registry.select(join(tmpdir(), 'pi-desktop-missing-workspace'))).rejects.toThrow('工作区不存在或不可访问');
+  });
+
+  it('reads the selected workspace Git branch', async () => {
+    const project = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
+    directories.push(project);
+    await mkdir(project);
+    await execFileAsync('git', ['init', '--initial-branch=main', project]);
+
+    await expect(getWorkspaceGitBranch(project)).resolves.toBe('main');
   });
 });

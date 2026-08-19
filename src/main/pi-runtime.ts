@@ -64,6 +64,10 @@ export class PiRuntime {
     this.#resetSession();
   }
 
+  startNewConversation(): void {
+    this.#resetSession();
+  }
+
   #resetSession(): void {
     this.#sessionUnsubscribe?.();
     this.#session?.dispose?.();

@@ -1,5 +1,13 @@
 import type { CSSProperties } from 'react';
-import { ArrowUp, FileText, LoaderCircle, Square, X } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@pi-desktop/shadcn-ui/components/dropdown-menu';
+import { ArrowUp, FileText, Folder, FolderPlus, GitBranch, Laptop, LoaderCircle, Square, X } from 'lucide-react';
 import { baseKeymap, splitBlock } from 'prosemirror-commands';
 import { history } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -8,11 +16,93 @@ import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { CreateProjectDialog } from './workspace-sidebar';
 
 type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>['attachments'][number];
 type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
+type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 
-export function ChatComposer({ isRunning, onStop, onSubmitted }: { isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) {
+export function NewConversationToolbar({ onWorkspaceChange, workspace }: { onWorkspaceChange: (workspace: WorkspaceSnapshot) => void; workspace?: WorkspaceSnapshot }) {
+  const { formatMessage } = useIntl();
+  const [branchResult, setBranchResult] = useState<{ branch?: string; path: string }>();
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
+
+  useEffect(() => {
+    if (!selectedWorkspace)
+      return;
+    const { path } = selectedWorkspace;
+    void window.api.workspaces.getGitBranch(path).then(branch => setBranchResult({ branch, path })).catch(() => setBranchResult({ path }));
+  }, [selectedWorkspace]);
+
+  const branch = selectedWorkspace && selectedWorkspace.path === branchResult?.path ? branchResult?.branch : undefined;
+
+  const selectWorkspace = async (path: string) => {
+    const next = await window.api.workspaces.select(path);
+    onWorkspaceChange(next);
+    window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next }));
+  };
+
+  const createProject = (next: WorkspaceSnapshot) => {
+    onWorkspaceChange(next);
+    window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next }));
+    setIsCreatingProject(false);
+  };
+
+  return (
+    <div aria-label="新会话项目上下文" className="new-conversation-toolbar" data-has-project={Boolean(selectedWorkspace)} role="toolbar">
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={(
+            <button className="new-conversation-toolbar-trigger" type="button">
+              <Folder aria-hidden="true" size={18} />
+              <span>{selectedWorkspace?.displayName ?? '选择项目'}</span>
+            </button>
+          )}
+        />
+        <DropdownMenuContent aria-label={formatMessage({ id: 'projects.title' })} className="new-conversation-project-menu">
+          <DropdownMenuGroup>
+            {workspace?.workspaces.map(item => (
+              <DropdownMenuItem aria-current={item.path === selectedWorkspace?.path ? 'true' : undefined} key={item.path} onClick={() => void selectWorkspace(item.path)}>
+                <Folder aria-hidden="true" size={14} />
+                <span>{item.displayName}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => setIsCreatingProject(true)}>
+              <FolderPlus aria-hidden="true" size={14} />
+              <span>{formatMessage({ id: 'projects.new' })}</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {selectedWorkspace && (
+        <>
+          <span className="new-conversation-toolbar-item">
+            <Laptop aria-hidden="true" size={18} />
+            本地
+          </span>
+          {branch && (
+            <span className="new-conversation-toolbar-item">
+              <GitBranch aria-hidden="true" size={18} />
+              {branch}
+            </span>
+          )}
+        </>
+      )}
+      {isCreatingProject && <CreateProjectDialog onClose={() => setIsCreatingProject(false)} onCreated={createProject} />}
+    </div>
+  );
+}
+
+export function ChatComposer({ isRunning = false, onStop = () => {}, onSubmitted, workspace }: {
+  isRunning?: boolean;
+  onStop?: () => void;
+  onSubmitted: (text: string) => void;
+  workspace?: WorkspaceSnapshot;
+}) {
   const { formatMessage } = useIntl();
   const editorHostRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView | null>(null);
@@ -21,7 +111,8 @@ export function ChatComposer({ isRunning, onStop, onSubmitted }: { isRunning: bo
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [text, setText] = useState('');
-  const canSend = Boolean(text.trim() || attachments.length) && !isSending && !isRunning;
+  const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
+  const canSend = Boolean(selectedWorkspace && (text.trim() || attachments.length)) && !isSending && !isRunning;
   const placeholder = formatMessage({ id: 'composer.placeholder' });
 
   useEffect(() => {

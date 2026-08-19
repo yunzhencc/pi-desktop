@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../providers/i18n';
-import { ChatComposer } from './chat-composer';
+import { ChatComposer, NewConversationToolbar } from './chat-composer';
 
 const composer = {
   addDroppedAttachments: vi.fn(),
@@ -12,6 +12,15 @@ const composer = {
   onUpdate: vi.fn(),
   removeAttachment: vi.fn(),
   send: vi.fn(),
+};
+const weather = { displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' };
+const notes = { displayName: 'notes', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/notes' };
+const workspaces = {
+  create: vi.fn(),
+  getGitBranch: vi.fn(),
+  get: vi.fn(),
+  pickDirectory: vi.fn(),
+  select: vi.fn(),
 };
 
 beforeEach(() => {
@@ -21,17 +30,29 @@ beforeEach(() => {
   Object.defineProperty(Range.prototype, 'getBoundingClientRect', { configurable: true, value: () => rect });
   Object.defineProperty(Range.prototype, 'getClientRects', { configurable: true, value: () => [rect] });
   Object.defineProperty(window, 'scrollBy', { configurable: true, value: () => {} });
-  vi.stubGlobal('api', { composer });
+  vi.stubGlobal('api', { composer, workspaces });
   composer.addDroppedAttachments.mockResolvedValue({ attachments: [], failures: [] });
   composer.addPastedImage.mockResolvedValue({ attachments: [], failures: [] });
   composer.removeAttachment.mockResolvedValue(undefined);
   composer.send.mockResolvedValue(undefined);
+  workspaces.create.mockResolvedValue({ selectedWorkspacePath: weather.path, workspaces: [weather, notes] });
+  workspaces.getGitBranch.mockResolvedValue('main');
+  workspaces.pickDirectory.mockResolvedValue('/projects/weather');
+  workspaces.select.mockResolvedValue({ selectedWorkspacePath: notes.path, workspaces: [notes, weather] });
 });
 
-function renderComposer(onSubmitted = vi.fn()) {
+function renderComposer(onSubmitted = vi.fn(), props: Partial<Parameters<typeof ChatComposer>[0]> = {}) {
   return render(
     <I18nProvider>
-      <ChatComposer onSubmitted={onSubmitted} />
+      <ChatComposer onSubmitted={onSubmitted} workspace={{ selectedWorkspacePath: weather.path, workspaces: [weather] }} {...props} />
+    </I18nProvider>,
+  );
+}
+
+function renderNewConversationToolbar(props: Partial<Parameters<typeof NewConversationToolbar>[0]> = {}) {
+  return render(
+    <I18nProvider>
+      <NewConversationToolbar onWorkspaceChange={vi.fn()} workspace={{ selectedWorkspacePath: weather.path, workspaces: [weather, notes] }} {...props} />
     </I18nProvider>,
   );
 }
@@ -145,6 +166,61 @@ describe('chat composer', () => {
     renderComposer();
 
     expect(screen.getByRole('form', { name: 'Message Pi' }).style.getPropertyValue('--chat-composer-placeholder')).toBe('"Do anything"');
+  });
+
+  it('keeps the project toolbar outside the established composer', () => {
+    renderComposer();
+
+    expect(screen.queryByRole('button', { name: 'weather' })).toBeNull();
+  });
+
+  it('renders the project picker when no project is selected', () => {
+    renderNewConversationToolbar({ workspace: { workspaces: [weather, notes] } });
+
+    expect(screen.getByRole('button', { name: '选择项目' })).not.toBeNull();
+  });
+
+  it('switches the new conversation to a selected project', async () => {
+    const onWorkspaceChange = vi.fn();
+    const user = userEvent.setup();
+    renderNewConversationToolbar({ onWorkspaceChange });
+
+    await user.click(screen.getByRole('button', { name: 'weather' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'notes' }));
+
+    expect(workspaces.select).toHaveBeenCalledWith(notes.path);
+    await waitFor(() => expect(onWorkspaceChange).toHaveBeenCalledWith({ selectedWorkspacePath: notes.path, workspaces: [notes, weather] }));
+  });
+
+  it('dismisses the project picker with Escape', async () => {
+    const user = userEvent.setup();
+    renderNewConversationToolbar();
+
+    await user.click(screen.getByRole('button', { name: 'weather' }));
+    expect(await screen.findByRole('menu')).not.toBeNull();
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+  });
+
+  it('shows the active local Git context above a new conversation', async () => {
+    renderNewConversationToolbar();
+
+    const toolbar = await screen.findByRole('toolbar', { name: '新会话项目上下文' });
+    expect(toolbar.textContent).toContain('weather');
+    expect(toolbar.textContent).toContain('本地');
+    expect(toolbar.textContent).toContain('main');
+  });
+
+  it('opens project creation from the new-conversation project picker', async () => {
+    const user = userEvent.setup();
+    renderNewConversationToolbar();
+
+    await user.click(screen.getByRole('button', { name: 'weather' }));
+    await user.click(await screen.findByRole('menuitem', { name: '新建项目' }));
+
+    expect(screen.getByRole('dialog', { name: '创建项目' })).not.toBeNull();
   });
 
   it('uses the drop attachment command for Electron file paths', async () => {

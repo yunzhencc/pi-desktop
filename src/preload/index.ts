@@ -26,6 +26,7 @@ const api = {
   composer: {
     addDroppedAttachments: (paths: string[]): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipcRenderer.invoke('composer:add-attachments', paths),
     addPastedImage: (name: string, data: string): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipcRenderer.invoke('composer:add-pasted-image', name, data),
+    newConversation: (): Promise<void> => ipcRenderer.invoke('composer:new-conversation'),
     removeAttachment: (id: string): Promise<void> => ipcRenderer.invoke('composer:remove-attachment', id),
     send: (prompt: string, attachmentIds: string[]): Promise<void> => ipcRenderer.invoke('composer:send', prompt, attachmentIds),
     stop: (): Promise<void> => ipcRenderer.invoke('composer:stop'),
@@ -41,6 +42,7 @@ const api = {
   },
   workspaces: {
     get: (): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:get'),
+    getGitBranch: (path: string): Promise<string | undefined> => ipcRenderer.invoke('workspaces:get-git-branch', path),
     pickDirectory: (): Promise<string | undefined> => ipcRenderer.invoke('workspaces:pick-directory'),
     create: (name: string, path: string): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:create', name, path),
     select: (path: string): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:select', path),

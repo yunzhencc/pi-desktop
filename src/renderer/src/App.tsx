@@ -67,7 +67,10 @@ function AppShell() {
     if (!isSettingsPage)
       setIsSidebarVisible(visible => !visible);
   };
-  const startNewConversation = () => navigate({ to: '/' });
+  const startNewConversation = () => {
+    window.dispatchEvent(new Event('new-conversation'));
+    navigate({ to: '/' });
+  };
   const openSettings = () => navigate({ to: '/settings/general' });
   const headerLeftWidth = isSidebarVisible ? sidebarWidth : toolbarInset + 32;
   const mainContentWidth = viewportSize.width - (isSidebarVisible ? sidebarWidth : 0);

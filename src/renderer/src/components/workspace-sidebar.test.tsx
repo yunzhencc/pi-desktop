@@ -53,6 +53,21 @@ describe('workspace sidebar', () => {
     expect(screen.queryByRole('button', { name: 'weather' })).toBeNull();
   });
 
+  it('reflects a project selected from the new-conversation composer', async () => {
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'weather' })).not.toBeNull());
+    window.dispatchEvent(new CustomEvent('workspace-changed', {
+      detail: { selectedWorkspacePath: '/projects/notes', workspaces: [{ ...weather, displayName: 'notes', path: '/projects/notes' }, weather] },
+    }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'notes' }).getAttribute('aria-current')).toBe('page'));
+  });
+
   it('opens the create-project step and persists only after confirmation', async () => {
     render(
       <I18nProvider>

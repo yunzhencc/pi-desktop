@@ -13,6 +13,9 @@ export function WorkspaceSidebar() {
 
   useEffect(() => {
     void window.api.workspaces.get().then(setWorkspace);
+    const onWorkspaceChanged = (event: Event) => setWorkspace((event as CustomEvent<WorkspaceSnapshot>).detail);
+    window.addEventListener('workspace-changed', onWorkspaceChanged);
+    return () => window.removeEventListener('workspace-changed', onWorkspaceChanged);
   }, []);
 
   const update = (next: WorkspaceSnapshot) => {
@@ -70,7 +73,7 @@ function CodexPlus(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-function CreateProjectDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (workspace: WorkspaceSnapshot) => void }) {
+export function CreateProjectDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (workspace: WorkspaceSnapshot) => void }) {
   const [name, setName] = useState('');
   const [sourcePath, setSourcePath] = useState<string>();
   const [error, setError] = useState<string>();

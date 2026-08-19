@@ -39,6 +39,21 @@ describe('pi runtime', () => {
     expect(createSession).toHaveBeenCalledWith({ apiKey: 'sk-test', model: 'deepseek-v4-flash' }, '/tmp/pi-desktop-agent', '/tmp/project');
   });
 
+  it('disposes the active Pi context before a new conversation', async () => {
+    const dispose = vi.fn();
+    const createSession = vi.fn(async () => ({ dispose, prompt: vi.fn(), subscribe: () => () => {} }));
+    const runtime = new PiRuntime(new AttachmentStore(), createSession);
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
+    await runtime.send('First', []);
+
+    runtime.startNewConversation();
+    await runtime.send('Second', []);
+
+    expect(dispose).toHaveBeenCalledOnce();
+    expect(createSession).toHaveBeenCalledTimes(2);
+  });
+
   it('rejects sends until a workspace has been selected', async () => {
     const runtime = new PiRuntime(new AttachmentStore(), async () => ({ prompt: vi.fn(), subscribe: () => () => {} }));
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });

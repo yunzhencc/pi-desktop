@@ -13,6 +13,7 @@ vi.mock('../components/chat-composer', () => ({
       {isRunning ? 'Stop' : 'Fake composer'}
     </button>
   ),
+  NewConversationToolbar: () => <div aria-label="新会话项目上下文" role="toolbar" />,
 }));
 
 beforeEach(() => {
@@ -33,7 +34,7 @@ beforeEach(() => {
     })),
     select: vi.fn(),
   };
-  vi.stubGlobal('api', { composer: { onUpdate: vi.fn(() => () => {}) }, workspaces });
+  vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}) }, workspaces });
 });
 
 afterEach(() => {
@@ -57,12 +58,32 @@ describe('home page', () => {
     workspaces.get.mockResolvedValue({ workspaces: [] });
     render(<HomePage />);
 
-    await waitFor(() => expect(screen.getByText('Select or add a project from the sidebar to start a conversation.')).not.toBeNull());
+    await waitFor(() => expect(screen.getByText('Select or add a project above to start a conversation.')).not.toBeNull());
+  });
+
+  it('clears the pending transcript when a new conversation starts', () => {
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    expect(screen.getByText('Build this')).not.toBeNull();
+    act(() => window.dispatchEvent(new Event('new-conversation')));
+
+    expect(screen.queryByText('Build this')).toBeNull();
+    expect(screen.getByText('What can I help you build?')).not.toBeNull();
+  });
+
+  it('shows project controls only while the conversation is new', () => {
+    render(<HomePage />);
+
+    expect(screen.getByRole('toolbar', { name: '新会话项目上下文' })).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+
+    expect(screen.queryByRole('toolbar', { name: '新会话项目上下文' })).toBeNull();
   });
 
   it('renders submitted and streamed turns through the transcript log', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { onUpdate }, workspaces });
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     render(<HomePage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -85,7 +106,7 @@ describe('home page', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-19T10:00:00Z'));
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { onUpdate }, workspaces });
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     render(<HomePage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -97,7 +118,7 @@ describe('home page', () => {
 
   it('renders a streamed assistant snapshot as Markdown', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { onUpdate }, workspaces });
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     const { container } = render(<HomePage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Use **bold** text.', type: 'assistant' }));
@@ -124,7 +145,7 @@ describe('home page', () => {
   it('keeps the composer active until the agent settles and can stop it', () => {
     const onUpdate = vi.fn(() => () => {});
     const stop = vi.fn();
-    vi.stubGlobal('api', { composer: { onUpdate, stop }, workspaces });
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate, stop }, workspaces });
     render(<HomePage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ status: 'running', type: 'status' }));

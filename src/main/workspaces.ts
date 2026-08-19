@@ -1,5 +1,9 @@
+import { execFile } from 'node:child_process';
 import { readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 export interface WorkspaceSummary {
   displayName: string;
@@ -10,6 +14,16 @@ export interface WorkspaceSummary {
 export interface WorkspaceSnapshot {
   selectedWorkspacePath?: string;
   workspaces: WorkspaceSummary[];
+}
+
+export async function getWorkspaceGitBranch(path: string): Promise<string | undefined> {
+  try {
+    const { stdout } = await execFileAsync('git', ['-C', path, 'branch', '--show-current'], { timeout: 1500 });
+    return stdout.trim() || undefined;
+  }
+  catch {
+    return undefined;
+  }
 }
 
 export class WorkspaceRegistry {

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChatComposer } from '../components/chat-composer';
+import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
 import { MarkdownMessage } from '../components/markdown-message';
 import { ThreadScrollLayout } from '../components/thread-scroll-layout';
 
@@ -50,6 +50,15 @@ export function HomePage() {
       active = false;
       window.removeEventListener('workspace-changed', onWorkspaceChanged);
     };
+  }, []);
+
+  useEffect(() => {
+    const startNewConversation = () => {
+      setMessages([]);
+      void window.api.composer.newConversation();
+    };
+    window.addEventListener('new-conversation', startNewConversation);
+    return () => window.removeEventListener('new-conversation', startNewConversation);
   }, []);
 
   useLayoutEffect(() => {
@@ -128,27 +137,29 @@ export function HomePage() {
         const startedAtMs = Date.now();
         setMessages(current => [...current, { id: startedAtMs, role: 'user', startedAtMs, text }]);
       }}
+      workspace={workspace}
     />
   );
 
-  if (workspace && !workspace.selectedWorkspacePath) {
-    return (
-      <section className="chat-page">
-        <div className="chat-empty-state">
-          <p>Choose a project</p>
-          <span>Select or add a project from the sidebar to start a conversation.</span>
-        </div>
-      </section>
-    );
-  }
+  const newConversationToolbar = (
+    <NewConversationToolbar
+      onWorkspaceChange={(next) => {
+        if (next.selectedWorkspacePath !== workspaceRef.current?.selectedWorkspacePath)
+          setMessages([]);
+        workspaceRef.current = next;
+        setWorkspace(next);
+      }}
+      workspace={workspace}
+    />
+  );
 
   return (
     <section className="chat-page" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
       {messages.length === 0
         ? (
             <div className="chat-empty-state">
-              <p>What can I help you build?</p>
-              <span>Describe a task, paste code, or add an image or text file.</span>
+              <p>{workspace == null || workspace.selectedWorkspacePath ? 'What can I help you build?' : 'Choose a project'}</p>
+              <span>{workspace == null || workspace.selectedWorkspacePath ? 'Describe a task, paste code, or add an image or text file.' : 'Select or add a project above to start a conversation.'}</span>
             </div>
           )
         : (
@@ -172,7 +183,10 @@ export function HomePage() {
           )}
       {messages.length === 0 && (
         <div className="chat-composer-footer" ref={composerFooterRef}>
-          <div className="chat-composer-wrap">{composer}</div>
+          <div className="chat-composer-wrap">
+            {newConversationToolbar}
+            {composer}
+          </div>
         </div>
       )}
     </section>

@@ -14,7 +14,7 @@ import {
   readPrimaryWindowState,
   writePrimaryWindowState,
 } from './window-state';
-import { WorkspaceRegistry } from './workspaces';
+import { getWorkspaceGitBranch, WorkspaceRegistry } from './workspaces';
 
 let isPrimaryWindowOpaque = false;
 let syncPrimaryWindowBackdrop: (() => void) | undefined;
@@ -189,6 +189,11 @@ app.whenReady().then(async () => {
     return snapshot;
   };
   ipcMain.handle('workspaces:get', () => workspaceRegistry.snapshot());
+  ipcMain.handle('workspaces:get-git-branch', (_event, path: unknown) => {
+    if (typeof path !== 'string' || !path.trim())
+      throw new TypeError('无效的工作区路径');
+    return getWorkspaceGitBranch(path);
+  });
   ipcMain.handle('workspaces:pick-directory', async (event) => {
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender) ?? undefined, {
       properties: ['openDirectory'],
@@ -213,6 +218,7 @@ app.whenReady().then(async () => {
   const composer = createComposerHandlers(
     attachmentStore,
     (prompt, attachmentIds) => piRuntime.send(prompt, attachmentIds),
+    () => piRuntime.startNewConversation(),
   );
   ipcMain.handle('composer:add-attachments', (_event, paths: unknown) => {
     if (!Array.isArray(paths) || !paths.every(path => typeof path === 'string'))
@@ -234,6 +240,7 @@ app.whenReady().then(async () => {
       throw new TypeError('Invalid composer input');
     return composer.send(prompt, attachmentIds);
   });
+  ipcMain.handle('composer:new-conversation', () => composer.startNewConversation());
   ipcMain.handle('composer:stop', () => piRuntime.abort());
   piRuntime.subscribe((update) => {
     for (const window of BrowserWindow.getAllWindows())

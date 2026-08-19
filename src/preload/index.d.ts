@@ -18,6 +18,7 @@ declare global {
       composer: {
         addDroppedAttachments: (paths: string[]) => Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }>;
         addPastedImage: (name: string, data: string) => Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }>;
+        newConversation: () => Promise<void>;
         removeAttachment: (id: string) => Promise<void>;
         send: (prompt: string, attachmentIds: string[]) => Promise<void>;
         stop: () => Promise<void>;
@@ -29,6 +30,7 @@ declare global {
       };
       workspaces: {
         get: () => Promise<WorkspaceSnapshot>;
+        getGitBranch: (path: string) => Promise<string | undefined>;
         pickDirectory: () => Promise<string | undefined>;
         create: (name: string, path: string) => Promise<WorkspaceSnapshot>;
         select: (path: string) => Promise<WorkspaceSnapshot>;
