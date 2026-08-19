@@ -18,6 +18,12 @@ vi.mock('../components/chat-composer', () => ({
 
 beforeEach(() => {
   animationFrames = [];
+  vi.stubGlobal('ResizeObserver', class {
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+  });
+  Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: () => {} });
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
     animationFrames.push(callback);
     return animationFrames.length;
@@ -67,6 +73,11 @@ describe('home page', () => {
     render(<HomePage />);
 
     await waitFor(() => expect(screen.getByRole('heading', { name: '你想让我们在 weather 中构建什么？' })).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'weather' }));
+
+    expect(screen.getByRole('dialog', { name: '选择项目' })).not.toBeNull();
+    expect(screen.getByRole('combobox', { name: '搜索项目' })).not.toBeNull();
+    expect(screen.getByRole('heading', { name: '你想让我们在 weather 中构建什么？' })).not.toBeNull();
     expect(screen.getByRole('img', { name: 'PI' })).not.toBeNull();
   });
 

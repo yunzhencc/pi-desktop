@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import piLogo from '../../../../resources/icon.svg?asset';
 import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
 import { MarkdownMessage } from '../components/markdown-message';
+import { ProjectPicker } from '../components/project-picker';
 import { ThreadScrollLayout } from '../components/thread-scroll-layout';
 
 interface Message {
@@ -157,15 +158,14 @@ export function HomePage() {
     />
   );
 
+  const createProject = () => window.dispatchEvent(new Event('create-project'));
+  const selectProject = (path: string) => {
+    void window.api.workspaces.select(path).then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
+  };
   const newConversationToolbar = (
     <NewConversationToolbar
-      onClearProject={() => {
-        void window.api.workspaces.clear().then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
-      }}
-      onCreateProject={() => window.dispatchEvent(new Event('create-project'))}
-      onSelectProject={(path) => {
-        void window.api.workspaces.select(path).then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
-      }}
+      onCreateProject={createProject}
+      onSelectProject={selectProject}
       workspace={workspace}
     />
   );
@@ -177,7 +177,19 @@ export function HomePage() {
         ? (
             <div className="chat-empty-state">
               <img alt="PI" className="chat-empty-state-logo" src={piLogo} />
-              <h1>{selectedWorkspace ? `你想让我们在 ${selectedWorkspace.displayName} 中构建什么？` : '我们要构建什么？'}</h1>
+              <h1>
+                {selectedWorkspace
+                  ? (
+                      <>
+                        {'你想让我们在 '}
+                        <ProjectPicker onCreateProject={createProject} onSelectProject={selectProject} triggerClassName="chat-empty-state-project-trigger" workspace={workspace}>
+                          {selectedWorkspace.displayName}
+                        </ProjectPicker>
+                        {' 中构建什么？'}
+                      </>
+                    )
+                  : '我们要构建什么？'}
+              </h1>
             </div>
           )
         : (

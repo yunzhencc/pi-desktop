@@ -26,6 +26,12 @@ const workspaces = {
 
 beforeEach(() => {
   localStorage.clear();
+  vi.stubGlobal('ResizeObserver', class {
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+  });
+  Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: () => {} });
   const rect = new DOMRect(0, 0, 1, 1);
   Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => null });
   Object.defineProperty(Range.prototype, 'getBoundingClientRect', { configurable: true, value: () => rect });
@@ -182,8 +188,8 @@ describe('chat composer', () => {
     renderNewConversationToolbar({ onSelectProject, workspace: { workspaces: [weather, notes] } });
 
     await user.click(screen.getByRole('button', { name: '选择项目' }));
-    expect(screen.getByRole('menu')).not.toBeNull();
-    await user.click(screen.getByRole('menuitem', { name: 'notes' }));
+    expect(screen.getByRole('dialog', { name: '选择项目' })).not.toBeNull();
+    await user.click(screen.getByRole('option', { name: 'notes' }));
 
     expect(onSelectProject).toHaveBeenCalledWith(notes.path);
   });
@@ -194,10 +200,10 @@ describe('chat composer', () => {
     renderNewConversationToolbar({ onCreateProject, workspace: { workspaces: [weather, notes] } });
 
     await user.click(screen.getByRole('button', { name: '选择项目' }));
-    await user.click(screen.getByRole('menuitem', { name: '创建项目' }));
+    await user.click(screen.getByRole('option', { name: '新建项目' }));
 
     expect(onCreateProject).toHaveBeenCalledOnce();
-    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.queryByRole('dialog', { name: '选择项目' })).toBeNull();
   });
 
   it('shows the active local Git context above a new conversation', async () => {
@@ -209,15 +215,15 @@ describe('chat composer', () => {
     expect(toolbar.textContent).toContain('main');
   });
 
-  it('clears the selected project from its hover action', async () => {
+  it('switches a selected project from the project toolbar', async () => {
     const user = userEvent.setup();
-    const onClearProject = vi.fn();
-    renderNewConversationToolbar({ onClearProject });
+    const onSelectProject = vi.fn();
+    renderNewConversationToolbar({ onSelectProject });
 
-    await user.hover(screen.getByText('weather'));
-    await user.click(screen.getByRole('button', { name: '不在项目中工作' }));
+    await user.click(screen.getByRole('button', { name: 'weather' }));
+    await user.click(screen.getByRole('option', { name: 'notes' }));
 
-    expect(onClearProject).toHaveBeenCalledOnce();
+    expect(onSelectProject).toHaveBeenCalledWith(notes.path);
   });
 
   it('uses the drop attachment command for Electron file paths', async () => {

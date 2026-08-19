@@ -8,14 +8,14 @@ import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { ProjectPicker } from './project-picker';
 
 type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>['attachments'][number];
 type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 
-export function NewConversationToolbar({ onClearProject, onCreateProject, onSelectProject, workspace }: { onClearProject?: () => void; onCreateProject?: () => void; onSelectProject?: (path: string) => void; workspace?: WorkspaceSnapshot }) {
+export function NewConversationToolbar({ onCreateProject, onSelectProject, workspace }: { onCreateProject?: () => void; onSelectProject?: (path: string) => void; workspace?: WorkspaceSnapshot }) {
   const [branchResult, setBranchResult] = useState<{ branch?: string; path: string }>();
-  const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
 
   useEffect(() => {
@@ -31,52 +31,28 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
     <div aria-label="新会话项目上下文" className="new-conversation-toolbar" data-has-project={Boolean(selectedWorkspace)} role="toolbar">
       {selectedWorkspace
         ? (
-            <span className="new-conversation-toolbar-project" data-clear-project-available={onClearProject ? '' : undefined}>
-              {onClearProject && (
-                <button aria-label="不在项目中工作" className="new-conversation-toolbar-project-clear" onClick={onClearProject} type="button">
-                  <X aria-hidden="true" size={16} />
-                </button>
-              )}
+            <ProjectPicker
+              className="new-conversation-toolbar-project new-conversation-toolbar-project-picker"
+              onCreateProject={onCreateProject}
+              onSelectProject={onSelectProject}
+              triggerClassName="new-conversation-toolbar-project-trigger"
+              workspace={workspace}
+            >
               <Folder aria-hidden="true" className="new-conversation-toolbar-project-icon" size={18} />
               <span>{selectedWorkspace.displayName}</span>
-            </span>
+            </ProjectPicker>
           )
         : (
-            <div className="new-conversation-toolbar-project new-conversation-toolbar-project-picker">
-              <button aria-expanded={isProjectMenuOpen} aria-haspopup="menu" className="new-conversation-toolbar-project-trigger" onClick={() => setIsProjectMenuOpen(open => !open)} type="button">
-                <Folder aria-hidden="true" size={18} />
-                <span>选择项目</span>
-              </button>
-              {isProjectMenuOpen && (
-                <div className="new-conversation-toolbar-project-menu" role="menu">
-                  {workspace?.workspaces.length
-                    ? workspace.workspaces.map(item => (
-                        <button
-                          key={item.path}
-                          onClick={() => {
-                            onSelectProject?.(item.path);
-                            setIsProjectMenuOpen(false);
-                          }}
-                          role="menuitem"
-                          type="button"
-                        >
-                          {item.displayName}
-                        </button>
-                      ))
-                    : <span>暂无项目</span>}
-                  <button
-                    onClick={() => {
-                      onCreateProject?.();
-                      setIsProjectMenuOpen(false);
-                    }}
-                    role="menuitem"
-                    type="button"
-                  >
-                    创建项目
-                  </button>
-                </div>
-              )}
-            </div>
+            <ProjectPicker
+              className="new-conversation-toolbar-project new-conversation-toolbar-project-picker"
+              onCreateProject={onCreateProject}
+              onSelectProject={onSelectProject}
+              triggerClassName="new-conversation-toolbar-project-trigger"
+              workspace={workspace}
+            >
+              <Folder aria-hidden="true" size={18} />
+              <span>选择项目</span>
+            </ProjectPicker>
           )}
       {selectedWorkspace && (
         <>
