@@ -444,32 +444,81 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .workspace-sidebar-heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 4px;
   height: 28px;
   padding: 0 8px;
   color: var(--text-tertiary);
   font-size: 13px;
 }
 
-.workspace-sidebar-heading button {
+.workspace-sidebar-toggle {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.workspace-sidebar-toggle > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-sidebar-toggle svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  opacity: 0;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+
+.workspace-sidebar-toggle:hover svg,
+.workspace-sidebar-toggle:focus-visible svg,
+.workspace-sidebar-toggle svg.is-collapsed {
+  opacity: 1;
+}
+
+.workspace-sidebar-toggle svg.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.workspace-sidebar-create {
   display: grid;
   width: 24px;
   height: 24px;
   place-items: center;
   border-radius: 6px;
   color: var(--text-tertiary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
 }
 
-.workspace-sidebar-heading button:hover,
-.workspace-sidebar-heading button:focus-visible {
-  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+.workspace-sidebar-heading:hover .workspace-sidebar-create,
+.workspace-sidebar-heading:focus-within .workspace-sidebar-create {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.workspace-sidebar-create svg {
+  width: 14px;
+  height: 14px;
+}
+
+.workspace-sidebar-create:hover,
+.workspace-sidebar-create:focus-visible {
   color: var(--foreground);
 }
 
 .workspace-sidebar-list button {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   width: 100%;
   height: 30px;
   padding: 0 8px;
@@ -477,6 +526,10 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   color: var(--text-secondary);
   font-size: 14px;
   text-align: left;
+}
+
+.workspace-sidebar-list button > svg {
+  flex: 0 0 auto;
 }
 
 .workspace-sidebar-list button:hover,

@@ -36,6 +36,23 @@ describe('workspace sidebar', () => {
     expect(screen.getByRole('button', { name: '添加项目' })).not.toBeNull();
   });
 
+  it('collapses the project list from its heading', async () => {
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'weather' })).not.toBeNull());
+    const toggle = screen.getByRole('button', { name: '项目' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(toggle);
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('button', { name: 'weather' })).toBeNull();
+  });
+
   it('opens the create-project step and persists only after confirmation', async () => {
     render(
       <I18nProvider>

@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import type { FormEvent, SVGProps } from 'react';
 import { Folder, FolderPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -8,6 +8,7 @@ type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>
 export function WorkspaceSidebar() {
   const { formatMessage } = useIntl();
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
@@ -24,19 +25,48 @@ export function WorkspaceSidebar() {
   return (
     <nav aria-label={formatMessage({ id: 'projects.title' })} className="workspace-sidebar">
       <div className="workspace-sidebar-heading">
-        <span>{formatMessage({ id: 'projects.title' })}</span>
-        <button aria-label={formatMessage({ id: 'projects.add' })} onClick={() => setIsCreating(true)} title={formatMessage({ id: 'projects.add' })} type="button"><FolderPlus aria-hidden="true" size={15} /></button>
+        <button aria-expanded={!isCollapsed} className="workspace-sidebar-toggle" onClick={() => setIsCollapsed(collapsed => !collapsed)} type="button">
+          <span>{formatMessage({ id: 'projects.title' })}</span>
+          <CodexChevron aria-hidden="true" className={isCollapsed ? 'is-collapsed' : undefined} />
+        </button>
+        <button aria-label={formatMessage({ id: 'projects.add' })} className="workspace-sidebar-create" onClick={() => setIsCreating(true)} title={formatMessage({ id: 'projects.add' })} type="button"><CodexPlus aria-hidden="true" /></button>
       </div>
-      <div className="workspace-sidebar-list">
-        {workspace?.workspaces.map(item => (
-          <button aria-current={item.path === workspace.selectedWorkspacePath ? 'page' : undefined} key={item.path} onClick={() => void select(item.path)} type="button">
-            <Folder aria-hidden="true" size={15} />
-            <span>{item.displayName}</span>
-          </button>
-        ))}
-      </div>
+      {!isCollapsed && (
+        <div className="workspace-sidebar-list">
+          {workspace?.workspaces.map(item => (
+            <button aria-current={item.path === workspace.selectedWorkspacePath ? 'page' : undefined} key={item.path} onClick={() => void select(item.path)} type="button">
+              <CodexFolder aria-hidden="true" />
+              <span>{item.displayName}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {isCreating && <CreateProjectDialog onClose={() => setIsCreating(false)} onCreated={update} />}
     </nav>
+  );
+}
+
+function CodexChevron(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg fill="none" height="21" viewBox="0 0 20 21" width="20" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M15.2793 7.71101C15.539 7.45131 15.961 7.45131 16.2207 7.71101C16.4804 7.97071 16.4804 8.39272 16.2207 8.65242L10.4707 14.4024C10.211 14.6621 9.78902 14.6621 9.52932 14.4024L3.77932 8.65242L3.69436 8.54792C3.52385 8.28979 3.55205 7.93828 3.77932 7.71101C4.00659 7.48374 4.3581 7.45554 4.61623 7.62605L4.72073 7.71101L10 12.9903L15.2793 7.71101Z" fill="currentColor" stroke="currentColor" strokeWidth=".6" />
+    </svg>
+  );
+}
+
+function CodexFolder(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg fill="none" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path clipRule="evenodd" d="M5.55957 2.14136C6.06503 2.14136 6.55801 2.30207 6.9668 2.59937L7.81836 3.21851C8.04761 3.38513 8.32401 3.47534 8.60742 3.47534H12.1338C13.4545 3.47559 14.5254 4.54621 14.5254 5.86694V11.4666C14.5254 12.7873 13.4545 13.8579 12.1338 13.8582H3.86621C2.54554 13.8579 1.47461 12.7873 1.47461 11.4666V4.53296C1.47486 3.21244 2.54569 2.1416 3.86621 2.14136H5.55957ZM2.52539 7.85718V11.4666C2.52539 12.2074 3.12544 12.8081 3.86621 12.8083H12.1338C12.8746 12.8081 13.4746 12.2074 13.4746 11.4666V7.85718H2.52539ZM3.86621 3.19214C3.12559 3.19238 2.52564 3.79234 2.52539 4.53296V6.8064H13.4746V5.86694C13.4746 5.12611 12.8746 4.52539 12.1338 4.52515H8.60742C8.10203 4.52515 7.60895 4.36534 7.2002 4.06812L6.34863 3.448C6.11937 3.28135 5.84301 3.19214 5.55957 3.19214H3.86621Z" fill="currentColor" fillRule="evenodd" />
+    </svg>
+  );
+}
+
+function CodexPlus(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg fill="none" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M9.33496 16.5V10.665H3.5C3.13273 10.665 2.83496 10.3673 2.83496 10C2.83496 9.63273 3.13273 9.33496 3.5 9.33496H9.33496V3.5C9.33496 3.13273 9.63273 2.83496 10 2.83496C10.3673 2.83496 10.665 3.13273 10.665 3.5V9.33496H16.5L16.6338 9.34863C16.9369 9.41057 17.165 9.67857 17.165 10C17.165 10.3214 16.9369 10.5894 16.6338 10.6514L16.5 10.665H10.665V16.5C10.665 16.8673 10.3673 17.165 10 17.165C9.63273 17.165 9.33496 16.8673 9.33496 16.5Z" fill="currentColor" />
+    </svg>
   );
 }
 
