@@ -16,4 +16,10 @@ describe('app shell surfaces', () => {
 
     expect(opaqueSidebarRule).toContain('background: var(--surface-tertiary);');
   });
+
+  it('uses the light window underlay for an unfocused light sidebar', () => {
+    const lightOpaqueSidebarRule = styles.match(/html:not\(\.dark\)\.electron-opaque \.app-shell-left-panel\s*\{([\s\S]*?)\}/)?.[1];
+
+    expect(lightOpaqueSidebarRule).toContain('background: #fafafa;');
+  });
 });

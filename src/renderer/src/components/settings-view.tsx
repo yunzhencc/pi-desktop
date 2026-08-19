@@ -1,23 +1,22 @@
 import type { AppLocale } from '../providers/i18n';
 import type { AppearanceTheme } from './appearance-settings';
-import { ArrowLeft, Paintbrush } from 'lucide-react';
+import { ArrowLeft, Paintbrush, SlidersHorizontal } from 'lucide-react';
 import { useIntl } from 'react-intl';
 
 interface SettingsViewProps {
-  locale?: AppLocale;
-  onLocaleChange?: (locale: AppLocale) => void;
   onThemeChange: (theme: AppearanceTheme) => void;
   theme: AppearanceTheme;
 }
 
 const themeOptions: AppearanceTheme[] = ['system', 'light', 'dark'];
-const localeOptions: AppLocale[] = ['zh-CN', 'en'];
 
 interface SettingsSidebarProps {
+  activePath: string;
   onClose: () => void;
+  onNavigate: (path: '/settings/general' | '/settings/appearance') => void;
 }
 
-export function SettingsSidebar({ onClose }: SettingsSidebarProps) {
+export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSidebarProps) {
   const { formatMessage } = useIntl();
 
   return (
@@ -27,7 +26,21 @@ export function SettingsSidebar({ onClose }: SettingsSidebarProps) {
         {formatMessage({ id: 'settings.backToApp' })}
       </button>
       <div className="settings-navigation-title">{formatMessage({ id: 'settings.settings' })}</div>
-      <button aria-current="page" className="settings-navigation-item" type="button">
+      <button
+        aria-current={activePath === '/settings/general' ? 'page' : undefined}
+        className="settings-navigation-item"
+        onClick={() => onNavigate('/settings/general')}
+        type="button"
+      >
+        <SlidersHorizontal aria-hidden="true" size={16} strokeWidth={1.75} />
+        {formatMessage({ id: 'settings.general' })}
+      </button>
+      <button
+        aria-current={activePath === '/settings/appearance' ? 'page' : undefined}
+        className="settings-navigation-item"
+        onClick={() => onNavigate('/settings/appearance')}
+        type="button"
+      >
         <Paintbrush aria-hidden="true" size={16} strokeWidth={1.75} />
         {formatMessage({ id: 'settings.appearance' })}
       </button>
@@ -35,7 +48,7 @@ export function SettingsSidebar({ onClose }: SettingsSidebarProps) {
   );
 }
 
-export function SettingsView({ locale = 'zh-CN', onLocaleChange, onThemeChange, theme }: SettingsViewProps) {
+export function SettingsView({ onThemeChange, theme }: SettingsViewProps) {
   const { formatMessage } = useIntl();
 
   return (
@@ -60,22 +73,36 @@ export function SettingsView({ locale = 'zh-CN', onLocaleChange, onThemeChange, 
             ))}
           </div>
         </div>
+      </section>
+    </div>
+  );
+}
+
+interface GeneralSettingsViewProps {
+  locale: AppLocale;
+  onLocaleChange: (locale: AppLocale) => void;
+}
+
+export function GeneralSettingsView({ locale, onLocaleChange }: GeneralSettingsViewProps) {
+  const { formatMessage } = useIntl();
+
+  return (
+    <div className="settings-view">
+      <section className="settings-content" aria-labelledby="general-settings-title">
+        <h1 id="general-settings-title">{formatMessage({ id: 'settings.general' })}</h1>
         <div className="settings-section">
           <h2>{formatMessage({ id: 'settings.language' })}</h2>
-          <div aria-label={formatMessage({ id: 'settings.language' })} className="settings-theme-options" role="radiogroup">
-            {localeOptions.map(value => (
-              <label className="settings-theme-option" key={value}>
-                <input
-                  aria-label={formatMessage({ id: value === 'en' ? 'settings.english' : 'settings.chinese' })}
-                  checked={locale === value}
-                  name="locale"
-                  onChange={() => onLocaleChange?.(value)}
-                  type="radio"
-                />
-                <span>{formatMessage({ id: value === 'en' ? 'settings.english' : 'settings.chinese' })}</span>
-              </label>
-            ))}
-          </div>
+          <label className="settings-field">
+            <span>{formatMessage({ id: 'settings.language' })}</span>
+            <select
+              aria-label={formatMessage({ id: 'settings.language' })}
+              onChange={event => onLocaleChange(event.target.value as AppLocale)}
+              value={locale}
+            >
+              <option value="zh-CN">{formatMessage({ id: 'settings.chinese' })}</option>
+              <option value="en">{formatMessage({ id: 'settings.english' })}</option>
+            </select>
+          </label>
         </div>
       </section>
     </div>

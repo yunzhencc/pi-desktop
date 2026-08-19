@@ -26,7 +26,8 @@ const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
 export function App() {
   const { formatMessage } = useIntl();
   const navigate = useNavigate();
-  const isSettingsPage = useRouterState({ select: state => state.location.pathname.startsWith('/settings/') });
+  const settingsPath = useRouterState({ select: state => state.location.pathname });
+  const isSettingsPage = settingsPath.startsWith('/settings/');
   const isMac = navigator.platform.includes('Mac');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isWindowOpaque, setIsWindowOpaque] = useState(false);
@@ -200,8 +201,14 @@ export function App() {
               />
             )}
             {isSettingsPage
-              ? <SettingsSidebar onClose={() => navigate({ to: '/' })} />
-              : <SidebarProfile name="Wang Xingkang" onOpenSettings={() => navigate({ to: '/settings/appearance' })} />}
+              ? (
+                  <SettingsSidebar
+                    activePath={settingsPath}
+                    onClose={() => navigate({ to: '/' })}
+                    onNavigate={to => navigate({ to })}
+                  />
+                )
+              : <SidebarProfile name="Wang Xingkang" onOpenSettings={() => navigate({ to: '/settings/general' })} />}
           </>
         )}
       </aside>

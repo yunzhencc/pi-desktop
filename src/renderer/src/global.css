@@ -166,6 +166,10 @@ html.electron-opaque .app-shell-left-panel {
   background: var(--surface-tertiary);
 }
 
+html:not(.dark).electron-opaque .app-shell-left-panel {
+  background: #fafafa;
+}
+
 .app-shell-right-panel {
   background: var(--surface);
   border-inline-start: 1px solid var(--border-subtle);
@@ -367,6 +371,28 @@ html.electron-opaque .app-shell-left-panel {
 
 .settings-theme-option:has(input:checked) {
   color: var(--foreground);
+}
+
+.settings-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--foreground);
+  font-size: 14px;
+}
+
+.settings-field select {
+  min-width: 8rem;
+  padding: 4px 24px 4px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: inherit;
+  font: inherit;
 }
 
 .settings-theme-preview {

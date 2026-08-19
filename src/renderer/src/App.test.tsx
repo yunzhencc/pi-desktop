@@ -9,7 +9,7 @@ vi.mock('@tanstack/react-hotkeys', () => ({ useHotkey: () => {} }));
 vi.mock('@tanstack/react-router', () => ({
   Outlet: () => null,
   useNavigate: () => vi.fn(),
-  useRouterState: () => false,
+  useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => string }) => select({ location: { pathname: '/' } }),
 }));
 
 type OpaqueSurfaceListener = (opaque: boolean) => void;

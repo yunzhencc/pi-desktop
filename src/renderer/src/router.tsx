@@ -2,8 +2,10 @@ import type { RouterHistory } from '@tanstack/react-router';
 import { createHashHistory, createMemoryHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 import { App } from './App';
 import { AppearanceSettingsPage } from './components/appearance-settings-page';
+import { GeneralSettingsPage } from './components/general-settings-page';
 
 export const settingsAppearancePath = '/settings/appearance';
+export const settingsGeneralPath = '/settings/general';
 
 const rootRoute = createRootRoute({ component: App });
 const indexRoute = createRoute({
@@ -16,7 +18,12 @@ const appearanceSettingsRoute = createRoute({
   path: settingsAppearancePath,
   component: AppearanceSettingsPage,
 });
-const routeTree = rootRoute.addChildren([indexRoute, appearanceSettingsRoute]);
+const generalSettingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: settingsGeneralPath,
+  component: GeneralSettingsPage,
+});
+const routeTree = rootRoute.addChildren([indexRoute, generalSettingsRoute, appearanceSettingsRoute]);
 
 export function createAppRouter(history: RouterHistory = getDefaultHistory()) {
   return createRouter({ history, routeTree });
