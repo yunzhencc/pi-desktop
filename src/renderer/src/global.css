@@ -294,8 +294,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   height: 32px;
   padding: 0 8px;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--foreground) 8%, transparent);
-  color: var(--foreground);
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
   text-align: left;
@@ -310,6 +309,16 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 }
 
 .settings-back-button:hover {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+}
+
+.settings-navigation-item[aria-current='page'] {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--foreground);
+}
+
+.settings-navigation-item:not([aria-current='page']):hover {
   background: color-mix(in srgb, var(--foreground) 6%, transparent);
   color: var(--foreground);
 }
