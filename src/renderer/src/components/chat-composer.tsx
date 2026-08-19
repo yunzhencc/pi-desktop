@@ -6,7 +6,7 @@ import { keymap } from 'prosemirror-keymap';
 import { schema } from 'prosemirror-schema-basic';
 import { EditorState } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>['attachments'][number];
@@ -64,10 +64,43 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
     };
   }, []);
 
-  const addSelection = (result: SelectionResult) => {
+  const addSelection = useCallback((result: SelectionResult) => {
     setAttachments(current => [...current, ...result.attachments.filter(next => !current.some(existing => existing.id === next.id))]);
     setError(result.failures.map(failure => `${failure.name}: ${failure.reason}`).join('\n'));
-  };
+  }, []);
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      if (event.defaultPrevented)
+        return;
+
+      const images = Array.from(event.clipboardData?.items ?? []).flatMap((item) => {
+        const image = item.kind === 'file' && item.type.startsWith('image/') ? item.getAsFile() : null;
+        return image ? [image] : [];
+      });
+      if (images.length === 0)
+        return;
+      if (typeof window.api.composer.addPastedImage !== 'function') {
+        setError('请重启 Pi Desktop 后再粘贴图片。');
+        return;
+      }
+
+      event.preventDefault();
+      void Promise.all(images.map(async (image) => {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(reader.error ?? new Error('无法读取剪贴板图片。'));
+          reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('无法读取剪贴板图片。'));
+          reader.readAsDataURL(image);
+        });
+        const data = dataUrl.slice(dataUrl.indexOf(',') + 1);
+        addSelection(await window.api.composer.addPastedImage(image.name || 'pasted-image.png', data));
+      })).catch(() => setError('无法读取剪贴板图片。'));
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [addSelection]);
 
   const removeAttachment = async (id: string) => {
     await window.api.composer.removeAttachment(id);

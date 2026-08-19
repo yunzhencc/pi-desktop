@@ -164,6 +164,11 @@ app.whenReady().then(() => {
       throw new TypeError('Invalid attachment paths');
     return composer.addAttachments(paths);
   });
+  ipcMain.handle('composer:add-pasted-image', (_event, name: unknown, data: unknown) => {
+    if (typeof name !== 'string' || typeof data !== 'string')
+      throw new TypeError('Invalid pasted image');
+    return composer.addPastedImage(name, data);
+  });
   ipcMain.handle('composer:remove-attachment', (_event, id: unknown) => {
     if (typeof id !== 'string')
       throw new TypeError('Invalid attachment ID');

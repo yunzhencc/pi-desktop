@@ -8,6 +8,7 @@ import { ChatComposer } from './chat-composer';
 
 const composer = {
   addDroppedAttachments: vi.fn(),
+  addPastedImage: vi.fn(),
   onUpdate: vi.fn(),
   removeAttachment: vi.fn(),
   send: vi.fn(),
@@ -22,6 +23,7 @@ beforeEach(() => {
   Object.defineProperty(window, 'scrollBy', { configurable: true, value: () => {} });
   vi.stubGlobal('api', { composer });
   composer.addDroppedAttachments.mockResolvedValue({ attachments: [], failures: [] });
+  composer.addPastedImage.mockResolvedValue({ attachments: [], failures: [] });
   composer.removeAttachment.mockResolvedValue(undefined);
   composer.send.mockResolvedValue(undefined);
 });
@@ -88,5 +90,26 @@ describe('chat composer', () => {
     fireEvent.drop(screen.getByRole('textbox', { name: 'Message Pi' }), { dataTransfer: { files: [file] } });
 
     await waitFor(() => expect(composer.addDroppedAttachments).toHaveBeenCalledWith(['/tmp/notes.txt']));
+  });
+
+  it('adds a clipboard image while the editor is not focused', async () => {
+    renderComposer();
+    const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });
+    const item = { getAsFile: () => image, kind: 'file', type: 'image/png' } as DataTransferItem;
+
+    fireEvent.paste(window, { clipboardData: { items: [item] } });
+
+    await waitFor(() => expect(composer.addPastedImage).toHaveBeenCalledWith('clipboard.png', 'iVBORw=='));
+  });
+
+  it('asks for a restart when the running preload bridge is outdated', async () => {
+    vi.stubGlobal('api', { composer: { ...composer, addPastedImage: undefined } });
+    renderComposer();
+    const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });
+    const item = { getAsFile: () => image, kind: 'file', type: 'image/png' } as DataTransferItem;
+
+    fireEvent.paste(window, { clipboardData: { items: [item] } });
+
+    expect((await screen.findByRole('status')).textContent).toBe('请重启 Pi Desktop 后再粘贴图片。');
   });
 });

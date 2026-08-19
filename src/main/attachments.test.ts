@@ -32,6 +32,18 @@ describe('attachmentStore', () => {
     expect(result.attachments[0]).not.toHaveProperty('path');
   });
 
+  it('accepts copied image bytes without a file path', async () => {
+    const store = new AttachmentStore();
+    const result = await store.addImage('pasted-image.png', png);
+
+    expect(result.failures).toEqual([]);
+    expect(result.attachments).toEqual([expect.objectContaining({ kind: 'image', name: 'pasted-image.png', size: png.length })]);
+    await expect(store.toPrompt([result.attachments[0]!.id])).resolves.toEqual({
+      images: [{ type: 'image', data: png.toString('base64'), mimeType: 'image/png' }],
+      text: '',
+    });
+  });
+
   it('accepts UTF-8 code files without exposing their contents', async () => {
     const store = new AttachmentStore();
     const result = await store.add([await fixture('example.ts', 'export const answer = 42;')]);

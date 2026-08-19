@@ -444,11 +444,6 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   box-shadow: 0 10px 28px color-mix(in srgb, #000 8%, transparent);
 }
 
-.chat-composer:focus-within {
-  border-color: color-mix(in srgb, var(--foreground) 30%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 25%, transparent), 0 10px 28px color-mix(in srgb, #000 8%, transparent);
-}
-
 .chat-composer-attachments {
   display: flex;
   flex-wrap: wrap;

@@ -20,7 +20,8 @@ export interface AttachmentFailure {
 }
 
 interface StoredAttachment extends AttachmentMetadata {
-  path: string;
+  path?: string;
+  source?: Buffer;
 }
 
 export interface PromptAttachments {
@@ -105,6 +106,23 @@ export class AttachmentStore {
     return { attachments, failures };
   }
 
+  addImage(name: string, source: Buffer): { attachments: AttachmentMetadata[]; failures: AttachmentFailure[] } {
+    const imageMimeType = detectImageMimeType(source);
+    if (!imageMimeType)
+      return { attachments: [], failures: [{ name, reason: '不支持此图片类型。' }] };
+
+    const attachment: StoredAttachment = {
+      id: randomUUID(),
+      kind: 'image',
+      name,
+      size: source.length,
+      source,
+      previewDataUrl: `data:${imageMimeType};base64,${source.toString('base64')}`,
+    };
+    this.#attachments.set(attachment.id, attachment);
+    return { attachments: [toMetadata(attachment)], failures: [] };
+  }
+
   remove(id: string): void {
     this.#attachments.delete(id);
   }
@@ -121,7 +139,7 @@ export class AttachmentStore {
     let text = '';
 
     for (const attachment of this.resolve(ids)) {
-      const source = await readFile(attachment.path);
+      const source = attachment.source ?? await readFile(attachment.path!);
       if (attachment.kind === 'image') {
         const mimeType = detectImageMimeType(source);
         if (!mimeType)
@@ -137,7 +155,7 @@ export class AttachmentStore {
   }
 }
 
-function toMetadata({ path: _path, ...attachment }: StoredAttachment): AttachmentMetadata {
+function toMetadata({ path: _path, source: _source, ...attachment }: StoredAttachment): AttachmentMetadata {
   return attachment;
 }
 
