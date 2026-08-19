@@ -907,7 +907,11 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   margin: 0 12px -1px;
   padding: 0 16px;
   border-radius: 22px 22px 0 0;
-  background: color-mix(in srgb, var(--surface-elevated) 82%, var(--background));
+  background: var(--surface-tertiary);
+}
+
+.dark .new-conversation-toolbar {
+  background: color-mix(in oklab, var(--foreground) 2.5%, transparent);
 }
 
 .new-conversation-toolbar[data-has-project='false'] {
