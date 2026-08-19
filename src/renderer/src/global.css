@@ -323,6 +323,10 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   color: var(--foreground);
 }
 
+.settings-navigation-item + .settings-navigation-item {
+  margin-top: 1px;
+}
+
 .settings-content {
   width: 100%;
   max-width: 48rem;

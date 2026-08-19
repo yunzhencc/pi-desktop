@@ -30,4 +30,8 @@ describe('app shell surfaces', () => {
     expect(navigationRule).not.toContain('background:');
     expect(activeNavigationRule).toContain('background: color-mix(in srgb, var(--foreground) 8%, transparent);');
   });
+
+  it('leaves a one-pixel gap between adjacent settings navigation items', () => {
+    expect(styles).toMatch(/\.settings-navigation-item \+ \.settings-navigation-item\s*\{\s*margin-top: 1px;/);
+  });
 });
