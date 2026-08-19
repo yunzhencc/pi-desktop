@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChatComposer } from '../components/chat-composer';
+import { ThreadScrollLayout } from '../components/thread-scroll-layout';
 
 interface Message {
   id: number;
@@ -24,16 +25,18 @@ export function HomePage() {
 
   return (
     <section className="chat-page">
-      <div aria-live="polite" className="chat-transcript">
-        {messages.length === 0
-          ? (
-              <div className="chat-empty-state">
-                <p>What can I help you build?</p>
-                <span>Describe a task, paste code, or add an image or text file.</span>
-              </div>
-            )
-          : messages.map(message => <article className={`chat-message chat-message-${message.role}`} key={message.id}>{message.text}</article>)}
-      </div>
+      {messages.length === 0
+        ? (
+            <div className="chat-empty-state">
+              <p>What can I help you build?</p>
+              <span>Describe a task, paste code, or add an image or text file.</span>
+            </div>
+          )
+        : (
+            <ThreadScrollLayout turns={messages.map(message => ({ key: String(message.id), message }))}>
+              {({ message }) => <article className={`chat-message chat-message-${message.role}`}>{message.text}</article>}
+            </ThreadScrollLayout>
+          )}
       <div className="chat-composer-wrap">
         <ChatComposer onSubmitted={text => setMessages(current => [...current, { id: Date.now(), role: 'user', text }])} />
       </div>

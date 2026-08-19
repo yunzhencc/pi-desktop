@@ -381,14 +381,15 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   padding-top: 46px;
 }
 
-.chat-transcript {
-  display: flex;
+.thread-scroll-layout {
   flex: 1;
-  flex-direction: column;
-  gap: 16px;
   min-height: 0;
   overflow: auto;
   padding: 48px max(24px, calc((100% - 720px) / 2));
+}
+
+.thread-scroll-layout > [data-thread-turn] {
+  display: flex;
 }
 
 .chat-empty-state {
@@ -416,6 +417,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 }
 
 .chat-message-user {
+  margin-left: auto;
   align-self: flex-end;
   padding: 10px 14px;
   border-radius: 16px;
