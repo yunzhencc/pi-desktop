@@ -100,6 +100,29 @@ describe('pi runtime', () => {
     expect(createSession).toHaveBeenCalledTimes(2);
   });
 
+  it('returns the last user prompt after moving the session to its parent branch', async () => {
+    const editLastUserMessage = vi.fn(() => Promise.resolve({ cancelled: false, editorText: 'Revise the plan' }));
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({ editLastUserMessage, prompt: vi.fn(), subscribe: () => () => {} }));
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
+
+    await expect(runtime.editLastUserMessage()).resolves.toBe('Revise the plan');
+    expect(editLastUserMessage).toHaveBeenCalledOnce();
+  });
+
+  it('resends an edited last user message in the same operation', async () => {
+    const editLastUserMessage = vi.fn(() => Promise.resolve({ cancelled: false, editorText: 'Original prompt' }));
+    const prompt = vi.fn();
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({ editLastUserMessage, prompt, subscribe: () => () => {} }));
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
+
+    await runtime.editLastUserMessage('Revised prompt');
+
+    expect(editLastUserMessage).toHaveBeenCalledOnce();
+    expect(prompt).toHaveBeenCalledWith('Revised prompt', undefined);
+  });
+
   it('rejects sends until a workspace has been selected', async () => {
     const runtime = new PiRuntime(new AttachmentStore(), async () => ({ prompt: vi.fn(), subscribe: () => () => {} }));
     runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });

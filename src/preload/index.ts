@@ -26,6 +26,7 @@ const api = {
   composer: {
     addDroppedAttachments: (paths: string[]): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipcRenderer.invoke('composer:add-attachments', paths),
     addPastedImage: (name: string, data: string): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipcRenderer.invoke('composer:add-pasted-image', name, data),
+    editLastUserMessage: (text?: string): Promise<string | undefined> => ipcRenderer.invoke('composer:edit-last-user-message', text),
     newConversation: (): Promise<void> => ipcRenderer.invoke('composer:new-conversation'),
     removeAttachment: (id: string): Promise<void> => ipcRenderer.invoke('composer:remove-attachment', id),
     send: (prompt: string, attachmentIds: string[]): Promise<void> => ipcRenderer.invoke('composer:send', prompt, attachmentIds),

@@ -73,7 +73,9 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
   );
 }
 
-export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = () => {}, onSubmitted, workspace }: {
+export function ChatComposer({ draft, inlineEdit, isRunning = false, onSent = () => {}, onStop = () => {}, onSubmitted, workspace }: {
+  draft?: { id: number; text: string };
+  inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => Promise<void> | void };
   isRunning?: boolean;
   onSent?: () => void;
   onStop?: () => void;
@@ -89,8 +91,10 @@ export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = ()
   const [isSending, setIsSending] = useState(false);
   const [text, setText] = useState('');
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
-  const canSend = Boolean(selectedWorkspace && (text.trim() || attachments.length)) && !isSending && !isRunning;
-  const placeholder = formatMessage({ id: 'composer.placeholder' });
+  const initialText = inlineEdit?.initialText ?? draft?.text;
+  const canSend = Boolean(inlineEdit ? text.trim() : selectedWorkspace && (text.trim() || attachments.length)) && !isSending && !isRunning;
+  const placeholder = inlineEdit ? 'Edit message' : formatMessage({ id: 'composer.placeholder' });
+  const editorLabel = inlineEdit ? 'Edit message' : 'Message Pi';
 
   useEffect(() => {
     if (!editorHostRef.current)
@@ -98,7 +102,7 @@ export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = ()
 
     const view = new EditorView(editorHostRef.current, {
       attributes: {
-        'aria-label': 'Message Pi',
+        'aria-label': editorLabel,
         'aria-multiline': 'true',
         'role': 'textbox',
       },
@@ -135,7 +139,14 @@ export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = ()
       editorViewRef.current = null;
       view.destroy();
     };
-  }, []);
+  }, [editorLabel]);
+
+  useEffect(() => {
+    const view = editorViewRef.current;
+    if (initialText == null || !view)
+      return;
+    view.dispatch(view.state.tr.replaceWith(0, view.state.doc.content.size, initialText ? schema.text(initialText) : undefined));
+  }, [initialText]);
 
   const addSelection = useCallback((result: SelectionResult) => {
     setAttachments(current => [...current, ...result.attachments.filter(next => !current.some(existing => existing.id === next.id))]);
@@ -143,6 +154,8 @@ export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = ()
   }, []);
 
   useEffect(() => {
+    if (inlineEdit)
+      return;
     const handlePaste = (event: ClipboardEvent) => {
       if (event.defaultPrevented)
         return;
@@ -173,7 +186,7 @@ export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = ()
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [addSelection]);
+  }, [addSelection, inlineEdit]);
 
   const removeAttachment = async (id: string) => {
     await window.api.composer.removeAttachment(id);
@@ -186,8 +199,12 @@ export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = ()
 
     setError('');
     setIsSending(true);
-    onSubmitted(text);
     try {
+      if (inlineEdit) {
+        await inlineEdit.onSubmit(text.trim());
+        return;
+      }
+      onSubmitted(text);
       await window.api.composer.send(text, attachments.map(attachment => attachment.id));
       onSent();
       editorViewRef.current?.dispatch(editorViewRef.current.state.tr.delete(0, editorViewRef.current.state.doc.content.size));
@@ -207,11 +224,13 @@ export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = ()
 
   return (
     <form
-      aria-label="Message Pi"
-      className="chat-composer"
+      aria-label={editorLabel}
+      className={inlineEdit ? 'chat-message-user-editor' : 'chat-composer'}
       style={{ '--chat-composer-placeholder': JSON.stringify(placeholder) } as CSSProperties}
-      onDragOver={event => event.preventDefault()}
+      onDragOver={inlineEdit ? undefined : event => event.preventDefault()}
       onDrop={(event) => {
+        if (inlineEdit)
+          return;
         event.preventDefault();
         const paths = Array.from(event.dataTransfer.files).flatMap((file) => {
           const path = (file as File & { path?: unknown }).path;
@@ -228,7 +247,7 @@ export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = ()
         void send();
       }}
     >
-      {attachments.length > 0 && (
+      {!inlineEdit && attachments.length > 0 && (
         <div aria-label="Attachments" className="chat-composer-attachments">
           {attachments.map(attachment => attachment.kind === 'image'
             ? (
@@ -247,18 +266,27 @@ export function ChatComposer({ isRunning = false, onSent = () => {}, onStop = ()
         </div>
       )}
       <div className="chat-composer-editor" ref={editorHostRef} />
-      <div className="chat-composer-actions">
-        <button
-          aria-label={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
-          className="chat-composer-send"
-          disabled={isRunning ? false : !canSend}
-          onClick={isRunning ? () => onStop() : undefined}
-          title={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
-          type={isRunning ? 'button' : 'submit'}
-        >
-          {isRunning ? <Square aria-hidden="true" fill="currentColor" size={12} /> : isSending ? <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /> : <ArrowUp aria-hidden="true" size={16} />}
-        </button>
-      </div>
+      {inlineEdit
+        ? (
+            <div className="chat-message-user-editor-actions">
+              <button aria-label="Cancel edit" disabled={isSending} onClick={inlineEdit.onCancel} type="button">取消</button>
+              <button aria-label="Send edited message" disabled={!canSend} type="submit">{isSending ? <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /> : '发送'}</button>
+            </div>
+          )
+        : (
+            <div className="chat-composer-actions">
+              <button
+                aria-label={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
+                className="chat-composer-send"
+                disabled={isRunning ? false : !canSend}
+                onClick={isRunning ? () => onStop() : undefined}
+                title={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
+                type={isRunning ? 'button' : 'submit'}
+              >
+                {isRunning ? <Square aria-hidden="true" fill="currentColor" size={12} /> : isSending ? <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /> : <ArrowUp aria-hidden="true" size={16} />}
+              </button>
+            </div>
+          )}
       {error && <p aria-live="polite" className="chat-composer-error" role="status">{error}</p>}
     </form>
   );

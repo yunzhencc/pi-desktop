@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Copy } from 'lucide-react';
+import { Copy, Pencil } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import piLogo from '../../../../resources/icon.svg?asset';
 import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
@@ -21,6 +21,7 @@ type PiSessionSnapshot = Awaited<ReturnType<Window['api']['sessions']['open']>>[
 
 export function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [editingMessage, setEditingMessage] = useState<{ id: number; text: string }>();
   const [isRunning, setIsRunning] = useState(false);
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
   const workspaceRef = useRef<WorkspaceSnapshot>();
@@ -123,6 +124,15 @@ export function HomePage() {
     };
     const unsubscribe = window.api.composer.onUpdate((update) => {
       if (update.type === 'status') {
+        if (update.status === 'settled') {
+          flushAssistant();
+          setMessages((current) => {
+            const last = current.at(-1);
+            return last?.role === 'assistant' && !last.done
+              ? [...current.slice(0, -1), { ...last, completedAtMs: Date.now(), done: true }]
+              : current;
+          });
+        }
         setIsRunning(update.status === 'running');
         return;
       }
@@ -159,6 +169,21 @@ export function HomePage() {
     />
   );
 
+  const submitEditedLastUserMessage = async (text: string) => {
+    const message = editingMessage;
+    if (message == null || !text.trim())
+      return;
+    const sourceText = await window.api.composer.editLastUserMessage(text);
+    if (sourceText == null)
+      return;
+    setMessages((current) => {
+      const index = current.findIndex(currentMessage => currentMessage.id === message.id);
+      return index < 0 ? current : [...current.slice(0, index), { ...current[index]!, text }];
+    });
+    setEditingMessage(undefined);
+    window.dispatchEvent(new Event('sessions-changed'));
+  };
+
   const createProject = () => window.dispatchEvent(new Event('create-project'));
   const selectProject = (path: string) => {
     void window.api.workspaces.select(path).then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
@@ -175,6 +200,7 @@ export function HomePage() {
     />
   );
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
+  const lastUserMessageId = messages.findLast(message => message.role === 'user')?.id;
 
   return (
     <section className="chat-page" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
@@ -203,20 +229,24 @@ export function HomePage() {
               turns={messages.map(message => ({ key: String(message.id), message }))}
             >
               {({ message }) => (
-                <article className={`chat-message chat-message-${message.role}`}>
+                <article className={`chat-message chat-message-${message.role}${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
                   {message.role === 'assistant'
                     ? (
                         <>
-                          <WorkedFor completedAtMs={message.completedAtMs} startedAtMs={message.startedAtMs} />
+                          <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} />
                           <MarkdownMessage>{message.text}</MarkdownMessage>
                         </>
                       )
                     : message.role === 'user'
                       ? (
-                          <>
-                            <div className="chat-message-user-content">{message.text}</div>
-                            <UserMessageFooter startedAtMs={message.startedAtMs} text={message.text} />
-                          </>
+                          editingMessage?.id === message.id
+                            ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
+                            : (
+                                <>
+                                  <div className="chat-message-user-content" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>{message.text}</div>
+                                  <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} startedAtMs={message.startedAtMs} text={message.text} />
+                                </>
+                              )
                         )
                       : message.text}
                 </article>
@@ -235,12 +265,13 @@ export function HomePage() {
   );
 }
 
-function UserMessageFooter({ startedAtMs, text }: Pick<Message, 'startedAtMs' | 'text'>) {
+function UserMessageFooter({ canEdit, onEdit, startedAtMs, text }: Pick<Message, 'startedAtMs' | 'text'> & { canEdit: boolean; onEdit: () => void }) {
   const timestamp = startedAtMs == null ? null : new Intl.DateTimeFormat(undefined, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' }).format(startedAtMs);
 
   return (
     <footer className="chat-message-user-footer">
       {timestamp != null && <time dateTime={new Date(startedAtMs!).toISOString()}>{timestamp}</time>}
+      {canEdit && <button aria-label="Edit message" className="chat-message-user-copy" onClick={onEdit} title="Edit message" type="button"><Pencil aria-hidden="true" size={14} /></button>}
       <button aria-label="Copy message" className="chat-message-user-copy" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button">
         <Copy aria-hidden="true" size={14} />
       </button>
@@ -248,17 +279,17 @@ function UserMessageFooter({ startedAtMs, text }: Pick<Message, 'startedAtMs' | 
   );
 }
 
-function WorkedFor({ completedAtMs, startedAtMs }: Pick<Message, 'completedAtMs' | 'startedAtMs'>) {
+function WorkedFor({ completedAtMs, done, startedAtMs }: Pick<Message, 'completedAtMs' | 'done' | 'startedAtMs'>) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if (startedAtMs == null || completedAtMs != null)
+    if (done || startedAtMs == null || completedAtMs != null)
       return;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
-  }, [completedAtMs, startedAtMs]);
+  }, [completedAtMs, done, startedAtMs]);
 
-  if (startedAtMs == null)
+  if ((done && completedAtMs == null) || startedAtMs == null)
     return null;
   const elapsedMs = Math.max(0, (completedAtMs ?? now) - startedAtMs);
   const label = completedAtMs != null ? 'Worked for' : elapsedMs >= 1000 ? 'Working for' : 'Working';

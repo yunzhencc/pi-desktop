@@ -85,6 +85,22 @@ describe('chat composer', () => {
     expect(screen.getByRole('textbox', { name: 'Message Pi' }).textContent).toBe('');
   });
 
+  it('prefills the editor with an editable user message draft', () => {
+    renderComposer(vi.fn(), { draft: { id: 1, text: 'Revise the plan' } });
+
+    expect(screen.getByRole('textbox', { name: 'Message Pi' }).textContent).toBe('Revise the plan');
+  });
+
+  it('renders a prefilled inline message editor through the Composer', () => {
+    renderComposer(vi.fn(), {
+      inlineEdit: { initialText: 'Revise the plan', onCancel: vi.fn(), onSubmit: vi.fn() },
+    } as never);
+
+    expect(screen.getByRole('textbox', { name: 'Edit message' }).textContent).toBe('Revise the plan');
+    expect(screen.getByRole('button', { name: 'Cancel edit' })).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Send edited message' })).not.toBeNull();
+  });
+
   it('shows a loading indicator until sending completes', async () => {
     let finishSend: (() => void) | undefined;
     composer.send.mockImplementation(() => new Promise<void>((resolve) => {

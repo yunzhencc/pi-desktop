@@ -16,12 +16,16 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
   turns: T[];
 }) {
   const overlayScrollbarsTheme = useOverlayScrollbarsTheme();
+  const hasFooter = footer != null;
   const scrollRef = useRef<HTMLDivElement>(null);
   const previousLayoutRef = useRef<ThreadLayout | null>(null);
   const previousTurnKeysRef = useRef<string[]>([]);
   const anchorKeyRef = useRef<string | null>(null);
   const followsBottomRef = useRef(true);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const previousFooterHeightRef = useRef(0);
   const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(() => new Map());
+  const [footerHeightPx, setFooterHeightPx] = useState(0);
   const [scrollbarInitialized, setScrollbarInitialized] = useState(false);
   const [scrollMetrics, setScrollMetrics] = useState({ distanceFromBottomPx: 0, viewportHeightPx: 0 });
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
@@ -87,6 +91,32 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
     return () => observer.disconnect();
   }, [range.endIndex, range.startIndex, turns]);
 
+  useLayoutEffect(() => {
+    const element = footerRef.current;
+    if (element == null || typeof ResizeObserver === 'undefined')
+      return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      const height = Math.ceil(entry?.contentRect.height ?? 0);
+      setFooterHeightPx(current => current === height ? current : height);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [hasFooter]);
+
+  useLayoutEffect(() => {
+    const previousHeight = previousFooterHeightRef.current;
+    previousFooterHeightRef.current = footerHeightPx;
+    const element = scrollRef.current;
+    if (element == null || previousHeight === footerHeightPx)
+      return;
+
+    if (followsBottomRef.current)
+      element.scrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
+    else
+      element.scrollTop = Math.max(0, element.scrollTop + footerHeightPx - previousHeight);
+  }, [footerHeightPx]);
+
   const scrollToBottom = () => {
     const element = scrollRef.current;
     if (element == null)
@@ -129,21 +159,23 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
         options={{ scrollbars: { autoHide: 'leave', theme: overlayScrollbarsTheme } }}
         role="log"
       >
-        <div className="thread-scroll-content">
-          <div aria-hidden="true" style={{ height: topSpacerPx }} />
-          {visibleTurns.map((turn, index) => (
-            <div data-thread-turn={turn.key} key={turn.key} style={{ marginBottom: index === visibleTurns.length - 1 ? 0 : TURN_GAP }}>
-              {children(turn)}
-            </div>
-          ))}
-          <div aria-hidden="true" style={{ height: bottomSpacerPx }} />
-        </div>
-        {footer && (
-          <div className="thread-scroll-footer">
-            {jumpToBottomButton}
-            {footer}
+        <div className="thread-scroll-surface" data-thread-scroll-surface>
+          <div className="thread-scroll-content" style={footer ? { paddingBottom: footerHeightPx + 16 } : undefined}>
+            <div aria-hidden="true" style={{ height: topSpacerPx }} />
+            {visibleTurns.map((turn, index) => (
+              <div data-thread-turn={turn.key} key={turn.key} style={{ marginBottom: index === visibleTurns.length - 1 ? 0 : TURN_GAP }}>
+                {children(turn)}
+              </div>
+            ))}
+            <div aria-hidden="true" style={{ height: bottomSpacerPx }} />
           </div>
-        )}
+          {footer && (
+            <div className="thread-scroll-footer" ref={footerRef}>
+              {jumpToBottomButton}
+              {footer}
+            </div>
+          )}
+        </div>
       </OverlayScrollbarsComponent>
       {!footer && jumpToBottomButton}
     </>

@@ -395,10 +395,14 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .thread-scroll-layout {
   position: absolute;
   inset: 46px 0 0;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
   scroll-padding-bottom: var(--thread-scroll-padding-bottom, 32px);
+}
+
+.thread-scroll-surface {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
 
 .thread-scroll-content {
@@ -750,6 +754,11 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   max-width: 77%;
 }
 
+.chat-message-user.is-editing {
+  width: 100%;
+  max-width: none;
+}
+
 .chat-message-user-content {
   overflow: hidden;
   padding: 8px 12px;
@@ -757,6 +766,58 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   background: color-mix(in srgb, var(--foreground) 5%, transparent);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.chat-message-user-editor {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex-direction: column;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.chat-message-user-editor .chat-composer-editor {
+  flex: 1;
+  margin-bottom: 8px;
+  overflow-y: auto;
+  padding: 12px 12px 0;
+}
+
+.chat-message-user-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+
+.chat-message-user-editor-actions button {
+  display: grid;
+  min-width: 0;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  place-items: center;
+  font: inherit;
+  cursor: pointer;
+}
+
+.chat-message-user-editor-actions button:first-child {
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: inherit;
+}
+
+.chat-message-user-editor-actions button:last-child {
+  border: 0;
+  background: var(--foreground);
+  color: var(--surface);
+}
+
+.chat-message-user-editor-actions button:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .chat-message-user-footer {
@@ -916,6 +977,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 }
 
 .thread-scroll-footer {
+  flex: none;
   position: sticky;
   z-index: 1;
   bottom: 0;

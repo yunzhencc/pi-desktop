@@ -21,6 +21,7 @@ export interface PiSessionSnapshot {
 
 interface PiSession {
   abort?: () => Promise<void>;
+  editLastUserMessage?: () => Promise<{ cancelled: boolean; editorText?: string }>;
   isStreaming?: boolean;
   prompt: (text: string, options?: { images?: Array<{ type: 'image'; data: string; mimeType: string }>; streamingBehavior?: 'steer' }) => Promise<void>;
   subscribe: (listener: (event: unknown) => void) => () => void;
@@ -148,6 +149,24 @@ export class PiRuntime {
     }
   }
 
+  async editLastUserMessage(message?: string): Promise<string | undefined> {
+    const session = await this.#getSession();
+    if (this.#promptActive || session.isStreaming)
+      throw new Error('请等待当前回复完成后再编辑消息');
+    if (!session.editLastUserMessage)
+      throw new Error('当前 Pi 会话不支持编辑消息');
+
+    const result = await session.editLastUserMessage();
+    if (result.cancelled)
+      return undefined;
+    this.#streamedAssistantText = '';
+    if (message != null) {
+      await this.send(message, []);
+      return message;
+    }
+    return result.editorText;
+  }
+
   dispose(): void {
     this.#sessionUnsubscribe?.();
     this.#session?.dispose?.();
@@ -256,6 +275,10 @@ async function createDefaultSession(configuration: DeepSeekConfiguration, agentD
   return {
     abort: () => session.abort(),
     dispose: () => session.dispose(),
+    async editLastUserMessage() {
+      const message = session.sessionManager.getBranch().findLast(entry => entry.type === 'message' && entry.message.role === 'user');
+      return message ? session.navigateTree(message.id) : { cancelled: true };
+    },
     get isStreaming() {
       return session.isStreaming;
     },

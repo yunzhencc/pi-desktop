@@ -18,6 +18,7 @@ declare global {
       composer: {
         addDroppedAttachments: (paths: string[]) => Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }>;
         addPastedImage: (name: string, data: string) => Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }>;
+        editLastUserMessage: (text?: string) => Promise<string | undefined>;
         newConversation: () => Promise<void>;
         removeAttachment: (id: string) => Promise<void>;
         send: (prompt: string, attachmentIds: string[]) => Promise<void>;

@@ -259,6 +259,11 @@ app.whenReady().then(async () => {
       throw new TypeError('Invalid composer input');
     return composer.send(prompt, attachmentIds);
   });
+  ipcMain.handle('composer:edit-last-user-message', (_event, message: unknown) => {
+    if (message !== undefined && typeof message !== 'string')
+      throw new TypeError('Invalid edited message');
+    return piRuntime.editLastUserMessage(message);
+  });
   ipcMain.handle('composer:new-conversation', () => composer.startNewConversation());
   ipcMain.handle('composer:stop', () => piRuntime.abort());
   piRuntime.subscribe((update) => {

@@ -8,11 +8,19 @@ let animationFrames: FrameRequestCallback[];
 let workspaces: { get: ReturnType<typeof vi.fn>; pick: ReturnType<typeof vi.fn>; select: ReturnType<typeof vi.fn> };
 
 vi.mock('../components/chat-composer', () => ({
-  ChatComposer: ({ isRunning, onStop, onSubmitted }: { isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) => (
-    <button aria-label={isRunning ? 'Stop generating' : 'Fake composer'} onClick={() => isRunning ? onStop() : onSubmitted('Build this')}>
-      {isRunning ? 'Stop' : 'Fake composer'}
-    </button>
-  ),
+  ChatComposer: ({ inlineEdit, isRunning, onStop, onSubmitted }: { inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => void }; isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) => inlineEdit
+    ? (
+        <div>
+          <div aria-label="Edit message" role="textbox">{inlineEdit.initialText}</div>
+          <button aria-label="Cancel edit" onClick={inlineEdit.onCancel}>Cancel</button>
+          <button aria-label="Send edited message" onClick={() => inlineEdit.onSubmit('Build it differently')}>Send</button>
+        </div>
+      )
+    : (
+        <button aria-label={isRunning ? 'Stop generating' : 'Fake composer'} onClick={() => isRunning ? onStop() : onSubmitted('Build this')}>
+          {isRunning ? 'Stop' : 'Fake composer'}
+        </button>
+      ),
   NewConversationToolbar: () => <div aria-label="新会话项目上下文" role="toolbar" />,
 }));
 
@@ -40,7 +48,7 @@ beforeEach(() => {
     })),
     select: vi.fn(),
   };
-  vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}) }, workspaces });
+  vi.stubGlobal('api', { composer: { editLastUserMessage: vi.fn(), newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}) }, workspaces });
 });
 
 afterEach(() => {
@@ -72,6 +80,42 @@ describe('home page', () => {
     expect(screen.getByText('10:01')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
     expect(writeText).toHaveBeenCalledWith('Build this');
+  });
+
+  it('edits the latest user message in place without navigating until it is resent', async () => {
+    const editLastUserMessage = vi.fn(() => Promise.resolve('Build this'));
+    const send = vi.fn(() => Promise.resolve());
+    vi.stubGlobal('api', { composer: { editLastUserMessage, newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}), send }, workspaces });
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit message' }));
+
+    expect(screen.getByRole('textbox', { name: 'Edit message' }).textContent).toBe('Build this');
+    expect(editLastUserMessage).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel edit' }));
+
+    expect(screen.getByText('Build this')).not.toBeNull();
+    expect(editLastUserMessage).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit message' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send edited message' }));
+
+    await waitFor(() => expect(editLastUserMessage).toHaveBeenCalledOnce());
+    expect(editLastUserMessage).toHaveBeenCalledWith('Build it differently');
+    expect(send).not.toHaveBeenCalled();
+    expect(screen.queryByText('Build this')).toBeNull();
+    expect(screen.getByText('Build it differently')).not.toBeNull();
+  });
+
+  it('opens the latest user message editor on double-click', () => {
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    fireEvent.doubleClick(screen.getByText('Build this'));
+
+    expect(screen.getByRole('textbox', { name: 'Edit message' })).not.toBeNull();
   });
 
   it('directs an unselected workspace to the sidebar', async () => {
@@ -124,6 +168,22 @@ describe('home page', () => {
     expect(screen.getByText('Earlier reply')).not.toBeNull();
   });
 
+  it('does not run a timer for restored assistant messages without a recorded duration', () => {
+    vi.useFakeTimers();
+    render(<HomePage />);
+
+    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
+      detail: {
+        messages: [
+          { role: 'assistant', text: 'Earlier reply', timestamp: Date.now() - 60_000 },
+        ],
+      },
+    })));
+    act(() => vi.advanceTimersByTime(60_000));
+
+    expect(screen.queryByText(/Working for/)).toBeNull();
+  });
+
   it('shows project controls only while the conversation is new', () => {
     render(<HomePage />);
 
@@ -164,6 +224,23 @@ describe('home page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
     vi.setSystemTime(new Date('2026-08-19T10:01:05Z'));
     act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', type: 'assistant' }));
+
+    expect(screen.getByText('Worked for 1m 5s')).not.toBeNull();
+  });
+
+  it('freezes streamed assistant work duration when the agent settles', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-19T10:00:00Z'));
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    vi.setSystemTime(new Date('2026-08-19T10:01:05Z'));
+    act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Done', type: 'assistant' }));
+    act(() => animationFrames.at(-1)?.(0));
+    act(() => onUpdate.mock.calls[0]![0]({ status: 'settled', type: 'status' }));
+    act(() => vi.advanceTimersByTime(60_000));
 
     expect(screen.getByText('Worked for 1m 5s')).not.toBeNull();
   });
