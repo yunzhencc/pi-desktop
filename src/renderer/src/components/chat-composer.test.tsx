@@ -56,6 +56,28 @@ describe('chat composer', () => {
     expect(screen.getByRole('textbox', { name: 'Message Pi' }).textContent).toBe('');
   });
 
+  it('sends typed text when Enter is pressed', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    await user.type(screen.getByRole('textbox', { name: 'Message Pi' }), 'Hello Pi{Enter}');
+
+    await waitFor(() => expect(composer.send).toHaveBeenCalledWith('Hello Pi', []));
+  });
+
+  it('keeps a newline when Shift+Enter is pressed', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
+    await user.type(editor, 'Hello');
+    await user.keyboard('{Shift>}{Enter}{/Shift}');
+    await user.type(editor, 'Pi');
+
+    expect(composer.send).not.toHaveBeenCalled();
+    expect(editor.querySelectorAll('p')).toHaveLength(2);
+  });
+
   it('does not render auxiliary composer controls', () => {
     renderComposer();
 

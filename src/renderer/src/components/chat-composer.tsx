@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { ArrowUp, FileText, X } from 'lucide-react';
-import { baseKeymap } from 'prosemirror-commands';
+import { baseKeymap, splitBlock } from 'prosemirror-commands';
 import { history } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import { schema } from 'prosemirror-schema-basic';
@@ -45,10 +45,15 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
         plugins: [
           history(),
           keymap({
+            'Enter': () => {
+              submitRef.current();
+              return true;
+            },
             'Mod-Enter': () => {
               submitRef.current();
               return true;
             },
+            'Shift-Enter': splitBlock,
           }),
           keymap(baseKeymap),
         ],
