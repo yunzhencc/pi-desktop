@@ -4,8 +4,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ThreadScrollLayout } from './thread-scroll-layout';
 
-function Transcript({ turns }: { turns: { key: string }[] }) {
-  return <ThreadScrollLayout turns={turns}>{turn => <article>{turn.key}</article>}</ThreadScrollLayout>;
+function Transcript({ footer, turns }: { footer?: React.ReactNode; turns: { key: string }[] }) {
+  return <ThreadScrollLayout footer={footer} turns={turns}>{turn => <article>{turn.key}</article>}</ThreadScrollLayout>;
 }
 
 function setScrollMetrics(element: HTMLElement, scrollHeight: number) {
@@ -54,6 +54,16 @@ describe('thread scroll layout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Jump to latest' }));
 
     expect(transcript.scrollTop).toBe(160);
+  });
+
+  it('anchors the jump button above the composer footer', () => {
+    const { container } = render(<Transcript footer={<div>Composer</div>} turns={[{ key: 'first' }, { key: 'second' }]} />);
+    const transcript = screen.getByRole('log');
+    setScrollMetrics(transcript, 260);
+    transcript.scrollTop = 20;
+    fireEvent.scroll(transcript);
+
+    expect(container.querySelector('.thread-scroll-footer')?.contains(screen.getByRole('button', { name: 'Jump to latest' }))).toBe(true);
   });
 
   it('renders the turns reached after scrolling away from the bottom', () => {

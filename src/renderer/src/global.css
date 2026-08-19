@@ -577,6 +577,10 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   background: var(--surface);
 }
 
+.thread-scroll-footer .thread-scroll-to-bottom {
+  bottom: calc(100% + 8px);
+}
+
 .chat-composer-footer {
   position: absolute;
   right: 0;

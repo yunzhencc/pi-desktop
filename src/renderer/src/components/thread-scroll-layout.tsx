@@ -92,6 +92,11 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
     setShowJumpToBottom(false);
     setScrollMetrics({ distanceFromBottomPx: 0, viewportHeightPx: element.clientHeight });
   };
+  const jumpToBottomButton = showJumpToBottom && (
+    <button aria-label="Jump to latest" className="thread-scroll-to-bottom" onClick={scrollToBottom} title="Jump to latest" type="button">
+      <ArrowDown aria-hidden="true" size={16} />
+    </button>
+  );
 
   return (
     <>
@@ -124,13 +129,14 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
           ))}
           <div aria-hidden="true" style={{ height: bottomSpacerPx }} />
         </div>
-        {footer && <div className="thread-scroll-footer">{footer}</div>}
+        {footer && (
+          <div className="thread-scroll-footer">
+            {jumpToBottomButton}
+            {footer}
+          </div>
+        )}
       </div>
-      {showJumpToBottom && (
-        <button aria-label="Jump to latest" className="thread-scroll-to-bottom" onClick={scrollToBottom} title="Jump to latest" type="button">
-          <ArrowDown aria-hidden="true" size={16} />
-        </button>
-      )}
+      {!footer && jumpToBottomButton}
     </>
   );
 }
