@@ -176,11 +176,28 @@ describe('chat composer', () => {
     expect(screen.queryByRole('button', { name: 'weather' })).toBeNull();
   });
 
-  it('renders the project as static context when no project is selected', () => {
-    renderNewConversationToolbar({ workspace: { workspaces: [weather, notes] } });
+  it('opens the project menu and selects a workspace', async () => {
+    const user = userEvent.setup();
+    const onSelectProject = vi.fn();
+    renderNewConversationToolbar({ onSelectProject, workspace: { workspaces: [weather, notes] } });
 
-    expect(screen.getByText('选择项目')).not.toBeNull();
-    expect(screen.queryByRole('button', { name: '选择项目' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: '选择项目' }));
+    expect(screen.getByRole('menu')).not.toBeNull();
+    await user.click(screen.getByRole('menuitem', { name: 'notes' }));
+
+    expect(onSelectProject).toHaveBeenCalledWith(notes.path);
+  });
+
+  it('starts project creation from the project menu', async () => {
+    const user = userEvent.setup();
+    const onCreateProject = vi.fn();
+    renderNewConversationToolbar({ onCreateProject, workspace: { workspaces: [weather, notes] } });
+
+    await user.click(screen.getByRole('button', { name: '选择项目' }));
+    await user.click(screen.getByRole('menuitem', { name: '创建项目' }));
+
+    expect(onCreateProject).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('shows the active local Git context above a new conversation', async () => {

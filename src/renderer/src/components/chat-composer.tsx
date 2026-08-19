@@ -13,8 +13,9 @@ type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDropp
 type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 
-export function NewConversationToolbar({ onClearProject, workspace }: { onClearProject?: () => void; workspace?: WorkspaceSnapshot }) {
+export function NewConversationToolbar({ onClearProject, onCreateProject, onSelectProject, workspace }: { onClearProject?: () => void; onCreateProject?: () => void; onSelectProject?: (path: string) => void; workspace?: WorkspaceSnapshot }) {
   const [branchResult, setBranchResult] = useState<{ branch?: string; path: string }>();
+  const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
 
   useEffect(() => {
@@ -28,15 +29,55 @@ export function NewConversationToolbar({ onClearProject, workspace }: { onClearP
 
   return (
     <div aria-label="新会话项目上下文" className="new-conversation-toolbar" data-has-project={Boolean(selectedWorkspace)} role="toolbar">
-      <span className="new-conversation-toolbar-project" data-clear-project-available={selectedWorkspace && onClearProject ? '' : undefined}>
-        {selectedWorkspace && onClearProject && (
-          <button aria-label="不在项目中工作" className="new-conversation-toolbar-project-clear" onClick={onClearProject} type="button">
-            <X aria-hidden="true" size={16} />
-          </button>
-        )}
-        <Folder aria-hidden="true" className="new-conversation-toolbar-project-icon" size={18} />
-        <span>{selectedWorkspace?.displayName ?? '选择项目'}</span>
-      </span>
+      {selectedWorkspace
+        ? (
+            <span className="new-conversation-toolbar-project" data-clear-project-available={onClearProject ? '' : undefined}>
+              {onClearProject && (
+                <button aria-label="不在项目中工作" className="new-conversation-toolbar-project-clear" onClick={onClearProject} type="button">
+                  <X aria-hidden="true" size={16} />
+                </button>
+              )}
+              <Folder aria-hidden="true" className="new-conversation-toolbar-project-icon" size={18} />
+              <span>{selectedWorkspace.displayName}</span>
+            </span>
+          )
+        : (
+            <div className="new-conversation-toolbar-project new-conversation-toolbar-project-picker">
+              <button aria-expanded={isProjectMenuOpen} aria-haspopup="menu" className="new-conversation-toolbar-project-trigger" onClick={() => setIsProjectMenuOpen(open => !open)} type="button">
+                <Folder aria-hidden="true" size={18} />
+                <span>选择项目</span>
+              </button>
+              {isProjectMenuOpen && (
+                <div className="new-conversation-toolbar-project-menu" role="menu">
+                  {workspace?.workspaces.length
+                    ? workspace.workspaces.map(item => (
+                        <button
+                          key={item.path}
+                          onClick={() => {
+                            onSelectProject?.(item.path);
+                            setIsProjectMenuOpen(false);
+                          }}
+                          role="menuitem"
+                          type="button"
+                        >
+                          {item.displayName}
+                        </button>
+                      ))
+                    : <span>暂无项目</span>}
+                  <button
+                    onClick={() => {
+                      onCreateProject?.();
+                      setIsProjectMenuOpen(false);
+                    }}
+                    role="menuitem"
+                    type="button"
+                  >
+                    创建项目
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
       {selectedWorkspace && (
         <>
           <span className="new-conversation-toolbar-item">

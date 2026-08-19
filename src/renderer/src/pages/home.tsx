@@ -161,6 +161,10 @@ export function HomePage() {
       onClearProject={() => {
         void window.api.workspaces.clear().then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
       }}
+      onCreateProject={() => window.dispatchEvent(new Event('create-project'))}
+      onSelectProject={(path) => {
+        void window.api.workspaces.select(path).then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
+      }}
       workspace={workspace}
     />
   );

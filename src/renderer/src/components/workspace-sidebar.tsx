@@ -18,8 +18,13 @@ export function WorkspaceSidebar() {
   useEffect(() => {
     void window.api.workspaces.get().then(setWorkspace);
     const onWorkspaceChanged = (event: Event) => setWorkspace((event as CustomEvent<WorkspaceSnapshot>).detail);
+    const openCreateProject = () => setIsCreating(true);
     window.addEventListener('workspace-changed', onWorkspaceChanged);
-    return () => window.removeEventListener('workspace-changed', onWorkspaceChanged);
+    window.addEventListener('create-project', openCreateProject);
+    return () => {
+      window.removeEventListener('workspace-changed', onWorkspaceChanged);
+      window.removeEventListener('create-project', openCreateProject);
+    };
   }, []);
 
   useEffect(() => {

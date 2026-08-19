@@ -114,4 +114,17 @@ describe('workspace sidebar', () => {
 
     await waitFor(() => expect(window.api.workspaces.create).toHaveBeenCalledWith('天气助手', '/projects/weather'));
   });
+
+  it('opens project creation when requested by the composer', async () => {
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
+    fireEvent(window, new Event('create-project'));
+
+    expect(screen.getByRole('dialog', { name: '创建项目' })).not.toBeNull();
+  });
 });

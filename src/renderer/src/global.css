@@ -915,6 +915,59 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   font-size: 14px;
 }
 
+.new-conversation-toolbar-project-picker {
+  position: relative;
+}
+
+.new-conversation-toolbar-project-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.new-conversation-toolbar-project-trigger:hover,
+.new-conversation-toolbar-project-trigger:focus-visible {
+  color: var(--text-primary);
+}
+
+.new-conversation-toolbar-project-trigger:focus-visible {
+  outline: 1px solid var(--focus);
+}
+
+.new-conversation-toolbar-project-menu {
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% + 8px);
+  left: 0;
+  display: grid;
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--surface-elevated);
+  box-shadow: 0 10px 28px color-mix(in srgb, #000 12%, transparent);
+}
+
+.new-conversation-toolbar-project-menu button {
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.new-conversation-toolbar-project-menu button:hover,
+.new-conversation-toolbar-project-menu button:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--text-primary);
+}
+
 .new-conversation-toolbar-project[data-clear-project-available]:hover .new-conversation-toolbar-project-icon,
 .new-conversation-toolbar-project:has(.new-conversation-toolbar-project-clear:focus-visible) .new-conversation-toolbar-project-icon {
   opacity: 0;
