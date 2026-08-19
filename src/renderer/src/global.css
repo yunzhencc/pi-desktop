@@ -162,6 +162,10 @@ html.electron-opaque #root {
   }
 }
 
+html.electron-opaque .app-shell-left-panel {
+  background: var(--surface-tertiary);
+}
+
 .app-shell-right-panel {
   background: var(--surface);
   border-inline-start: 1px solid var(--border-subtle);

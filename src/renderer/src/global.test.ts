@@ -10,4 +10,10 @@ describe('app shell surfaces', () => {
     expect(sidebarRule).toContain('background: var(--surface-tertiary);');
     expect(styles).toMatch(/\.app-shell-left-panel\s*\{\s*background:\s*color-mix\([^}]*transparent/);
   });
+
+  it('uses the theme sidebar color without transparency while the window is unfocused', () => {
+    const opaqueSidebarRule = styles.match(/html\.electron-opaque \.app-shell-left-panel\s*\{([\s\S]*?)\}/)?.[1];
+
+    expect(opaqueSidebarRule).toContain('background: var(--surface-tertiary);');
+  });
 });
