@@ -334,4 +334,30 @@ describe('pi runtime', () => {
     ]);
     expect(abort).toHaveBeenCalledOnce();
   });
+
+  it('identifies the active session and forwards tool progress', async () => {
+    let listener: ((event: unknown) => void) | undefined;
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({
+      getSessionPath: () => '/sessions/active.jsonl',
+      prompt: vi.fn(),
+      subscribe: (callback: (event: unknown) => void) => {
+        listener = callback;
+        return () => {};
+      },
+    }));
+    const update = vi.fn();
+    runtime.subscribe(update);
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
+
+    await runtime.send('Inspect the project', []);
+    listener?.({ args: {}, toolCallId: 'tool-1', toolName: 'read', type: 'tool_execution_start' });
+    listener?.({ isError: false, result: {}, toolCallId: 'tool-1', toolName: 'read', type: 'tool_execution_end' });
+
+    expect(update.mock.calls.map(([event]) => event)).toEqual([
+      { sessionPath: '/sessions/active.jsonl', status: 'running', type: 'status' },
+      { sessionPath: '/sessions/active.jsonl', status: 'running', toolCallId: 'tool-1', toolName: 'read', type: 'tool' },
+      { sessionPath: '/sessions/active.jsonl', status: 'completed', toolCallId: 'tool-1', toolName: 'read', type: 'tool' },
+    ]);
+  });
 });

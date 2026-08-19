@@ -574,6 +574,14 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   white-space: nowrap;
 }
 
+.workspace-sidebar-session-activity {
+  display: grid;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+}
+
 .project-dialog-backdrop {
   position: fixed;
   z-index: 100;
@@ -869,12 +877,35 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 
 .chat-message-assistant-footer {
   display: flex;
+  height: 20px;
   align-items: center;
-  gap: 16px;
-  margin-top: 12px;
+  gap: 2px;
+  margin-top: 6px;
   color: var(--text-tertiary);
   font-size: 12px;
   line-height: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-4px);
+  transition: opacity 150ms ease;
+}
+
+.chat-message-assistant-footer.is-latest,
+.chat-message-assistant:hover .chat-message-assistant-footer,
+.chat-message-assistant:focus-within .chat-message-assistant-footer {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chat-message-assistant-timestamp {
+  margin-left: 6px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.chat-message-assistant:hover .chat-message-assistant-timestamp,
+.chat-message-assistant:focus-within .chat-message-assistant-timestamp {
+  opacity: 1;
 }
 
 .chat-message-assistant-action {
@@ -903,6 +934,15 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 
 .chat-message-error {
   color: var(--destructive);
+}
+
+.chat-message-activity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 20px;
 }
 
 .chat-turn {

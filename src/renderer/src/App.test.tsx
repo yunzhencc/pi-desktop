@@ -34,6 +34,9 @@ describe('app window surface', () => {
     Object.defineProperty(window, 'api', {
       configurable: true,
       value: {
+        composer: {
+          onUpdate: () => () => {},
+        },
         windowControls: {
           getIsFullscreen: () => Promise.resolve(false),
           getIsOpaqueSurface: () => Promise.resolve(false),

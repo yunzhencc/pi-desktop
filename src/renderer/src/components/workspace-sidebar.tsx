@@ -1,5 +1,5 @@
 import type { FormEvent, SVGProps } from 'react';
-import { Folder, FolderPlus, X } from 'lucide-react';
+import { Folder, FolderPlus, LoaderCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -16,6 +16,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
   const [sessionsByWorkspace, setSessionsByWorkspace] = useState<Record<string, PiSessionSummary[]>>({});
   const [collapsedSessionPaths, setCollapsedSessionPaths] = useState<Record<string, boolean>>({});
   const [selectedSessionPath, setSelectedSessionPath] = useState<string>();
+  const [runningSessionPath, setRunningSessionPath] = useState<string>();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -33,6 +34,12 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
       window.removeEventListener('create-project', openCreateProject);
     };
   }, []);
+
+  useEffect(() => window.api.composer.onUpdate((update) => {
+    if (update.type !== 'status' || !update.sessionPath)
+      return;
+    setRunningSessionPath(current => update.status === 'running' ? update.sessionPath : current === update.sessionPath ? undefined : current);
+  }), []);
 
   useEffect(() => {
     if (!workspace)
@@ -97,6 +104,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
                     {(sessionsByWorkspace[item.path] ?? []).map(session => (
                       <button aria-current={session.path === selectedSessionPath ? 'page' : undefined} key={session.path} onClick={() => void openSession(item.path, session.path)} type="button">
                         <span>{session.firstMessage || '新对话'}</span>
+                        {session.path === runningSessionPath && <span aria-label="正在生成" className="workspace-sidebar-session-activity" role="status"><LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /></span>}
                       </button>
                     ))}
                   </div>

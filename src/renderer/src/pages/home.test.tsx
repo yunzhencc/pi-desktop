@@ -84,25 +84,67 @@ describe('home page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
 
-    expect(screen.getByText('10:01')).not.toBeNull();
+    expect(screen.getByText(/10:01/)).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
     expect(writeText).toHaveBeenCalledWith('Build this');
   });
 
-  it('copies an assistant reply and shows its completion time', () => {
+  it('keeps the latest assistant reply actions visible while its timestamp stays hover-only', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 7, 19, 10, 1));
     const writeText = vi.fn(() => Promise.resolve());
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('navigator', { clipboard: { writeText } });
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    render(<HomePage />);
+    const { container } = render(<HomePage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', timestamp: Date.now(), type: 'assistant' }));
 
-    expect(screen.getByText('10:01')).not.toBeNull();
+    expect(screen.getByText(/10:01/)).not.toBeNull();
+    expect(container.querySelector('.chat-message-assistant-footer.is-latest')).not.toBeNull();
+    expect(container.querySelector('.chat-message-assistant-timestamp')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Copy assistant message' }));
     expect(writeText).toHaveBeenCalledWith('Done');
+  });
+
+  it('does not insert a duration divider before the assistant action footer', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-19T10:00:00Z'));
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    const { container } = render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    vi.setSystemTime(new Date('2026-08-19T10:01:05Z'));
+    act(() => onUpdate.mock.calls[0]![0]({ done: true, entryId: 'assistant-1', text: 'Done', timestamp: Date.now(), type: 'assistant' }));
+
+    expect(container.querySelector('[data-duration-divider]')).toBeNull();
+  });
+
+  it('shows previous assistant reply actions only on hover', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    const { container } = render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    act(() => onUpdate.mock.calls[0]![0]({ done: true, entryId: 'assistant-1', text: 'First reply', timestamp: 1_000, type: 'assistant' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    act(() => onUpdate.mock.calls[0]![0]({ done: true, entryId: 'assistant-2', text: 'Second reply', timestamp: 2_000, type: 'assistant' }));
+
+    const footers = container.querySelectorAll('.chat-message-assistant-footer');
+    expect(footers).toHaveLength(2);
+    expect(footers[0]?.classList.contains('is-latest')).toBe(false);
+    expect(footers[1]?.classList.contains('is-latest')).toBe(true);
+  });
+
+  it('does not render Fork when the assistant reply has no branch target', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<HomePage />);
+
+    act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', timestamp: 1_000, type: 'assistant' }));
+
+    expect(screen.queryByRole('button', { name: 'Fork conversation from this message' })).toBeNull();
   });
 
   it('forks at an assistant reply and switches to the new conversation', async () => {
@@ -232,6 +274,16 @@ describe('home page', () => {
     act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Working', type: 'assistant' }));
     act(() => animationFrames.at(-1)?.(0));
     expect(screen.getByRole('log').textContent).toContain('Working');
+  });
+
+  it('shows an in-progress tool before it produces an assistant reply', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<HomePage />);
+
+    act(() => onUpdate.mock.calls[0]![0]({ sessionPath: '/sessions/active.jsonl', status: 'running', toolCallId: 'tool-1', toolName: 'read', type: 'tool' }));
+
+    expect(screen.getByRole('status', { name: '正在使用工具 read' })).not.toBeNull();
   });
 
   it('keeps the composer inside the transcript scroll container', () => {

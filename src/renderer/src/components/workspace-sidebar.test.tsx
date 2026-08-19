@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../providers/i18n';
 import { WorkspaceSidebar } from './workspace-sidebar';
@@ -13,6 +13,9 @@ beforeEach(() => {
     sessions: {
       list: vi.fn(() => Promise.resolve([])),
       open: vi.fn(() => Promise.resolve({ session: { messages: [], path: session.path }, workspace: { selectedWorkspacePath: weather.path, workspaces: [weather] } })),
+    },
+    composer: {
+      onUpdate: vi.fn(() => () => {}),
     },
     workspaces: {
       get: vi.fn(() => Promise.resolve({ selectedWorkspacePath: weather.path, workspaces: [weather] })),
@@ -101,6 +104,22 @@ describe('workspace sidebar', () => {
     fireEvent(window, new CustomEvent('session-changed', { detail: { messages: [], path: session.path } }));
 
     expect(sessionButton.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('shows activity on the session that is generating', async () => {
+    window.api.sessions.list.mockResolvedValue([session]);
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'Summarize the forecast' });
+    const onUpdate = window.api.composer.onUpdate as ReturnType<typeof vi.fn>;
+    fireEvent(window, new CustomEvent('session-changed', { detail: { messages: [], path: session.path } }));
+    act(() => onUpdate.mock.calls[0]![0]({ sessionPath: session.path, status: 'running', type: 'status' }));
+
+    expect(screen.getByRole('status', { name: '正在生成' })).not.toBeNull();
   });
 
   it('collapses and expands a project session history from its project row', async () => {

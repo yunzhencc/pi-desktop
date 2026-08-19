@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Copy, GitFork, Pencil } from 'lucide-react';
+import { Copy, GitFork, LoaderCircle, Pencil } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import piLogo from '../../../../resources/icon.svg?asset';
 import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
@@ -8,12 +8,17 @@ import { ProjectPicker } from '../components/project-picker';
 import { ThreadScrollLayout } from '../components/thread-scroll-layout';
 
 interface Message {
+  completedAtMs?: number;
   entryId?: string;
   id: number;
-  role: 'assistant' | 'error' | 'user';
+  role: 'activity' | 'assistant' | 'error' | 'user';
+  startedAtMs?: number;
   text: string;
   timestamp?: number;
   done?: boolean;
+  toolCallId?: string;
+  toolName?: string;
+  toolStatus?: 'completed' | 'failed' | 'running';
 }
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
@@ -69,7 +74,15 @@ export function HomePage() {
       pendingAssistantRef.current = null;
       setIsRunning(false);
       const session = (event as CustomEvent<PiSessionSnapshot>).detail;
-      setMessages(session.messages.map((message, index) => ({ done: true, entryId: message.entryId, id: index, role: message.role, text: message.text, timestamp: message.timestamp || undefined })));
+      let latestUserStartedAtMs: number | undefined;
+      setMessages(session.messages.map((message, index) => {
+        const timestamp = message.timestamp || undefined;
+        if (message.role === 'user') {
+          latestUserStartedAtMs = timestamp;
+          return { done: true, entryId: message.entryId, id: index, role: message.role, startedAtMs: timestamp, text: message.text, timestamp };
+        }
+        return { completedAtMs: timestamp, done: true, entryId: message.entryId, id: index, role: message.role, startedAtMs: latestUserStartedAtMs, text: message.text, timestamp };
+      }));
     };
     window.addEventListener('new-conversation', startNewConversation);
     window.addEventListener('session-changed', openSession);
@@ -102,7 +115,10 @@ export function HomePage() {
       setMessages((current) => {
         const last = current.at(-1);
         const now = Date.now();
-        const message = { done, entryId, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, text, timestamp };
+        const startedAtMs = last?.role === 'assistant'
+          ? last.startedAtMs
+          : current.findLast(message => message.role === 'user')?.startedAtMs ?? now;
+        const message = { completedAtMs: done ? timestamp ?? now : undefined, done, entryId, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, startedAtMs, text, timestamp };
         return last?.role === 'assistant' && !last.done ? [...current.slice(0, -1), message] : [...current, message];
       });
     };
@@ -121,14 +137,37 @@ export function HomePage() {
     };
     const unsubscribe = window.api.composer.onUpdate((update) => {
       if (update.type === 'status') {
-        if (update.status === 'settled')
+        if (update.status === 'settled') {
           flushAssistant();
+          setMessages((current) => {
+            const last = current.at(-1);
+            return last?.role === 'assistant' && !last.done
+              ? [...current.slice(0, -1), { ...last, completedAtMs: Date.now(), done: true }]
+              : current;
+          });
+        }
         setIsRunning(update.status === 'running');
         return;
       }
       if (update.type === 'error') {
         flushAssistant();
         setMessages(current => [...current, { id: Date.now(), role: 'error', text: update.text }]);
+        return;
+      }
+      if (update.type === 'tool') {
+        setMessages((current) => {
+          const index = current.findLastIndex(message => message.role === 'activity' && message.toolCallId === update.toolCallId);
+          const message: Message = {
+            done: update.status !== 'running',
+            id: index < 0 ? Date.now() : current[index]!.id,
+            role: 'activity',
+            text: update.toolName,
+            toolCallId: update.toolCallId,
+            toolName: update.toolName,
+            toolStatus: update.status,
+          };
+          return index < 0 ? [...current, message] : [...current.slice(0, index), message, ...current.slice(index + 1)];
+        });
         return;
       }
       if (update.done) {
@@ -153,7 +192,7 @@ export function HomePage() {
       onStop={() => void window.api.composer.stop()}
       onSubmitted={(text) => {
         const startedAtMs = Date.now();
-        setMessages(current => [...current, { id: startedAtMs, role: 'user', text, timestamp: startedAtMs }]);
+        setMessages(current => [...current, { id: startedAtMs, role: 'user', startedAtMs, text, timestamp: startedAtMs }]);
       }}
       workspace={workspace}
     />
@@ -231,7 +270,7 @@ export function HomePage() {
                       ? (
                           <>
                             <MarkdownMessage>{message.text}</MarkdownMessage>
-                            {message.done && <AssistantMessageFooter entryId={message.entryId} isRunning={isRunning} onFork={forkAssistantMessage} text={message.text} timestamp={message.timestamp} />}
+                            {message.done && message.text.trim() && <AssistantMessageFooter entryId={message.entryId} isLatest={messages.at(-1) === message} isRunning={isRunning} onFork={forkAssistantMessage} text={message.text} timestamp={message.timestamp} />}
                           </>
                         )
                       : message.role === 'user'
@@ -245,7 +284,9 @@ export function HomePage() {
                                   </>
                                 )
                           )
-                        : message.text}
+                        : message.role === 'activity'
+                          ? <ToolActivity name={message.toolName ?? message.text} status={message.toolStatus ?? 'running'} />
+                          : message.text}
                   </article>
                 </div>
               )}
@@ -263,6 +304,19 @@ export function HomePage() {
   );
 }
 
+function ToolActivity({ name, status }: { name: string; status: NonNullable<Message['toolStatus']> }) {
+  const label = status === 'running' ? `正在使用工具 ${name}` : status === 'completed' ? `已完成工具 ${name}` : `工具 ${name} 执行失败`;
+  return (
+    <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-message-activity" role={status === 'running' ? 'status' : undefined}>
+      {status === 'running' && <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} />}
+      <span>
+        {label}
+        {status === 'running' && '…'}
+      </span>
+    </div>
+  );
+}
+
 function UserMessageFooter({ canEdit, onEdit, text, timestamp }: Pick<Message, 'text' | 'timestamp'> & { canEdit: boolean; onEdit: () => void }) {
   const time = formatMessageTime(timestamp);
 
@@ -277,17 +331,28 @@ function UserMessageFooter({ canEdit, onEdit, text, timestamp }: Pick<Message, '
   );
 }
 
-function AssistantMessageFooter({ entryId, isRunning, onFork, text, timestamp }: Pick<Message, 'entryId' | 'text' | 'timestamp'> & { isRunning: boolean; onFork: (entryId: string) => Promise<void> }) {
+function AssistantMessageFooter({ entryId, isLatest, isRunning, onFork, text, timestamp }: Pick<Message, 'entryId' | 'text' | 'timestamp'> & { isLatest: boolean; isRunning: boolean; onFork: (entryId: string) => Promise<void> }) {
   const time = formatMessageTime(timestamp);
   return (
-    <footer className="chat-message-assistant-footer">
+    <footer className={`chat-message-assistant-footer${isLatest ? ' is-latest' : ''}`}>
       <button aria-label="Copy assistant message" className="chat-message-assistant-action" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button"><Copy aria-hidden="true" size={18} /></button>
-      <button aria-label="Fork conversation from this message" className="chat-message-assistant-action" disabled={entryId == null || isRunning} onClick={() => entryId != null && void onFork(entryId)} title="Fork conversation" type="button"><GitFork aria-hidden="true" size={18} /></button>
-      {time != null && <time dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
+      {entryId != null && !isRunning && <button aria-label="Fork conversation from this message" className="chat-message-assistant-action" onClick={() => void onFork(entryId)} title="Fork conversation" type="button"><GitFork aria-hidden="true" size={18} /></button>}
+      {time != null && <time className="chat-message-assistant-timestamp" dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
     </footer>
   );
 }
 
 function formatMessageTime(timestamp: number | undefined): string | null {
-  return timestamp == null ? null : new Intl.DateTimeFormat(undefined, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' }).format(timestamp);
+  if (timestamp == null)
+    return null;
+  const time = new Date(timestamp);
+  const now = new Date();
+  const day = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const daysFromNow = Math.round((day(time) - day(now)) / 86_400_000);
+  const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' };
+  if (daysFromNow === 0)
+    return new Intl.DateTimeFormat(undefined, timeOptions).format(time);
+  if (daysFromNow < 0 && daysFromNow > -7)
+    return new Intl.DateTimeFormat(undefined, { ...timeOptions, weekday: 'long' }).format(time);
+  return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(time);
 }

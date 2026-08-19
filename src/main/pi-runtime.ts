@@ -5,7 +5,8 @@ import { join, resolve } from 'node:path';
 export type TranscriptUpdate
   = | { done?: boolean; entryId?: string; text: string; timestamp?: number; type: 'assistant' }
     | { text: string; type: 'error' }
-    | { status: 'running' | 'settled'; type: 'status' };
+    | { sessionPath?: string; status: 'running' | 'settled'; type: 'status' }
+    | { sessionPath?: string; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string; type: 'tool' };
 
 export const DEEPSEEK_PROVIDER = {
   api: 'openai-completions' as const,
@@ -34,6 +35,7 @@ interface PiSession {
   editLastUserMessage?: () => Promise<{ cancelled: boolean; editorText?: string }>;
   forkAssistantMessage?: (entryId: string) => string | undefined;
   getLastAssistantEntryId?: () => string | undefined;
+  getSessionPath?: () => string | undefined;
   isStreaming?: boolean;
   prompt: (text: string, options?: { images?: Array<{ type: 'image'; data: string; mimeType: string }>; streamingBehavior?: 'steer' }) => Promise<void>;
   subscribe: (listener: (event: unknown) => void) => () => void;
@@ -162,7 +164,7 @@ export class PiRuntime {
       const startsTurn = !this.#promptActive && !session.isStreaming;
       this.#promptActive = true;
       if (startsTurn)
-        this.#emit({ status: 'running', type: 'status' });
+        this.#emit({ ...this.#sessionMetadata(), status: 'running', type: 'status' });
       void Promise.resolve(session.prompt(`${prompt}${attachments.text ? `\n${attachments.text}` : ''}`, Object.keys(options).length ? options : undefined)).catch((error) => {
         if (!session.isStreaming)
           this.#settleTurn();
@@ -233,6 +235,7 @@ export class PiRuntime {
     const session = await this.createSession(this.#configuration, this.agentDir, this.#workspacePath, this.#sessionPath);
     this.#sessionUnsubscribe = session.subscribe(event => this.#handleEvent(event));
     this.#session = session;
+    this.#sessionPath ??= session.getSessionPath?.();
     return session;
   }
 
@@ -243,6 +246,14 @@ export class PiRuntime {
     }
     if (isAssistantMessageStartEvent(event)) {
       this.#streamedAssistantText = '';
+      return;
+    }
+    if (isToolExecutionStartEvent(event)) {
+      this.#emit({ ...this.#sessionMetadata(), status: 'running', toolCallId: event.toolCallId, toolName: event.toolName, type: 'tool' });
+      return;
+    }
+    if (isToolExecutionEndEvent(event)) {
+      this.#emit({ ...this.#sessionMetadata(), status: event.isError ? 'failed' : 'completed', toolCallId: event.toolCallId, toolName: event.toolName, type: 'tool' });
       return;
     }
     if (isAssistantTextDeltaEvent(event)) {
@@ -273,7 +284,11 @@ export class PiRuntime {
 
   #settleTurn(): void {
     this.#promptActive = false;
-    this.#emit({ status: 'settled', type: 'status' });
+    this.#emit({ ...this.#sessionMetadata(), status: 'settled', type: 'status' });
+  }
+
+  #sessionMetadata(): { sessionPath?: string } {
+    return this.#sessionPath ? { sessionPath: this.#sessionPath } : {};
   }
 
   #emit(update: TranscriptUpdate): void {
@@ -306,6 +321,7 @@ async function createDefaultSession(configuration: DeepSeekConfiguration, agentD
     },
     forkAssistantMessage: entryId => session.sessionManager.createBranchedSession(entryId),
     getLastAssistantEntryId: () => session.sessionManager.getBranch().findLast(entry => entry.type === 'message' && entry.message.role === 'assistant')?.id,
+    getSessionPath: () => session.sessionManager.getSessionFile(),
     get isStreaming() {
       return session.isStreaming;
     },
@@ -350,6 +366,14 @@ function isAssistantTextDeltaEvent(event: unknown): event is { assistantMessageE
     && isRecord(event.assistantMessageEvent)
     && event.assistantMessageEvent.type === 'text_delta'
     && typeof event.assistantMessageEvent.delta === 'string';
+}
+
+function isToolExecutionStartEvent(event: unknown): event is { toolCallId: string; toolName: string; type: 'tool_execution_start' } {
+  return isRecord(event) && event.type === 'tool_execution_start' && typeof event.toolCallId === 'string' && typeof event.toolName === 'string';
+}
+
+function isToolExecutionEndEvent(event: unknown): event is { isError: boolean; toolCallId: string; toolName: string; type: 'tool_execution_end' } {
+  return isRecord(event) && event.type === 'tool_execution_end' && typeof event.toolCallId === 'string' && typeof event.toolName === 'string' && typeof event.isError === 'boolean';
 }
 
 function isTextContent(content: unknown): content is { type: 'text'; text: string } {
