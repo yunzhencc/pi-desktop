@@ -48,7 +48,7 @@ describe('home page', () => {
   it('shows an empty state and appends a submitted user message', () => {
     render(<HomePage />);
 
-    expect(screen.getByText('What can I help you build?')).not.toBeNull();
+    expect(screen.getByRole('heading', { name: '我们要构建什么？' })).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
 
     expect(screen.getByText('Build this')).not.toBeNull();
@@ -58,7 +58,16 @@ describe('home page', () => {
     workspaces.get.mockResolvedValue({ workspaces: [] });
     render(<HomePage />);
 
-    await waitFor(() => expect(screen.getByText('Select or add a project above to start a conversation.')).not.toBeNull());
+    await waitFor(() => expect(screen.getByRole('heading', { name: '我们要构建什么？' })).not.toBeNull());
+    expect(screen.getByRole('img', { name: 'PI' })).not.toBeNull();
+    expect(screen.queryByText('构建新功能、应用或工具')).toBeNull();
+  });
+
+  it('welcomes a selected project by name', async () => {
+    render(<HomePage />);
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: '你想让我们在 weather 中构建什么？' })).not.toBeNull());
+    expect(screen.getByRole('img', { name: 'PI' })).not.toBeNull();
   });
 
   it('clears the pending transcript when a new conversation starts', () => {
@@ -69,7 +78,7 @@ describe('home page', () => {
     act(() => window.dispatchEvent(new Event('new-conversation')));
 
     expect(screen.queryByText('Build this')).toBeNull();
-    expect(screen.getByText('What can I help you build?')).not.toBeNull();
+    expect(screen.getByRole('heading', { name: '我们要构建什么？' })).not.toBeNull();
   });
 
   it('replaces the pending transcript with the selected session history', () => {

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import piLogo from '../../../../resources/icon.svg?asset';
 import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
 import { MarkdownMessage } from '../components/markdown-message';
 import { ThreadScrollLayout } from '../components/thread-scroll-layout';
@@ -168,14 +169,15 @@ export function HomePage() {
       workspace={workspace}
     />
   );
+  const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
 
   return (
     <section className="chat-page" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
       {messages.length === 0
         ? (
             <div className="chat-empty-state">
-              <p>{workspace == null || workspace.selectedWorkspacePath ? 'What can I help you build?' : 'Choose a project'}</p>
-              <span>{workspace == null || workspace.selectedWorkspacePath ? 'Describe a task, paste code, or add an image or text file.' : 'Select or add a project above to start a conversation.'}</span>
+              <img alt="PI" className="chat-empty-state-logo" src={piLogo} />
+              <h1>{selectedWorkspace ? `你想让我们在 ${selectedWorkspace.displayName} 中构建什么？` : '我们要构建什么？'}</h1>
             </div>
           )
         : (
