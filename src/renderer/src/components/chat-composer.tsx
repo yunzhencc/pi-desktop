@@ -14,7 +14,7 @@ type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDropp
 type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 
-export function NewConversationToolbar({ onCreateProject, onSelectProject, workspace }: { onCreateProject?: () => void; onSelectProject?: (path: string) => void; workspace?: WorkspaceSnapshot }) {
+export function NewConversationToolbar({ onClearProject, onCreateProject, onSelectProject, workspace }: { onClearProject?: () => void; onCreateProject?: () => void; onSelectProject?: (path: string) => void; workspace?: WorkspaceSnapshot }) {
   const [branchResult, setBranchResult] = useState<{ branch?: string; path: string }>();
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
 
@@ -33,12 +33,13 @@ export function NewConversationToolbar({ onCreateProject, onSelectProject, works
         ? (
             <ProjectPicker
               className="new-conversation-toolbar-project new-conversation-toolbar-project-picker"
+              onClearProject={onClearProject}
               onCreateProject={onCreateProject}
               onSelectProject={onSelectProject}
               triggerClassName="new-conversation-toolbar-project-trigger"
               workspace={workspace}
             >
-              <Folder aria-hidden="true" className="new-conversation-toolbar-project-icon" size={18} />
+              <Folder aria-hidden="true" className="new-conversation-toolbar-project-icon" data-project-selector-icon size={18} />
               <span>{selectedWorkspace.displayName}</span>
             </ProjectPicker>
           )

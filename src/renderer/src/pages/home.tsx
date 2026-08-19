@@ -162,8 +162,12 @@ export function HomePage() {
   const selectProject = (path: string) => {
     void window.api.workspaces.select(path).then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
   };
+  const clearProject = () => {
+    void window.api.workspaces.clear().then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
+  };
   const newConversationToolbar = (
     <NewConversationToolbar
+      onClearProject={clearProject}
       onCreateProject={createProject}
       onSelectProject={selectProject}
       workspace={workspace}

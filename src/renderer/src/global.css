@@ -748,12 +748,59 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   margin-left: auto;
   align-self: flex-end;
   max-width: 77%;
+}
+
+.chat-message-user-content {
   overflow: hidden;
   padding: 8px 12px;
   border-radius: 16px;
   background: color-mix(in srgb, var(--foreground) 5%, transparent);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.chat-message-user-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  max-height: 0;
+  margin-top: 0;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-height 150ms ease, margin-top 150ms ease, opacity 150ms ease;
+  white-space: normal;
+}
+
+.chat-message-user:hover .chat-message-user-footer,
+.chat-message-user:has(.chat-message-user-copy:focus-visible) .chat-message-user-footer {
+  max-height: 20px;
+  margin-top: 4px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chat-message-user-copy {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  place-items: center;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chat-message-user-copy:hover,
+.chat-message-user-copy:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--text-secondary);
 }
 
 .chat-message-assistant {
@@ -936,21 +983,72 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   position: relative;
 }
 
+.new-conversation-toolbar-project-picker[data-clear-project-available] {
+  border-radius: 9999px;
+}
+
+.new-conversation-toolbar-project-picker[data-clear-project-available]:hover,
+.new-conversation-toolbar-project-picker[data-clear-project-available]:has([data-clear-project-button]:focus-visible) {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.new-conversation-toolbar-project-picker[data-clear-project-available]:hover [data-project-selector-icon],
+.new-conversation-toolbar-project-picker[data-clear-project-available]:has([data-clear-project-button]:focus-visible) [data-project-selector-icon] {
+  opacity: 0;
+}
+
+.project-picker-clear {
+  position: absolute;
+  z-index: 1;
+  inset-block: 0;
+  inset-inline-start: 0;
+  display: flex;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.project-picker-clear:hover {
+  color: var(--text-primary);
+}
+
+.project-picker-clear:focus-visible {
+  outline: 1px solid var(--focus);
+}
+
+.new-conversation-toolbar-project-picker[data-clear-project-available]:hover .project-picker-clear,
+.project-picker-clear:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .new-conversation-toolbar-project-trigger {
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 20px;
   min-width: 0;
-  padding: 0;
+  padding: 0 8px;
   border: 0;
+  border-radius: 9999px;
   background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .new-conversation-toolbar-project-trigger:hover,
-.new-conversation-toolbar-project-trigger:focus-visible {
+.new-conversation-toolbar-project-trigger:focus-visible,
+.new-conversation-toolbar-project-trigger[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
   color: var(--text-primary);
 }
 
@@ -961,12 +1059,16 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .project-picker-popover {
   position: fixed;
   z-index: 10;
-  width: min(520px, calc(100vw - 32px));
+  min-width: 260px;
+  max-width: calc(100vw - 16px);
+  max-height: min(350px, calc(100vh - 16px));
+  padding: 4px;
+  overflow-y: auto;
   transform: translate(-50%, -100%);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--surface-elevated);
-  box-shadow: 0 18px 44px color-mix(in srgb, #000 32%, transparent);
+  box-shadow: 0 8px 16px -4px color-mix(in srgb, #000 12%, transparent);
 }
 
 .project-picker-command {
@@ -976,8 +1078,8 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .project-picker-search {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 16px 18px 10px;
+  gap: 6px;
+  padding: 5px 8px;
   color: var(--text-tertiary);
 }
 
@@ -989,7 +1091,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   background: transparent;
   color: var(--text-primary);
   font: inherit;
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .project-picker-search input::placeholder {
@@ -997,13 +1099,13 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 }
 
 .project-picker-command [cmdk-list] {
-  max-height: 300px;
+  max-height: calc((1lh + 10px) * 5);
   overflow-y: auto;
-  padding: 4px 8px;
+  padding: 0;
 }
 
 .project-picker-command [cmdk-group-heading] {
-  padding: 4px 10px 8px;
+  padding: 0 8px 4px;
   color: var(--text-tertiary);
   font-size: 12px;
 }
@@ -1011,13 +1113,13 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .project-picker-command [cmdk-item] {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 42px;
-  padding: 0 10px;
+  gap: 6px;
+  min-height: 0;
+  padding: 5px 8px;
   border-radius: 10px;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .project-picker-command [cmdk-item][data-selected='true'] {
@@ -1027,7 +1129,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 
 .project-picker-command [cmdk-separator] {
   height: 1px;
-  margin: 8px 2px;
+  margin: 4px 0;
   background: var(--border-subtle);
 }
 

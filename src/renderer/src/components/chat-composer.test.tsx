@@ -57,7 +57,7 @@ function renderComposer(onSubmitted = vi.fn(), props: Partial<Parameters<typeof 
   );
 }
 
-function renderNewConversationToolbar(props: Partial<Parameters<typeof NewConversationToolbar>[0]> = {}) {
+function renderNewConversationToolbar(props: Partial<Parameters<typeof NewConversationToolbar>[0]> & { onClearProject?: () => void } = {}) {
   return render(
     <I18nProvider>
       <NewConversationToolbar workspace={{ selectedWorkspacePath: weather.path, workspaces: [weather, notes] }} {...props} />
@@ -224,6 +224,17 @@ describe('chat composer', () => {
     await user.click(screen.getByRole('option', { name: 'notes' }));
 
     expect(onSelectProject).toHaveBeenCalledWith(notes.path);
+  });
+
+  it('clears the selected project without opening its picker', async () => {
+    const user = userEvent.setup();
+    const onClearProject = vi.fn();
+    renderNewConversationToolbar({ onClearProject });
+
+    await user.click(screen.getByRole('button', { name: '清理项目' }));
+
+    expect(onClearProject).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: '选择项目' })).toBeNull();
   });
 
   it('uses the drop attachment command for Electron file paths', async () => {

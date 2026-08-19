@@ -1,14 +1,15 @@
 import type { ReactNode } from 'react';
 import { Command } from 'cmdk';
-import { Folder, Plus, Search } from 'lucide-react';
+import { Folder, Plus, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 
-export function ProjectPicker({ children, className, onCreateProject, onSelectProject, triggerClassName, workspace }: {
+export function ProjectPicker({ children, className, onClearProject, onCreateProject, onSelectProject, triggerClassName, workspace }: {
   children: ReactNode;
   className?: string;
+  onClearProject?: () => void;
   onCreateProject?: () => void;
   onSelectProject?: (path: string) => void;
   triggerClassName?: string;
@@ -56,7 +57,22 @@ export function ProjectPicker({ children, className, onCreateProject, onSelectPr
   };
 
   return (
-    <span className={className ? `project-picker ${className}` : 'project-picker'} ref={rootRef}>
+    <span className={className ? `project-picker ${className}` : 'project-picker'} data-clear-project-available={onClearProject ? '' : undefined} ref={rootRef}>
+      {onClearProject && (
+        <button
+          aria-label="清理项目"
+          className="project-picker-clear"
+          data-clear-project-button
+          onClick={(event) => {
+            event.stopPropagation();
+            setOpen(false);
+            onClearProject();
+          }}
+          type="button"
+        >
+          <X aria-hidden="true" size={14} />
+        </button>
+      )}
       <button aria-expanded={open} aria-haspopup="dialog" className={triggerClassName} onClick={toggle} ref={triggerRef} type="button">
         {children}
       </button>
@@ -64,7 +80,7 @@ export function ProjectPicker({ children, className, onCreateProject, onSelectPr
         <div aria-label="选择项目" className="project-picker-popover" ref={popoverRef} role="dialog" style={position}>
           <Command className="project-picker-command" label="搜索项目">
             <div className="project-picker-search">
-              <Search aria-hidden="true" size={18} />
+              <Search aria-hidden="true" size={14} />
               <Command.Input aria-label="搜索项目" autoFocus placeholder="搜索项目" />
             </div>
             <Command.List>
@@ -72,7 +88,7 @@ export function ProjectPicker({ children, className, onCreateProject, onSelectPr
               <Command.Group heading="项目">
                 {workspace?.workspaces.map(item => (
                   <Command.Item key={item.path} onSelect={() => selectProject(item.path)} value={item.displayName}>
-                    <Folder aria-hidden="true" size={18} />
+                    <Folder aria-hidden="true" size={16} />
                     {item.displayName}
                   </Command.Item>
                 ))}
@@ -86,7 +102,7 @@ export function ProjectPicker({ children, className, onCreateProject, onSelectPr
                   }}
                   value="新建项目"
                 >
-                  <Plus aria-hidden="true" size={18} />
+                  <Plus aria-hidden="true" size={16} />
                   新建项目
                 </Command.Item>
               </Command.Group>
