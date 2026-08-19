@@ -6,8 +6,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { messages } from '../providers/i18n';
 import { GeneralSettingsView, SettingsSidebar, SettingsView } from './settings-view';
 
+const { hotkeys } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>() }));
+
+vi.mock('@tanstack/react-hotkeys', () => ({
+  useHotkey: (key: string, handler: () => void) => hotkeys.set(key, handler),
+}));
+
 describe('settings view', () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    hotkeys.clear();
+  });
 
   it('renders the settings copy in Chinese when the active locale is Chinese', () => {
     const onThemeChange = vi.fn();
@@ -133,7 +142,7 @@ describe('settings view', () => {
     );
 
     const search = screen.getByRole('searchbox', { name: '搜索设置' });
-    fireEvent.keyDown(window, { key: 'f', metaKey: true });
+    hotkeys.get('Mod+F')?.();
 
     expect(document.activeElement).toBe(search);
   });

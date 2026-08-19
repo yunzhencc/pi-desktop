@@ -9,8 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
+import { useHotkey } from '@tanstack/react-hotkeys';
 import { ArrowLeft, Search, Settings, Sun, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 interface SettingsViewProps {
@@ -61,19 +62,12 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const results = useMemo(() => searchSettings(query, formatMessage), [formatMessage, query]);
+  const focusSearch = () => {
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+  };
 
-  useEffect(() => {
-    const focusSearch = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'f') {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
-      }
-    };
-
-    window.addEventListener('keydown', focusSearch);
-    return () => window.removeEventListener('keydown', focusSearch);
-  }, []);
+  useHotkey('Mod+F', focusSearch, { ignoreInputs: false, preventDefault: true });
 
   return (
     <nav className="settings-navigation" aria-label={formatMessage({ id: 'settings.navigation' })}>
