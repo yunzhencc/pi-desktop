@@ -39,7 +39,7 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
               triggerClassName="new-conversation-toolbar-project-trigger"
               workspace={workspace}
             >
-              <Folder aria-hidden="true" className="new-conversation-toolbar-project-icon" data-project-selector-icon size={18} />
+              <Folder aria-hidden="true" className="new-conversation-toolbar-project-icon" data-project-selector-icon size={16} />
               <span>{selectedWorkspace.displayName}</span>
             </ProjectPicker>
           )
@@ -51,19 +51,19 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
               triggerClassName="new-conversation-toolbar-project-trigger"
               workspace={workspace}
             >
-              <Folder aria-hidden="true" size={18} />
+              <Folder aria-hidden="true" size={16} />
               <span>选择项目</span>
             </ProjectPicker>
           )}
       {selectedWorkspace && (
         <>
           <span className="new-conversation-toolbar-item">
-            <Laptop aria-hidden="true" size={18} />
+            <Laptop aria-hidden="true" size={16} />
             本地
           </span>
           {branch && (
             <span className="new-conversation-toolbar-item">
-              <GitBranch aria-hidden="true" size={18} />
+              <GitBranch aria-hidden="true" size={16} />
               {branch}
             </span>
           )}

@@ -215,6 +215,13 @@ describe('chat composer', () => {
     expect(toolbar.textContent).toContain('main');
   });
 
+  it('uses Codex-sized context icons', async () => {
+    renderNewConversationToolbar();
+
+    const toolbar = await screen.findByRole('toolbar', { name: '新会话项目上下文' });
+    expect([...toolbar.querySelectorAll('svg')].map(icon => icon.getAttribute('width'))).toEqual(['16', '16', '16']);
+  });
+
   it('switches a selected project from the project toolbar', async () => {
     const user = userEvent.setup();
     const onSelectProject = vi.fn();

@@ -954,11 +954,11 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .new-conversation-toolbar {
   display: flex;
   align-items: center;
-  gap: 24px;
-  min-height: 42px;
-  margin: 0 12px -1px;
-  padding: 0 16px;
-  border-radius: 22px 22px 0 0;
+  gap: 8px;
+  min-height: 40px;
+  margin: 0 8px -1px;
+  padding: 0 8px;
+  border-radius: 16px 16px 0 0;
   background: var(--surface-tertiary);
 }
 
@@ -969,11 +969,11 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .new-conversation-toolbar-project {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
   position: relative;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .new-conversation-toolbar-project-picker {
@@ -986,7 +986,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 
 .new-conversation-toolbar-project-picker[data-clear-project-available]:hover,
 .new-conversation-toolbar-project-picker[data-clear-project-available]:has([data-clear-project-button]:focus-visible) {
-  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .new-conversation-toolbar-project-picker[data-clear-project-available]:hover [data-project-selector-icon],
@@ -1029,10 +1029,10 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .new-conversation-toolbar-project-trigger {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 20px;
+  gap: 6px;
+  height: 28px;
   min-width: 0;
-  padding: 0 8px;
+  padding: 0 12px;
   border: 0;
   border-radius: 9999px;
   background: transparent;
@@ -1045,7 +1045,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .new-conversation-toolbar-project-trigger:hover,
 .new-conversation-toolbar-project-trigger:focus-visible,
 .new-conversation-toolbar-project-trigger[aria-expanded='true'] {
-  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
   color: var(--text-primary);
 }
 
@@ -1163,9 +1163,18 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .new-conversation-toolbar-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 9999px;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 12px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.new-conversation-toolbar-item:hover {
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  color: var(--text-primary);
 }
 
 .chat-composer-attachments {
