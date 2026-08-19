@@ -426,6 +426,10 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   pointer-events: none;
 }
 
+.settings-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
 .settings-search-clear {
   right: 7px;
   display: grid;

@@ -113,6 +113,18 @@ describe('settings view', () => {
     expect(screen.getByRole('button', { name: '外观' })).not.toBeNull();
   });
 
+  it('shows the app clear button for a populated search input', () => {
+    render(
+      <IntlProvider locale="zh-CN" messages={messages['zh-CN']}>
+        <SettingsSidebar activePath="/settings/general" onClose={vi.fn()} onNavigate={vi.fn()} />
+      </IntlProvider>,
+    );
+
+    fireEvent.change(screen.getByRole('searchbox', { name: '搜索设置' }), { target: { value: '你好' } });
+
+    expect(screen.getByRole('button', { name: '清除设置搜索' })).not.toBeNull();
+  });
+
   it('focuses settings search with the find shortcut', () => {
     render(
       <IntlProvider locale="zh-CN" messages={messages['zh-CN']}>
