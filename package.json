@@ -49,6 +49,7 @@
     "cmdk": "catalog:core",
     "electron-updater": "catalog:core",
     "es-toolkit": "catalog:core",
+    "jotai": "catalog:core",
     "lucide-react": "catalog:core",
     "mdast-util-from-markdown": "catalog:core",
     "mdast-util-gfm": "catalog:core",
@@ -65,7 +66,8 @@
     "prosemirror-state": "catalog:core",
     "prosemirror-view": "catalog:core",
     "react-intl": "catalog:core",
-    "zod": "catalog:core"
+    "zod": "catalog:core",
+    "zustand": "catalog:core"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:lint",
