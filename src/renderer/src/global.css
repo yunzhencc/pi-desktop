@@ -471,13 +471,25 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   white-space: nowrap;
 }
 
-.chat-composer-chip-image {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+.chat-composer-image {
+  position: relative;
+  flex: 0 0 80px;
+  width: 80px;
+  height: 80px;
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
+  border-radius: 8px;
+}
+
+.chat-composer-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
   object-fit: cover;
 }
 
+.chat-composer-image button,
 .chat-composer-chip button {
   display: grid;
   place-items: center;
@@ -487,6 +499,19 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .chat-composer-chip button {
   padding: 2px;
   color: var(--text-tertiary);
+}
+
+.chat-composer-image button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 9999px;
+  background: var(--foreground);
+  color: var(--background);
+  box-shadow: 0 1px 2px color-mix(in srgb, #000 28%, transparent);
 }
 
 .chat-composer-chip button:hover {

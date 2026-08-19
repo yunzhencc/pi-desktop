@@ -102,6 +102,21 @@ describe('chat composer', () => {
     await waitFor(() => expect(composer.addPastedImage).toHaveBeenCalledWith('clipboard.png', 'iVBORw=='));
   });
 
+  it('renders pasted images as Codex thumbnail attachments', async () => {
+    composer.addPastedImage.mockResolvedValue({
+      attachments: [{ id: 'image-1', kind: 'image', name: '0000.jpg', previewDataUrl: 'data:image/jpeg;base64,/9j/', size: 4 }],
+      failures: [],
+    });
+    renderComposer();
+    const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });
+    const item = { getAsFile: () => image, kind: 'file', type: 'image/png' } as DataTransferItem;
+
+    fireEvent.paste(window, { clipboardData: { items: [item] } });
+
+    expect((await screen.findByAltText('0000.jpg')).closest('.chat-composer-image')).not.toBeNull();
+    expect(screen.queryByText('0000.jpg')).toBeNull();
+  });
+
   it('asks for a restart when the running preload bridge is outdated', async () => {
     vi.stubGlobal('api', { composer: { ...composer, addPastedImage: undefined } });
     renderComposer();

@@ -156,15 +156,20 @@ export function ChatComposer({ onSubmitted }: { onSubmitted: (text: string) => v
     >
       {attachments.length > 0 && (
         <div aria-label="Attachments" className="chat-composer-attachments">
-          {attachments.map(attachment => (
-            <div className="chat-composer-chip" key={attachment.id}>
-              {attachment.kind === 'image'
-                ? <img alt="" className="chat-composer-chip-image" src={attachment.previewDataUrl} />
-                : <FileText aria-hidden="true" size={15} />}
-              <span>{attachment.name}</span>
-              <button aria-label={`Remove ${attachment.name}`} onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={14} /></button>
-            </div>
-          ))}
+          {attachments.map(attachment => attachment.kind === 'image'
+            ? (
+                <div className="chat-composer-image" key={attachment.id}>
+                  <img alt={attachment.name} src={attachment.previewDataUrl} />
+                  <button aria-label={`Remove ${attachment.name}`} onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={10} /></button>
+                </div>
+              )
+            : (
+                <div className="chat-composer-chip" key={attachment.id}>
+                  <FileText aria-hidden="true" size={15} />
+                  <span>{attachment.name}</span>
+                  <button aria-label={`Remove ${attachment.name}`} onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={14} /></button>
+                </div>
+              ))}
         </div>
       )}
       <div className="chat-composer-editor" ref={editorHostRef} />
