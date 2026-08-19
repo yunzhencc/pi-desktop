@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Copy, Pencil } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import piLogo from '../../../../resources/icon.svg?asset';
 import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
 import { MarkdownMessage } from '../components/markdown-message';
@@ -280,6 +281,7 @@ function UserMessageFooter({ canEdit, onEdit, startedAtMs, text }: Pick<Message,
 }
 
 function WorkedFor({ completedAtMs, done, startedAtMs }: Pick<Message, 'completedAtMs' | 'done' | 'startedAtMs'>) {
+  const { formatMessage } = useIntl();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -292,11 +294,17 @@ function WorkedFor({ completedAtMs, done, startedAtMs }: Pick<Message, 'complete
   if ((done && completedAtMs == null) || startedAtMs == null)
     return null;
   const elapsedMs = Math.max(0, (completedAtMs ?? now) - startedAtMs);
-  const label = completedAtMs != null ? 'Worked for' : elapsedMs >= 1000 ? 'Working for' : 'Working';
-  return <p className="chat-worked-for">{label === 'Working' ? label : `${label} ${formatDuration(elapsedMs)}`}</p>;
-}
-
-function formatDuration(durationMs: number) {
-  const seconds = Math.floor(durationMs / 1000);
-  return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  const seconds = Math.floor(elapsedMs / 1000);
+  const duration = seconds < 60
+    ? formatMessage({ id: 'conversation.duration.seconds' }, { seconds })
+    : formatMessage(
+        { id: 'conversation.duration.minutes' },
+        { minutes: Math.floor(seconds / 60), seconds: seconds % 60 },
+      );
+  const label = completedAtMs != null
+    ? formatMessage({ id: 'conversation.workedFor' }, { duration })
+    : elapsedMs >= 1000
+      ? formatMessage({ id: 'conversation.workingFor' }, { duration })
+      : formatMessage({ id: 'conversation.working' });
+  return <p className="chat-worked-for">{label}</p>;
 }

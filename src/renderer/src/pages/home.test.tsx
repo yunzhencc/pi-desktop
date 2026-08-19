@@ -1,11 +1,17 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { act, cleanup, fireEvent, screen, render as testingRender, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { I18nProvider } from '../providers/i18n';
 import { HomePage } from './home';
 
 let animationFrames: FrameRequestCallback[];
 let workspaces: { get: ReturnType<typeof vi.fn>; pick: ReturnType<typeof vi.fn>; select: ReturnType<typeof vi.fn> };
+
+function render(ui: ReactElement) {
+  return testingRender(<I18nProvider>{ui}</I18nProvider>);
+}
 
 vi.mock('../components/chat-composer', () => ({
   ChatComposer: ({ inlineEdit, isRunning, onStop, onSubmitted }: { inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => void }; isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) => inlineEdit
@@ -225,7 +231,19 @@ describe('home page', () => {
     vi.setSystemTime(new Date('2026-08-19T10:01:05Z'));
     act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', type: 'assistant' }));
 
-    expect(screen.getByText('Worked for 1m 5s')).not.toBeNull();
+    expect(screen.getByText('耗时 1分 5秒')).not.toBeNull();
+  });
+
+  it('shows active assistant work duration in Chinese', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
+    act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Working', type: 'assistant' }));
+    act(() => animationFrames.at(-1)?.(0));
+
+    expect(screen.getByText('处理中')).not.toBeNull();
   });
 
   it('freezes streamed assistant work duration when the agent settles', () => {
@@ -242,7 +260,7 @@ describe('home page', () => {
     act(() => onUpdate.mock.calls[0]![0]({ status: 'settled', type: 'status' }));
     act(() => vi.advanceTimersByTime(60_000));
 
-    expect(screen.getByText('Worked for 1m 5s')).not.toBeNull();
+    expect(screen.getByText('耗时 1分 5秒')).not.toBeNull();
   });
 
   it('renders a streamed assistant snapshot as Markdown', () => {
