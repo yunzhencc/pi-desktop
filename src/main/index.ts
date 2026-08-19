@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, screen, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeTheme, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
 import {
   getPrimaryWindowBounds,
@@ -32,6 +32,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     ...(process.platform === 'darwin'
       ? {
+          backgroundColor: '#00000000',
           titleBarStyle: 'hiddenInset',
           vibrancy: 'menu',
           trafficLightPosition: {
@@ -48,6 +49,13 @@ function createWindow(): void {
   });
 
   if (process.platform === 'darwin') {
+    const syncWindowBackdrop = () => {
+      const opaque = !mainWindow.isFocused();
+      mainWindow.setBackgroundColor(opaque
+        ? nativeTheme.shouldUseDarkColors ? '#000000' : '#f9f9f9'
+        : '#00000000');
+      mainWindow.setVibrancy(opaque ? null : 'menu');
+    };
     const syncTrafficLightPosition = () => {
       mainWindow.setWindowButtonPosition({
         x: 16,
@@ -56,6 +64,11 @@ function createWindow(): void {
     };
     mainWindow.webContents.on('did-finish-load', syncTrafficLightPosition);
     mainWindow.webContents.on('zoom-changed', syncTrafficLightPosition);
+    mainWindow.on('focus', syncWindowBackdrop);
+    mainWindow.on('blur', syncWindowBackdrop);
+    mainWindow.on('show', syncWindowBackdrop);
+    mainWindow.on('hide', syncWindowBackdrop);
+    syncWindowBackdrop();
   }
 
   mainWindow.on('ready-to-show', () => {
