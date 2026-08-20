@@ -1,13 +1,5 @@
-import type { AppHistory, AppLocation } from '@renderer/components/app-history';
 import type { WorkspaceSnapshot } from '../../../../main/workspaces';
-import {
-  canGoBack,
-  canGoForward,
-  createAppHistory,
-  currentAppLocation,
-  moveAppHistory,
-  pushAppHistory,
-} from '@renderer/components/app-history';
+import type { AppHistory, AppLocation } from './utils';
 import { useShortcutSettings } from '@renderer/features/app/hotkeys';
 import { SettingsSidebar } from '@renderer/features/settings';
 import { WorkspaceSidebar } from '@renderer/features/workspace';
@@ -27,7 +19,16 @@ import {
   writeRightPanelWidth,
 } from './components';
 import { Footer, SidebarResizeHandle } from './sidebar';
-import { getToolbarInset, readSidebarWidth } from './utils';
+import {
+  canGoBack,
+  canGoForward,
+  createAppHistory,
+  currentAppLocation,
+  getToolbarInset,
+  moveAppHistory,
+  pushAppHistory,
+  readSidebarWidth,
+} from './utils';
 
 const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
