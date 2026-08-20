@@ -1497,6 +1497,94 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   position: relative;
 }
 
+.chat-composer-editor .composer-link {
+  color: #8fc5ff;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.composer-link-popover {
+  position: fixed;
+  z-index: 50;
+  transform: translate(-50%, -100%);
+}
+
+.composer-link-popover-actions-content {
+  display: flex;
+  width: fit-content;
+  max-width: calc(100vw - 16px);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 70%, transparent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-elevated) 90%, transparent);
+  box-shadow: 0 4px 8px -2px rgb(0 0 0 / 10%);
+  backdrop-filter: blur(4px);
+}
+
+.composer-link-popover-actions-content button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.composer-link-popover-actions-content button:first-child {
+  border-left: 0;
+}
+
+.composer-link-popover-actions-content button:hover,
+.composer-link-popover-actions-content button:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+
+.composer-link-popover-editor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: min(27rem, calc(100vw - 16px));
+  padding: 4px 4px 4px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
+  background: var(--surface);
+  box-shadow: 0 4px 8px -2px rgb(0 0 0 / 10%);
+}
+
+.composer-link-popover-editor button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--foreground);
+  color: var(--surface);
+}
+
+.composer-link-popover-editor input {
+  min-width: 0;
+  flex: 1;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+}
+
 .chat-composer-actions {
   display: flex;
   align-items: center;

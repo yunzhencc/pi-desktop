@@ -85,6 +85,114 @@ describe('chat composer', () => {
     expect(screen.getByRole('textbox', { name: 'Message Pi' }).textContent).toBe('');
   });
 
+  it('autolinks a typed HTTP URL in the editor', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    await user.type(screen.getByRole('textbox', { name: 'Message Pi' }), 'https://example.com/docs');
+
+    expect(screen.getByRole('button', { name: 'https://example.com/docs' }).getAttribute('data-link-href')).toBe('https://example.com/docs');
+  });
+
+  it('autolinks a pasted HTTP URL without its trailing punctuation', () => {
+    renderComposer();
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
+
+    fireEvent.paste(editor, { clipboardData: { getData: () => 'Read https://example.com/docs.' } });
+
+    expect(editor.querySelector('[data-link-href]')?.getAttribute('data-link-href')).toBe('https://example.com/docs');
+    expect(editor.textContent).toBe('Read https://example.com/docs.');
+  });
+
+  it('shows Codex-style link controls and saves an edited URL', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
+
+    await user.type(editor, 'https://example.com/docs');
+    await user.click(editor.querySelector('[data-link-href]')!);
+    expect(screen.getByRole('dialog', { name: '链接选项' }).className).toContain('composer-link-popover-actions');
+    await user.click(screen.getByRole('button', { name: '编辑链接' }));
+    expect(screen.getByRole('dialog', { name: '链接选项' }).className).toContain('composer-link-popover-editor');
+    await user.clear(screen.getByRole('textbox', { name: 'URL' }));
+    await user.type(screen.getByRole('textbox', { name: 'URL' }), 'https://openai.com');
+    await user.click(screen.getByRole('button', { name: '保存链接 URL' }));
+
+    expect(editor.querySelector('[data-link-href]')?.getAttribute('data-link-href')).toBe('https://openai.com');
+  });
+
+  it('saves edited link display text without changing its URL', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
+
+    await user.type(editor, 'https://example.com/docs');
+    await user.click(editor.querySelector('[data-link-href]')!);
+    await user.click(screen.getByRole('button', { name: '编辑文本' }));
+    await user.clear(screen.getByRole('textbox', { name: '文本' }));
+    await user.type(screen.getByRole('textbox', { name: '文本' }), '项目文档');
+    await user.click(screen.getByRole('button', { name: '保存链接文本' }));
+
+    expect(editor.textContent).toBe('项目文档');
+    expect(editor.querySelector('[data-link-href]')?.getAttribute('data-link-href')).toBe('https://example.com/docs');
+  });
+
+  it('opens the selected link in a new browser target', async () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const user = userEvent.setup();
+    renderComposer();
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
+
+    await user.type(editor, 'https://example.com/docs');
+    await user.click(editor.querySelector('[data-link-href]')!);
+    await user.click(screen.getByRole('button', { name: '打开链接' }));
+
+    expect(open).toHaveBeenCalledWith('https://example.com/docs', '_blank', 'noopener,noreferrer');
+  });
+
+  it('removes a link while preserving its display text when its URL is cleared', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
+
+    await user.type(editor, 'https://example.com/docs');
+    await user.click(editor.querySelector('[data-link-href]')!);
+    await user.click(screen.getByRole('button', { name: '编辑链接' }));
+    await user.clear(screen.getByRole('textbox', { name: 'URL' }));
+    await user.click(screen.getByRole('button', { name: '保存链接 URL' }));
+
+    expect(editor.textContent).toBe('https://example.com/docs');
+    expect(editor.querySelector('[data-link-href]')).toBeNull();
+  });
+
+  it('keeps the URL editor open and reports an invalid link', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
+
+    await user.type(editor, 'https://example.com/docs');
+    await user.click(editor.querySelector('[data-link-href]')!);
+    await user.click(screen.getByRole('button', { name: '编辑链接' }));
+    await user.clear(screen.getByRole('textbox', { name: 'URL' }));
+    await user.type(screen.getByRole('textbox', { name: 'URL' }), 'ftp://example.com');
+    await user.click(screen.getByRole('button', { name: '保存链接 URL' }));
+
+    expect(screen.getByRole('textbox', { name: 'URL' }).getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByRole('alert').textContent).toBe('请输入 HTTP 或 HTTPS 链接');
+  });
+
+  it('closes link controls with Escape', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
+
+    await user.type(editor, 'https://example.com/docs');
+    await user.click(editor.querySelector('[data-link-href]')!);
+    fireEvent.keyDown(screen.getByRole('dialog', { name: '链接选项' }), { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog', { name: '链接选项' })).toBeNull();
+  });
+
   it('prefills the editor with an editable user message draft', () => {
     renderComposer(vi.fn(), { draft: { id: 1, text: 'Revise the plan' } });
 
