@@ -23,7 +23,7 @@ import {
 } from './components/right-panel';
 import { RightPanelResizeHandle } from './components/right-panel-resize-handle';
 import { SettingsSidebar } from './components/settings-view';
-import { SidebarProfile } from './components/sidebar-profile';
+import { Footer } from './components/sidebar';
 import {
   readSidebarWidth,
 } from './components/sidebar-resize';
@@ -338,7 +338,8 @@ function AppShell() {
                       </button>
                     </div>
                     <WorkspaceSidebar onOpenSession={(workspacePath, sessionPath) => void visitLocation({ kind: 'session', sessionPath, workspacePath })} />
-                    <SidebarProfile name="Wang Xingkang" onOpenSettings={openSettings} />
+
+                    <Footer />
                   </>
                 )}
           </>

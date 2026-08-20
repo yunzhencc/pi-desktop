@@ -14,12 +14,12 @@ export default defineConfig({
       },
     },
     plugins: [
-      react(),
-      tailwindcss(),
       codeInspectorPlugin({
         bundler: 'vite',
         editor: 'code',
       }),
+      react(),
+      tailwindcss(),
     ],
   },
 });
