@@ -214,7 +214,6 @@ export function HomePage() {
   const composer = (
     <ChatComposer
       isRunning={isRunning}
-      onSent={() => window.dispatchEvent(new Event('sessions-changed'))}
       onStop={() => void window.api.composer.stop()}
       onSubmitted={(text) => {
         const startedAtMs = Date.now();

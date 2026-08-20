@@ -81,6 +81,26 @@ export class WorkspaceRegistry {
     return this.snapshot();
   }
 
+  async update(path: string, nextPath: string, displayName: string): Promise<WorkspaceSnapshot> {
+    const current = this.#snapshot.workspaces.find(workspace => workspace.path === path);
+    if (!current)
+      throw new Error('工作区不存在');
+    if (!(await isDirectory(nextPath)))
+      throw new Error('工作区不存在或不可访问');
+    if (nextPath !== path && this.#snapshot.workspaces.some(workspace => workspace.path === nextPath))
+      throw new Error('该源文件夹已添加为项目');
+
+    const next = { ...current, displayName: displayName.trim() || basename(nextPath) || nextPath, path: nextPath };
+    this.#snapshot = {
+      ...this.#snapshot,
+      pinnedWorkspacePaths: this.#snapshot.pinnedWorkspacePaths.map(pinnedPath => pinnedPath === path ? nextPath : pinnedPath),
+      selectedWorkspacePath: this.#snapshot.selectedWorkspacePath === path ? nextPath : this.#snapshot.selectedWorkspacePath,
+      workspaces: this.#snapshot.workspaces.map(workspace => workspace.path === path ? next : workspace),
+    };
+    await this.#write();
+    return this.snapshot();
+  }
+
   async clear(): Promise<WorkspaceSnapshot> {
     if (!this.#snapshot.selectedWorkspacePath)
       return this.snapshot();

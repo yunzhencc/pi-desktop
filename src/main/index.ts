@@ -239,11 +239,26 @@ app.whenReady().then(async () => {
     });
     return result.canceled ? undefined : result.filePaths[0];
   });
+  ipcMain.handle('workspaces:open-directory', async (_event, path: unknown) => {
+    if (typeof path !== 'string' || !path.trim())
+      throw new TypeError('无效的工作区路径');
+    const error = await shell.openPath(path);
+    if (error)
+      throw new Error(error);
+  });
   ipcMain.handle('workspaces:create', async (_event, name: unknown, path: unknown) => {
     if (typeof name !== 'string' || typeof path !== 'string' || !path.trim())
       throw new TypeError('无效的项目');
     const snapshot = await workspaceRegistry.create(path, name);
     piRuntime.setWorkspace(snapshot.selectedWorkspacePath!);
+    return snapshot;
+  });
+  ipcMain.handle('workspaces:update', async (_event, path: unknown, name: unknown, nextPath: unknown) => {
+    if (typeof path !== 'string' || !path.trim() || typeof name !== 'string' || typeof nextPath !== 'string' || !nextPath.trim())
+      throw new TypeError('无效的项目');
+    const snapshot = await workspaceRegistry.update(path, nextPath, name);
+    if (snapshot.selectedWorkspacePath === nextPath)
+      piRuntime.setWorkspace(nextPath);
     return snapshot;
   });
   ipcMain.handle('workspaces:select', (_event, path: unknown) => {

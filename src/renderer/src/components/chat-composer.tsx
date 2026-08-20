@@ -187,11 +187,10 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
   );
 }
 
-export function ChatComposer({ draft, inlineEdit, isRunning = false, onSent = () => {}, onStop = () => {}, onSubmitted, workspace }: {
+export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = () => {}, onSubmitted, workspace }: {
   draft?: { id: number; text: string };
   inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => Promise<void> | void };
   isRunning?: boolean;
-  onSent?: () => void;
   onStop?: () => void;
   onSubmitted: (text: string) => void;
   workspace?: WorkspaceSnapshot;
@@ -390,7 +389,6 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onSent = ()
       }
       onSubmitted(text);
       await window.api.composer.send(text, attachments.map(attachment => attachment.id));
-      onSent();
       editorViewRef.current?.dispatch(editorViewRef.current.state.tr.delete(0, editorViewRef.current.state.doc.content.size));
       setAttachments([]);
     }

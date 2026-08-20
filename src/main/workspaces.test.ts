@@ -71,6 +71,24 @@ describe('workspace registry', () => {
     expect(registry.snapshot().workspaces[0]).toMatchObject({ displayName: project.split('/').at(-1), path: project });
   });
 
+  it('updates a project source folder while preserving its selection and pin', async () => {
+    const path = await registryPath();
+    const original = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
+    const replacement = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
+    directories.push(original, replacement);
+    await Promise.all([mkdir(original), mkdir(replacement)]);
+    const registry = new WorkspaceRegistry(path);
+
+    await registry.load();
+    await registry.create(original, '旧项目');
+    await registry.setWorkspacePinned(original, true);
+    const updated = await registry.update(original, replacement, '新项目');
+
+    expect(updated).toMatchObject({ pinnedWorkspacePaths: [replacement], selectedWorkspacePath: replacement });
+    expect(updated.workspaces).toEqual([expect.objectContaining({ displayName: '新项目', path: replacement })]);
+    await expect(new WorkspaceRegistry(path).load()).resolves.toEqual(updated);
+  });
+
   it('clears the selected project but keeps it in recents', async () => {
     const path = await registryPath();
     const project = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);

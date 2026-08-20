@@ -536,30 +536,36 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   color: var(--foreground);
 }
 
-.workspace-sidebar-list button,
-.workspace-sidebar-pinned-list button {
+.workspace-sidebar-list .workspace-sidebar-project-toggle,
+.workspace-sidebar-pinned-list .workspace-sidebar-project-toggle,
+.workspace-sidebar-list .workspace-sidebar-session-row > button:first-child,
+.workspace-sidebar-pinned-list .workspace-sidebar-session-row > button:first-child {
   display: flex;
   align-items: center;
   gap: 4px;
   width: 100%;
   height: 30px;
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 10px;
   color: var(--text-secondary);
   font-size: 14px;
   text-align: left;
 }
 
-.workspace-sidebar-list button > svg {
+.workspace-sidebar-project-toggle > svg {
   flex: 0 0 auto;
 }
 
 .workspace-sidebar-project-toggle > span {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .workspace-sidebar-project-header {
+  position: relative;
   display: flex;
   align-items: center;
 }
@@ -569,17 +575,185 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   min-width: 0;
 }
 
-.workspace-sidebar-project-pin {
-  width: 26px !important;
-  padding: 0 !important;
-  justify-content: center;
-  color: var(--text-tertiary) !important;
+.workspace-sidebar-project-actions {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
   opacity: 0;
 }
 
-.workspace-sidebar-project:hover .workspace-sidebar-project-pin,
-.workspace-sidebar-project-pin:focus-visible {
+.workspace-sidebar-project:hover .workspace-sidebar-project-actions,
+.workspace-sidebar-project-actions:focus-within {
   opacity: 1;
+}
+
+.workspace-sidebar-project-action {
+  display: grid;
+  width: 26px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--text-tertiary);
+}
+
+.workspace-sidebar-project-action:hover,
+.workspace-sidebar-project-action:focus-visible,
+.workspace-sidebar-project-action[aria-expanded='true'] {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+}
+
+.workspace-sidebar-project-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 156px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: 10px;
+  background: var(--background);
+  box-shadow: 0 8px 20px color-mix(in srgb, #000 22%, transparent);
+}
+
+.workspace-sidebar-project-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--foreground);
+  font-size: 13px;
+  text-align: left;
+}
+
+.workspace-sidebar-project-menu button:hover,
+.workspace-sidebar-project-menu button:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.workspace-sidebar-project-hover-card {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  width: min(21rem, calc(100vw - 16px));
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: 12px;
+  background: var(--background);
+  box-shadow: 0 12px 28px color-mix(in srgb, #000 24%, transparent);
+  color: var(--foreground);
+  font-size: 13px;
+}
+
+.workspace-sidebar-project-hover-card-header,
+.workspace-sidebar-project-hover-card-header > div,
+.workspace-sidebar-project-hover-card-status {
+  display: flex;
+  align-items: center;
+}
+
+.workspace-sidebar-project-hover-card-header {
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.workspace-sidebar-project-hover-card-header > div {
+  min-width: 0;
+  gap: 8px;
+}
+
+.workspace-sidebar-project-hover-card-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.workspace-sidebar-project-hover-card-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.workspace-sidebar-project-hover-card-header button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  padding: 0;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--text-tertiary);
+}
+
+.workspace-sidebar-project-hover-card-header button:hover,
+.workspace-sidebar-project-hover-card-header button:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+}
+
+.workspace-sidebar-project-hover-card-status {
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.workspace-sidebar-project-hover-card-status span + span::before {
+  margin-right: 8px;
+  color: var(--text-tertiary);
+  content: '·';
+}
+
+.workspace-sidebar-project-hover-card-source {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.workspace-sidebar-project-hover-card-source span:first-child {
+  color: var(--text-tertiary);
+}
+
+.workspace-sidebar-project-hover-card-source span:last-child {
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-sidebar-project-hover-card-source:hover span:last-child,
+.workspace-sidebar-project-hover-card-source:focus-visible span:last-child {
+  color: var(--foreground);
+}
+
+.workspace-sidebar-project-hover-card-edit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--foreground);
+}
+
+.workspace-sidebar-project-hover-card-edit:hover,
+.workspace-sidebar-project-hover-card-edit:focus-visible {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
 }
 
 .workspace-sidebar-session-row > button:first-child {
@@ -603,10 +777,6 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 
 .workspace-sidebar-pinned-project .workspace-sidebar-session-row > button:first-child {
   padding-left: 28px;
-}
-
-.workspace-sidebar-pinned-list button {
-  border-radius: 10px;
 }
 
 .workspace-sidebar-session-row {
@@ -651,8 +821,10 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   min-width: 0;
 }
 
-.workspace-sidebar-list button:hover,
-.workspace-sidebar-list button[aria-current='page'] {
+.workspace-sidebar-project:hover .workspace-sidebar-project-toggle,
+.workspace-sidebar-project-toggle[aria-current='page'],
+.workspace-sidebar-session-row:hover > button:first-child,
+.workspace-sidebar-session-row > button:first-child[aria-current='page'] {
   background: color-mix(in srgb, var(--foreground) 6%, transparent);
   color: var(--foreground);
 }

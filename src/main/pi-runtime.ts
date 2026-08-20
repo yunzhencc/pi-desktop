@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 export type TranscriptUpdate
   = | { done?: boolean; entryId?: string; text: string; timestamp?: number; type: 'assistant' }
     | { text: string; type: 'error' }
+    | { sessionPath: string; type: 'session' }
     | { completedAtMs?: number; sessionPath?: string; startedAtMs?: number; status: 'running' | 'settled'; type: 'status'; workStatus?: WorkStatus }
     | { args?: unknown; output?: unknown; sessionPath?: string; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string; type: 'tool' };
 
@@ -258,6 +259,12 @@ export class PiRuntime {
   }
 
   #handleEvent(event: unknown): void {
+    if (isUserMessageEndEvent(event)) {
+      const sessionPath = this.#sessionPath;
+      if (sessionPath)
+        queueMicrotask(() => this.#emit({ sessionPath, type: 'session' }));
+      return;
+    }
     if (isAgentSettledEvent(event)) {
       this.#settleTurn(this.#abortRequested ? 'stopped' : 'worked');
       return;
@@ -378,6 +385,10 @@ function isAssistantMessageEvent(event: unknown): event is { type: 'message_upda
   if (!isRecord(event) || (event.type !== 'message_update' && event.type !== 'message_end') || !isRecord(event.message))
     return false;
   return event.message.role === 'assistant' && Array.isArray(event.message.content);
+}
+
+function isUserMessageEndEvent(event: unknown): event is { message: { role: 'user' }; type: 'message_end' } {
+  return isRecord(event) && event.type === 'message_end' && isRecord(event.message) && event.message.role === 'user';
 }
 
 function isAssistantMessageStartEvent(event: unknown): event is { message: { role: 'assistant' }; type: 'message_start' } {

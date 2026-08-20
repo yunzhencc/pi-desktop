@@ -382,4 +382,26 @@ describe('pi runtime', () => {
       { output: { content: 'Hello' }, sessionPath: '/sessions/active.jsonl', status: 'completed', toolCallId: 'tool-1', toolName: 'read', type: 'tool' },
     ]);
   });
+
+  it('announces a session after its first user message is persisted', async () => {
+    let listener: ((event: unknown) => void) | undefined;
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({
+      getSessionPath: () => '/sessions/new.jsonl',
+      prompt: vi.fn(),
+      subscribe: (callback: (event: unknown) => void) => {
+        listener = callback;
+        return () => {};
+      },
+    }));
+    const update = vi.fn();
+    runtime.subscribe(update);
+    runtime.configureDeepSeek({ apiKey: 'sk-test', model: 'deepseek-v4-flash' });
+    runtime.setWorkspace('/tmp/project');
+
+    await runtime.send('Start a new task', []);
+    listener?.({ message: { content: [{ text: 'Start a new task', type: 'text' }], role: 'user' }, type: 'message_end' });
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+
+    expect(update).toHaveBeenLastCalledWith({ sessionPath: '/sessions/new.jsonl', type: 'session' });
+  });
 });

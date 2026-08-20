@@ -39,7 +39,9 @@ declare global {
         get: () => Promise<WorkspaceSnapshot>;
         getGitBranch: (path: string) => Promise<string | undefined>;
         pickDirectory: () => Promise<string | undefined>;
+        openDirectory: (path: string) => Promise<void>;
         create: (name: string, path: string) => Promise<WorkspaceSnapshot>;
+        update: (path: string, name: string, nextPath: string) => Promise<WorkspaceSnapshot>;
         select: (path: string) => Promise<WorkspaceSnapshot>;
         setPinned: (workspacePath: string, pinned: boolean, beforeWorkspacePath?: string) => Promise<WorkspaceSnapshot>;
       };

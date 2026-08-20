@@ -1,10 +1,21 @@
 import type { DragEvent, FormEvent, SVGProps } from 'react';
-import { Folder, FolderPlus, LoaderCircle, Pin, PinOff, X } from 'lucide-react';
+import { Ellipsis, Folder, FolderPlus, LoaderCircle, MessageSquarePlus, Pencil, Pin, PinOff, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useIntl } from 'react-intl';
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
+type WorkspaceSummary = WorkspaceSnapshot['workspaces'][number];
 type PiSessionSummary = Awaited<ReturnType<Window['api']['sessions']['list']>>[number];
+
+function getHoverCardPosition(target: HTMLElement) {
+  const rect = target.getBoundingClientRect();
+  const cardWidth = Math.min(336, window.innerWidth - 16);
+  return {
+    left: Math.max(8, Math.min(rect.right + 2, window.innerWidth - cardWidth - 8)),
+    top: Math.max(8, Math.min(rect.top, window.innerHeight - 220)),
+  };
+}
 
 interface SessionEntry {
   session: PiSessionSummary;
@@ -27,6 +38,12 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
   const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingProject, setEditingProject] = useState<WorkspaceSummary>();
+  const [projectActionsPath, setProjectActionsPath] = useState<string>();
+  const [hoverCard, setHoverCard] = useState<{ left: number; path: string; top: number }>();
+  const hoverCardPath = hoverCard?.path;
+  const hoverCardCloseTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const hoverCardAnchorRef = useRef<HTMLDivElement>();
 
   useEffect(() => {
     void window.api.workspaces.get().then(setWorkspace);
@@ -44,22 +61,71 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
   }, []);
 
   useEffect(() => window.api.composer.onUpdate((update) => {
+    if (update.type === 'session') {
+      window.dispatchEvent(new Event('sessions-changed'));
+      return;
+    }
     if (update.type !== 'status' || !update.sessionPath)
       return;
     setRunningSessionPath(current => update.status === 'running' ? update.sessionPath : current === update.sessionPath ? undefined : current);
   }), []);
 
   useEffect(() => {
+    if (!projectActionsPath)
+      return;
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (event.target instanceof Element && !event.target.closest('[data-project-actions]'))
+        setProjectActionsPath(undefined);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape')
+        setProjectActionsPath(undefined);
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [projectActionsPath]);
+
+  useEffect(() => () => clearTimeout(hoverCardCloseTimerRef.current), []);
+
+  useEffect(() => {
+    const anchor = hoverCardAnchorRef.current;
+    if (!hoverCardPath || !anchor)
+      return;
+    const updatePosition = () => {
+      if (!anchor.isConnected) {
+        setHoverCard(undefined);
+        return;
+      }
+      const position = getHoverCardPosition(anchor);
+      setHoverCard(current => current ? { ...current, ...position } : current);
+    };
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [hoverCardPath]);
+
+  useEffect(() => {
     if (!workspace)
       return;
     let active = true;
-    const refresh = () => Promise.all(workspace.workspaces.map(async item => [item.path, await window.api.sessions.list(item.path)] as const)).then((entries) => {
-      if (active)
-        setSessionsByWorkspace(Object.fromEntries(entries));
-    }).catch(() => {
-      if (active)
-        setSessionsByWorkspace({});
-    });
+    let refreshVersion = 0;
+    const refresh = () => {
+      const version = ++refreshVersion;
+      return Promise.all(workspace.workspaces.map(async item => [item.path, await window.api.sessions.list(item.path)] as const)).then((entries) => {
+        if (active && version === refreshVersion)
+          setSessionsByWorkspace(Object.fromEntries(entries));
+      }).catch(() => {
+        if (active && version === refreshVersion)
+          setSessionsByWorkspace({});
+      });
+    };
     const clearSelectedSession = () => setSelectedSessionPath(undefined);
     void refresh();
     window.addEventListener('sessions-changed', refresh);
@@ -127,6 +193,36 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
     }
   };
 
+  const startProjectConversation = async (workspacePath: string) => {
+    const current = workspace;
+    if (!current)
+      return;
+    setProjectActionsPath(undefined);
+    try {
+      update(await window.api.workspaces.select(workspacePath));
+      setSelectedSessionPath(undefined);
+      window.dispatchEvent(new Event('new-conversation'));
+    }
+    catch {
+      update(current);
+    }
+  };
+
+  const keepHoverCardOpen = () => clearTimeout(hoverCardCloseTimerRef.current);
+  const closeHoverCard = () => {
+    hoverCardCloseTimerRef.current = setTimeout(() => {
+      hoverCardAnchorRef.current = undefined;
+      setHoverCard(undefined);
+    }, 120);
+  };
+  const openHoverCard = (item: WorkspaceSummary, target: HTMLDivElement) => {
+    if (draggedWorkspacePath || projectActionsPath)
+      return;
+    keepHoverCardOpen();
+    hoverCardAnchorRef.current = target;
+    setHoverCard({ path: item.path, ...getHoverCardPosition(target) });
+  };
+
   const sessionEntries: SessionEntry[] = workspace?.workspaces.flatMap(item => (sessionsByWorkspace[item.path] ?? []).map(session => ({ session, workspacePath: item.path }))) ?? [];
   const sessionByPath = new Map(sessionEntries.map(entry => [entry.session.path, entry]));
   const pinnedSessions = (workspace?.pinnedSessionPaths ?? []).flatMap(path => sessionByPath.get(path) ?? []);
@@ -143,20 +239,81 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
     if (draggedWorkspacePath)
       void setWorkspacePinned(draggedWorkspacePath, true, beforeWorkspacePath);
   };
-  const renderProject = (item: NonNullable<typeof workspace>['workspaces'][number], isPinned: boolean) => {
+  const renderProject = (item: WorkspaceSummary, isPinned: boolean) => {
     const collapsed = collapsedSessionPaths[item.path] ?? false;
     const sessionListId = `workspace-sessions-${item.path}`;
     const sessions = sessionsByWorkspace[item.path] ?? [];
+    const isSessionListLoading = sessionsByWorkspace[item.path] === undefined;
     return (
-      <div className={`workspace-sidebar-project${isPinned ? ' workspace-sidebar-pinned-project' : ''}`} draggable={isPinned} key={item.path} onDragEnd={() => setDraggedWorkspacePath(undefined)} onDragOver={isPinned ? event => event.preventDefault() : undefined} onDragStart={() => setDraggedWorkspacePath(item.path)} onDrop={isPinned ? () => pinDraggedWorkspace(item.path) : undefined}>
+      <div
+        className={`workspace-sidebar-project${isPinned ? ' workspace-sidebar-pinned-project' : ''}`}
+        draggable={isPinned}
+        key={item.path}
+        onDragEnd={() => setDraggedWorkspacePath(undefined)}
+        onDragOver={isPinned ? event => event.preventDefault() : undefined}
+        onDragStart={() => {
+          setHoverCard(undefined);
+          setDraggedWorkspacePath(item.path);
+        }}
+        onDrop={isPinned ? () => pinDraggedWorkspace(item.path) : undefined}
+        onMouseEnter={event => openHoverCard(item, event.currentTarget)}
+        onMouseLeave={closeHoverCard}
+      >
         <div className="workspace-sidebar-project-header">
-          <button aria-controls={sessionListId} aria-expanded={!collapsed} className="workspace-sidebar-project-toggle" onClick={() => setCollapsedSessionPaths(paths => ({ ...paths, [item.path]: !paths[item.path] }))} type="button">
+          <button aria-controls={sessionListId} aria-current={workspace?.selectedWorkspacePath === item.path ? 'page' : undefined} aria-expanded={!collapsed} className="workspace-sidebar-project-toggle" onClick={() => setCollapsedSessionPaths(paths => ({ ...paths, [item.path]: !paths[item.path] }))} type="button">
             <CodexFolder aria-hidden="true" />
             <span>{item.displayName}</span>
           </button>
-          <button aria-label={`${isPinned ? '取消置顶项目' : '置顶项目'} ${item.displayName}`} className="workspace-sidebar-project-pin" onClick={() => void setWorkspacePinned(item.path, !isPinned)} title={isPinned ? '取消置顶项目' : '置顶项目'} type="button">
-            {isPinned ? <PinOff aria-hidden="true" size={15} /> : <Pin aria-hidden="true" size={15} />}
-          </button>
+          <div className="workspace-sidebar-project-actions" data-project-actions>
+            <button aria-label={`在 ${item.displayName} 中新建聊天`} className="workspace-sidebar-project-action" onClick={() => void startProjectConversation(item.path)} title="新建聊天" type="button">
+              <MessageSquarePlus aria-hidden="true" size={15} />
+            </button>
+            <button
+              aria-expanded={projectActionsPath === item.path}
+              aria-haspopup="menu"
+              aria-label={`项目操作 ${item.displayName}`}
+              className="workspace-sidebar-project-action"
+              onClick={() => {
+                setHoverCard(undefined);
+                setProjectActionsPath(path => path === item.path ? undefined : item.path);
+              }}
+              title="项目操作"
+              type="button"
+            >
+              <Ellipsis aria-hidden="true" size={16} />
+            </button>
+            {projectActionsPath === item.path && (
+              <div aria-label={`${item.displayName} 项目操作`} className="workspace-sidebar-project-menu" role="menu">
+                <button onClick={() => void startProjectConversation(item.path)} role="menuitem" type="button">
+                  <MessageSquarePlus aria-hidden="true" size={15} />
+                  新建聊天
+                </button>
+                <button
+                  onClick={() => {
+                    setHoverCard(undefined);
+                    setProjectActionsPath(undefined);
+                    setEditingProject(item);
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  <Pencil aria-hidden="true" size={15} />
+                  编辑项目
+                </button>
+                <button
+                  onClick={() => {
+                    setProjectActionsPath(undefined);
+                    void setWorkspacePinned(item.path, !isPinned);
+                  }}
+                  role="menuitem"
+                  type="button"
+                >
+                  {isPinned ? <PinOff aria-hidden="true" size={15} /> : <Pin aria-hidden="true" size={15} />}
+                  {isPinned ? '取消置顶项目' : '置顶项目'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         {!collapsed && (
           <div id={sessionListId}>
@@ -178,6 +335,25 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
               );
             })}
           </div>
+        )}
+        {hoverCard?.path === item.path && createPortal(
+          <ProjectHoverCard
+            isCurrent={workspace?.selectedWorkspacePath === item.path}
+            isLoading={isSessionListLoading}
+            isPinned={isPinned}
+            item={item}
+            onMouseEnter={keepHoverCardOpen}
+            onMouseLeave={closeHoverCard}
+            onOpenSource={() => void window.api.workspaces.openDirectory(item.path)}
+            onEdit={() => {
+              setHoverCard(undefined);
+              setEditingProject(item);
+            }}
+            onTogglePin={() => void setWorkspacePinned(item.path, !isPinned)}
+            sessionCount={sessions.length}
+            style={{ left: hoverCard.left, top: hoverCard.top }}
+          />,
+          document.body,
         )}
       </div>
     );
@@ -230,7 +406,48 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
         </div>
       )}
       {isCreating && <CreateProjectDialog onClose={() => setIsCreating(false)} onCreated={update} />}
+      {editingProject && <CreateProjectDialog onClose={() => setEditingProject(undefined)} onCreated={update} project={editingProject} />}
     </nav>
+  );
+}
+
+function ProjectHoverCard({ isCurrent, isLoading, isPinned, item, onEdit, onMouseEnter, onMouseLeave, onOpenSource, onTogglePin, sessionCount, style }: {
+  isCurrent: boolean;
+  isLoading: boolean;
+  isPinned: boolean;
+  item: WorkspaceSummary;
+  onEdit: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  onOpenSource: () => void;
+  onTogglePin: () => void;
+  sessionCount: number;
+  style: { left: number; top: number };
+}) {
+  return (
+    <div aria-label={`${item.displayName} 项目信息`} className="workspace-sidebar-project-hover-card" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} role="dialog" style={style}>
+      <div className="workspace-sidebar-project-hover-card-header">
+        <div>
+          <span className="workspace-sidebar-project-hover-card-icon"><CodexFolder aria-hidden="true" /></span>
+          <span>{item.displayName}</span>
+        </div>
+        <button aria-label={`${isPinned ? '取消置顶项目' : '置顶项目'} ${item.displayName}`} onClick={onTogglePin} title={isPinned ? '取消置顶项目' : '置顶项目'} type="button">
+          {isPinned ? <PinOff aria-hidden="true" size={15} /> : <Pin aria-hidden="true" size={15} />}
+        </button>
+      </div>
+      <div className="workspace-sidebar-project-hover-card-status">
+        <span>{isCurrent ? '当前项目' : '本地项目'}</span>
+        <span>{isLoading ? '正在加载任务' : `${sessionCount} 个任务`}</span>
+      </div>
+      <button aria-label={`在文件管理器中打开 ${item.path}`} className="workspace-sidebar-project-hover-card-source" onClick={onOpenSource} type="button">
+        <span>源文件夹</span>
+        <span title={item.path}>{item.path}</span>
+      </button>
+      <button className="workspace-sidebar-project-hover-card-edit" onClick={onEdit} type="button">
+        <Pencil aria-hidden="true" size={14} />
+        编辑项目
+      </button>
+    </div>
   );
 }
 
@@ -299,9 +516,10 @@ function CodexPlus(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-export function CreateProjectDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (workspace: WorkspaceSnapshot) => void }) {
-  const [name, setName] = useState('');
-  const [sourcePath, setSourcePath] = useState<string>();
+export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: () => void; onCreated: (workspace: WorkspaceSnapshot) => void; project?: WorkspaceSummary }) {
+  const isEditing = project !== undefined;
+  const [name, setName] = useState(project?.displayName ?? '');
+  const [sourcePath, setSourcePath] = useState<string | undefined>(project?.path);
   const [error, setError] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
@@ -339,7 +557,7 @@ export function CreateProjectDialog({ onClose, onCreated }: { onClose: () => voi
     }
   };
 
-  const create = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting)
       return;
@@ -350,11 +568,13 @@ export function CreateProjectDialog({ onClose, onCreated }: { onClose: () => voi
     setIsSubmitting(true);
     setError(undefined);
     try {
-      onCreated(await window.api.workspaces.create(name.trim(), sourcePath));
+      onCreated(isEditing
+        ? await window.api.workspaces.update(project.path, name.trim(), sourcePath)
+        : await window.api.workspaces.create(name.trim(), sourcePath));
       onClose();
     }
     catch (reason) {
-      setError(reason instanceof Error ? reason.message : '创建项目失败');
+      setError(reason instanceof Error ? reason.message : isEditing ? '保存项目失败' : '创建项目失败');
     }
     finally {
       setIsSubmitting(false);
@@ -363,9 +583,9 @@ export function CreateProjectDialog({ onClose, onCreated }: { onClose: () => voi
 
   return (
     <div className="project-dialog-backdrop" onMouseDown={event => event.target === event.currentTarget && !isSubmitting && onClose()} role="presentation">
-      <form aria-labelledby="create-project-title" aria-modal="true" className="project-dialog" onSubmit={event => void create(event)} role="dialog">
+      <form aria-labelledby="create-project-title" aria-modal="true" className="project-dialog" onSubmit={event => void submit(event)} role="dialog">
         <div className="project-dialog-header">
-          <h2 id="create-project-title">创建项目</h2>
+          <h2 id="create-project-title">{isEditing ? '编辑项目' : '创建项目'}</h2>
           <button aria-label="关闭" disabled={isSubmitting} onClick={onClose} type="button"><X aria-hidden="true" size={22} /></button>
         </div>
         <label className="project-dialog-name">
@@ -384,12 +604,12 @@ export function CreateProjectDialog({ onClose, onCreated }: { onClose: () => voi
         <span className="project-dialog-label">源文件夹</span>
         <button className={`project-dialog-source${sourcePath ? ' has-source' : ''}`} disabled={isSubmitting} onClick={() => void pickDirectory()} type="button">
           {sourcePath ? <Folder aria-hidden="true" size={20} /> : <FolderPlus aria-hidden="true" size={28} />}
-          <span>{sourcePath ?? '添加 Codex 可读取和编辑的文件夹'}</span>
+          <span>{sourcePath ?? '添加 PI 可读取和编辑的文件夹'}</span>
         </button>
         {error && <p className="project-dialog-error" role="alert">{error}</p>}
         <div className="project-dialog-actions">
           <button disabled={isSubmitting} onClick={onClose} type="button">取消</button>
-          <button disabled={isSubmitting} type="submit">{isSubmitting ? '创建中…' : '创建项目'}</button>
+          <button disabled={isSubmitting} type="submit">{isSubmitting ? isEditing ? '保存中…' : '创建中…' : isEditing ? '保存项目' : '创建项目'}</button>
         </div>
       </form>
     </div>
