@@ -21,9 +21,9 @@
     "prosemirror-view": "catalog:core"
   },
   "devDependencies": {
-    "@storybook/react-vite": "catalog:",
-    "@tailwindcss/vite": "catalog:conflicts_vite_h4_3_3",
-    "storybook": "catalog:",
-    "vite": "catalog:conflicts_vite_h8_2_1"
+    "@storybook/react-vite": "catalog:docs",
+    "@tailwindcss/vite": "catalog:vite",
+    "storybook": "catalog:docs",
+    "vite": "catalog:vite"
   }
 }
