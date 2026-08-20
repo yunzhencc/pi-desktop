@@ -5,6 +5,14 @@ settings:
   excludeLinksFromLockfile: false
 
 catalogs:
+  conflicts_vite_h4_3_3:
+    '@tailwindcss/vite':
+      specifier: ^4.3.3
+      version: 4.3.3
+  conflicts_vite_h8_2_1:
+    vite:
+      specifier: ^8.2.1
+      version: 8.2.1
   core:
     '@base-ui/react':
       specifier: 1.7.0
@@ -33,6 +41,9 @@ catalogs:
     '@tanstack/react-hotkeys':
       specifier: 0.10.0
       version: 0.10.0
+    '@tanstack/react-query':
+      specifier: ^5.101.4
+      version: 5.101.4
     '@tanstack/react-router':
       specifier: 1.170.31
       version: 1.170.31
@@ -126,6 +137,13 @@ catalogs:
     zustand:
       specifier: 5.0.15
       version: 5.0.15
+  default:
+    '@storybook/react-vite':
+      specifier: ^10.5.9
+      version: 10.5.9
+    storybook:
+      specifier: ^10.5.9
+      version: 10.5.9
   dev:
     lint-staged:
       specifier: 17.3.0
@@ -260,6 +278,9 @@ importers:
       '@tanstack/react-hotkeys':
         specifier: catalog:core
         version: 0.10.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@tanstack/react-query':
+        specifier: catalog:core
+        version: 5.101.4(react@19.2.8)
       '@tanstack/react-router':
         specifier: catalog:core
         version: 1.170.31(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -464,16 +485,16 @@ importers:
         version: 1.42.2
     devDependencies:
       '@storybook/react-vite':
-        specifier: ^10.5.9
+        specifier: 'catalog:'
         version: 10.5.9(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(esbuild@0.28.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(storybook@10.5.9(@types/react@19.2.18)(prettier@3.9.6)(react@19.2.8))(supports-color@7.2.0)(typescript@6.0.3)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
       '@tailwindcss/vite':
-        specifier: ^4.3.3
+        specifier: catalog:conflicts_vite_h4_3_3
         version: 4.3.3(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
       storybook:
-        specifier: ^10.5.9
+        specifier: 'catalog:'
         version: 10.5.9(@types/react@19.2.18)(prettier@3.9.6)(react@19.2.8)
       vite:
-        specifier: ^8.2.1
+        specifier: catalog:conflicts_vite_h8_2_1
         version: 8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0)
 
   packages/shadcn-ui:
@@ -2709,12 +2730,20 @@ packages:
     resolution: {integrity: sha512-vqH7X9nb0MTJ/O08++dB5bP9jgj4+BIPOUu/U+6myG86lDsirZSVSobpq5UQpE7nBuk62i8eIYeOhd+OMl/UrA==}
     engines: {node: '>=18'}
 
+  '@tanstack/query-core@5.101.4':
+    resolution: {integrity: sha512-gNwcvOJcRbLWPOLG/2OBm+zM+Yv+MKsXKEOWC57USuZDEsI71hEErQsiEGx5wX9rzWWkfwM0fVSPoiIFSsxfiw==}
+
   '@tanstack/react-hotkeys@0.10.0':
     resolution: {integrity: sha512-GwOSndI5j3qBVYTmgP1mYyRTnlxb2MS17cwGlsavSxMQPSnmDf+m3LzMIpRMs+3zzQMjg3cYhHsFYizYlFI2tw==}
     engines: {node: '>=18'}
     peerDependencies:
       react: '>=16.8'
       react-dom: '>=16.8'
+
+  '@tanstack/react-query@5.101.4':
+    resolution: {integrity: sha512-yRg2pfOCxIs4ZJW3XYYHU/WgtD04FHSnfHlpRT7h7pR77hwkdRG4wxbKe4aq6P0RvXUTBSQpQeadS1SUYUe+KA==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@tanstack/react-router@1.170.31':
     resolution: {integrity: sha512-jqITLcf9Y+es9Wm7fD7XfXFGKk1Fujm+okGqHtr+UhISnQuyLQ8d3frsJlIN0Np1doYoeb5weozSkv72+EZ5bw==}
@@ -8969,12 +8998,19 @@ snapshots:
     dependencies:
       '@tanstack/store': 0.11.1
 
+  '@tanstack/query-core@5.101.4': {}
+
   '@tanstack/react-hotkeys@0.10.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       '@tanstack/hotkeys': 0.8.0
       '@tanstack/react-store': 0.11.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
+
+  '@tanstack/react-query@5.101.4(react@19.2.8)':
+    dependencies:
+      '@tanstack/query-core': 5.101.4
+      react: 19.2.8
 
   '@tanstack/react-router@1.170.31(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:

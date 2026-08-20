@@ -35,6 +35,7 @@ catalogs:
     '@electron-toolkit/preload': 3.0.2
     '@electron-toolkit/utils': 4.0.0
     '@tanstack/react-hotkeys': 0.10.0
+    '@tanstack/react-query': ^5.101.4
     '@tanstack/react-router': 1.170.31
     better-sqlite3: 13.0.3
     class-variance-authority: 0.7.1
@@ -104,6 +105,13 @@ catalogs:
     '@vitejs/plugin-react': 6.0.5
     electron-vite: 5.0.0
     vite: 8.2.1
+  conflicts_vite_h4_3_3:
+    '@tailwindcss/vite': ^4.3.3
+  conflicts_vite_h8_2_1:
+    vite: ^8.2.1
 onlyBuiltDependencies:
   - electron
   - esbuild
+catalog:
+  '@storybook/react-vite': ^10.5.9
+  storybook: ^10.5.9
