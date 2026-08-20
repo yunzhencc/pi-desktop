@@ -1,4 +1,4 @@
-import { ToggleTheme } from '@renderer/features/theme';
+import { ToggleTheme } from '@renderer/features/app/theme';
 import { useIntl } from 'react-intl';
 
 export function AppearanceSettings() {

@@ -1,6 +1,6 @@
-import { ShortcutSettingsProvider } from '@renderer/features/hotkeys';
-import { I18nProvider } from '@renderer/features/i18n';
-import { ThemeProvider } from '@renderer/features/theme';
+import { ShortcutSettingsProvider } from '@renderer/features/app/hotkeys';
+import { I18nProvider } from '@renderer/features/app/i18n';
+import { ThemeProvider } from '@renderer/features/app/theme';
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

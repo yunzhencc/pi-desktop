@@ -1,5 +1,5 @@
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
-import { useShortcutSettings } from '@renderer/features/hotkeys';
+import { useShortcutSettings } from '@renderer/features/app/hotkeys';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { ArrowLeft, Bot, Keyboard, Search, Settings, Sun, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';

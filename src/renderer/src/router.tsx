@@ -1,5 +1,5 @@
 import type { RouterHistory } from '@tanstack/react-router';
-import { HomePage } from '@renderer/features/home';
+import { HomePage } from '@renderer/features/conversation';
 import { AppearanceSettingsPage } from '@renderer/features/setting/appearance-settings-page';
 import { DeepSeekSettingsPage } from '@renderer/features/setting/deepseek-settings-page';
 import { GeneralSettingsPage } from '@renderer/features/setting/general-settings-page';

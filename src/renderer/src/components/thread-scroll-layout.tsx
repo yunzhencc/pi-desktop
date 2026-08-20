@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { ThreadLayout, ThreadTurn } from './thread-virtualizer';
-import { useOverlayScrollbarsTheme } from '@renderer/features/theme';
+import { useOverlayScrollbarsTheme } from '@renderer/features/app/theme';
 import { ArrowDown } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';

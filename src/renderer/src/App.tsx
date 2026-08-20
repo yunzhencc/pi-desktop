@@ -1,6 +1,6 @@
 import type { WorkspaceSnapshot } from '../../main/workspaces';
 import type { AppHistory, AppLocation } from './components/app-history';
-import { useShortcutSettings } from '@renderer/features/hotkeys';
+import { useShortcutSettings } from '@renderer/features/app/hotkeys';
 import {
   Footer,
   getExpandedRightPanelWidth,

@@ -1,4 +1,4 @@
-import type { AppLocale } from '@renderer/features/i18n';
+import type { AppLocale } from '@renderer/features/app/i18n';
 import {
   Select,
   SelectContent,

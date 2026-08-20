@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from 'react';
-import { ShortcutSettingsProvider } from '@renderer/features/hotkeys';
-import { messages } from '@renderer/features/i18n/locale';
+import { ShortcutSettingsProvider } from '@renderer/features/app/hotkeys';
+import { messages } from '@renderer/features/app/i18n/locale';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

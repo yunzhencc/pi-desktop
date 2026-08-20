@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { getDefaultShortcutBindings } from '@renderer/features/hotkeys';
+import { getDefaultShortcutBindings } from '@renderer/features/app/hotkeys';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';

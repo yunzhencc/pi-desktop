@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { I18nProvider } from '@renderer/features/i18n';
+import { I18nProvider } from '@renderer/features/app/i18n';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceSidebar } from './workspace-sidebar';

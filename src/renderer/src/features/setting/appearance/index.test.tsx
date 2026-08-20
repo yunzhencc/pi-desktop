@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { messages } from '@renderer/features/i18n';
+import { messages } from '@renderer/features/app/i18n';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -18,7 +18,7 @@ vi.mock('@tanstack/react-hotkeys', () => ({
   useHotkeys: (definitions: Array<{ hotkey: string; callback: () => void }>) => definitions.forEach(({ callback, hotkey }) => hotkeys.set(hotkey, callback)),
 }));
 
-vi.mock('@renderer/features/hotkeys', () => ({
+vi.mock('@renderer/features/app/hotkeys', () => ({
   useShortcutSettings: () => ({
     bindings: {
       focusSettingsSearch: ['Mod+F'],
