@@ -1,9 +1,6 @@
 import type { RouterHistory } from '@tanstack/react-router';
-import { HomePage } from '@renderer/features/conversation';
-import { AppearanceSettingsPage } from '@renderer/features/setting/appearance-settings-page';
-import { DeepSeekSettingsPage } from '@renderer/features/setting/deepseek-settings-page';
-import { GeneralSettingsPage } from '@renderer/features/setting/general-settings-page';
-import { KeyboardShortcutsPage } from '@renderer/features/setting/keyboard-shortcuts-page';
+import { ConversationPage } from '@renderer/features/conversation';
+import { AppearanceSettingsPage, DeepSeekSettingsPage, GeneralSettingsPage, KeyboardShortcutsPage } from '@renderer/features/settings';
 import { createHashHistory, createMemoryHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 import { App } from './App';
 
@@ -16,7 +13,7 @@ const rootRoute = createRootRoute({ component: App });
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: HomePage,
+  component: ConversationPage,
 });
 const appearanceSettingsRoute = createRoute({
   getParentRoute: () => rootRoute,

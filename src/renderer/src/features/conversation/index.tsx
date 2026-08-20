@@ -28,7 +28,7 @@ interface Message {
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 type PiSessionSnapshot = Awaited<ReturnType<Window['api']['sessions']['open']>>['session'];
 
-export function HomePage() {
+export function ConversationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [editingMessage, setEditingMessage] = useState<{ id: number; text: string }>();
   const [isRunning, setIsRunning] = useState(false);

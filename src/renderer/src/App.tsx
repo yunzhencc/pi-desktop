@@ -14,7 +14,7 @@ import {
   SidebarToggle,
   writeRightPanelWidth,
 } from '@renderer/features/layout';
-import { SettingsSidebar } from '@renderer/features/setting';
+import { SettingsSidebar } from '@renderer/features/settings';
 import { WorkspaceSidebar } from '@renderer/features/workspace';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';

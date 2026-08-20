@@ -4,7 +4,7 @@ import type { ReactElement } from 'react';
 import { I18nProvider } from '@renderer/features/app/i18n';
 import { act, cleanup, fireEvent, screen, render as testingRender, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HomePage } from './';
+import { ConversationPage } from './';
 
 let animationFrames: FrameRequestCallback[];
 let workspaces: { get: ReturnType<typeof vi.fn>; pick: ReturnType<typeof vi.fn>; select: ReturnType<typeof vi.fn> };
@@ -67,9 +67,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('home page', () => {
+describe('conversation page', () => {
   it('shows an empty state and appends a submitted user message', () => {
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     expect(screen.getByRole('heading', { name: '我们要构建什么？' })).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -82,7 +82,7 @@ describe('home page', () => {
     vi.setSystemTime(new Date(2026, 7, 19, 10, 1));
     const writeText = vi.fn(() => Promise.resolve());
     vi.stubGlobal('navigator', { clipboard: { writeText } });
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
 
@@ -98,7 +98,7 @@ describe('home page', () => {
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('navigator', { clipboard: { writeText } });
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    const { container } = render(<HomePage />);
+    const { container } = render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', timestamp: Date.now(), type: 'assistant' }));
 
@@ -114,7 +114,7 @@ describe('home page', () => {
     vi.setSystemTime(new Date('2026-08-19T10:00:00Z'));
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    const { container } = render(<HomePage />);
+    const { container } = render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
     vi.setSystemTime(new Date('2026-08-19T10:01:05Z'));
@@ -127,7 +127,7 @@ describe('home page', () => {
   it('shows previous assistant reply actions only on hover', () => {
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    const { container } = render(<HomePage />);
+    const { container } = render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
     act(() => onUpdate.mock.calls[0]![0]({ done: true, entryId: 'assistant-1', text: 'First reply', timestamp: 1_000, type: 'assistant' }));
@@ -143,7 +143,7 @@ describe('home page', () => {
   it('does not render Fork when the assistant reply has no branch target', () => {
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', timestamp: 1_000, type: 'assistant' }));
 
@@ -160,7 +160,7 @@ describe('home page', () => {
       path: '/sessions/forked.jsonl',
     }));
     vi.stubGlobal('api', { composer: { forkAssistantMessage, newConversation: vi.fn(), onUpdate }, workspaces });
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: true, entryId: 'assistant-1', text: 'Original reply', timestamp: 2_000, type: 'assistant' }));
     fireEvent.click(screen.getByRole('button', { name: 'Fork conversation from this message' }));
@@ -175,7 +175,7 @@ describe('home page', () => {
     const editLastUserMessage = vi.fn(() => Promise.resolve('Build this'));
     const send = vi.fn(() => Promise.resolve());
     vi.stubGlobal('api', { composer: { editLastUserMessage, newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}), send }, workspaces });
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
     fireEvent.click(screen.getByRole('button', { name: 'Edit message' }));
@@ -199,7 +199,7 @@ describe('home page', () => {
   });
 
   it('opens the latest user message editor on double-click', () => {
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
     fireEvent.doubleClick(screen.getByText('Build this'));
@@ -209,7 +209,7 @@ describe('home page', () => {
 
   it('directs an unselected workspace to the sidebar', async () => {
     workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], workspaces: [] });
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     await waitFor(() => expect(screen.getByRole('heading', { name: '我们要构建什么？' })).not.toBeNull());
     expect(screen.getByRole('img', { name: 'PI' })).not.toBeNull();
@@ -217,7 +217,7 @@ describe('home page', () => {
   });
 
   it('welcomes a selected project by name', async () => {
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     await waitFor(() => expect(screen.getByRole('heading', { name: '你想让我们在 weather 中构建什么？' })).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: 'weather' }));
@@ -229,7 +229,7 @@ describe('home page', () => {
   });
 
   it('clears the pending transcript when a new conversation starts', () => {
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
     expect(screen.getByText('Build this')).not.toBeNull();
@@ -240,7 +240,7 @@ describe('home page', () => {
   });
 
   it('replaces the pending transcript with the selected session history', () => {
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
     act(() => window.dispatchEvent(new CustomEvent('session-changed', {
@@ -258,7 +258,7 @@ describe('home page', () => {
   });
 
   it('shows project controls only while the conversation is new', () => {
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     expect(screen.getByRole('toolbar', { name: '新会话项目上下文' })).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -269,7 +269,7 @@ describe('home page', () => {
   it('renders submitted and streamed turns through the transcript log', () => {
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
     expect(screen.getByRole('log').textContent).toContain('Build this');
@@ -282,7 +282,7 @@ describe('home page', () => {
   it('shows a running tool command and collapses its completed output', () => {
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ args: { command: 'git status --short' }, sessionPath: '/sessions/active.jsonl', status: 'running', toolCallId: 'tool-1', toolName: 'bash', type: 'tool' }));
 
@@ -297,7 +297,7 @@ describe('home page', () => {
   });
 
   it('keeps the composer inside the transcript scroll container', () => {
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
 
@@ -307,7 +307,7 @@ describe('home page', () => {
   it('renders a streamed assistant snapshot as Markdown', () => {
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
-    const { container } = render(<HomePage />);
+    const { container } = render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Use **bold** text.', type: 'assistant' }));
     act(() => animationFrames.at(-1)?.(0));
@@ -318,7 +318,7 @@ describe('home page', () => {
   it('renders only the latest streamed snapshot in an animation frame', () => {
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('api', { composer: { onUpdate }, workspaces });
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     act(() => {
       onUpdate.mock.calls[0]![0]({ done: false, text: 'First', type: 'assistant' });
@@ -334,7 +334,7 @@ describe('home page', () => {
     const onUpdate = vi.fn(() => () => {});
     const stop = vi.fn();
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate, stop }, workspaces });
-    render(<HomePage />);
+    render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ status: 'running', type: 'status' }));
     fireEvent.click(screen.getByRole('button', { name: 'Stop generating' }));
