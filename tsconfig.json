@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "paths": {
-      "@shared/*": ["./shared/*"],
-      "@/*": ["./src/*"]
+      "@renderer/*": [
+        "./src/renderer/src/*"
+      ]
     }
   },
   "references": [

@@ -11,8 +11,9 @@
     "moduleResolution": "bundler",
 
     "paths": {
-      "@shared/*": ["./shared/*"],
-      "@/*": ["./src/*"]
+      "@renderer/*": [
+        "./src/renderer/src/*"
+      ]
     },
     "types": ["vite/client", "typed-query-selector"],
     "allowImportingTsExtensions": true,
@@ -32,5 +33,4 @@
     "src/renderer/src/**/*.tsx",
     "src/preload/*.d.ts"
   ]
-
 }

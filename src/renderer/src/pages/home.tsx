@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react';
+import logo from '@renderer/assets/icon.svg';
 import { Copy, GitFork, LoaderCircle, Pencil } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import piLogo from '../../../../resources/icon.svg?asset';
 import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
 import { MarkdownMessage } from '../components/markdown-message';
 import { ProjectPicker } from '../components/project-picker';
@@ -267,7 +267,7 @@ export function HomePage() {
       {messages.length === 0
         ? (
             <div className="chat-empty-state">
-              <img alt="PI" className="chat-empty-state-logo" src={piLogo} />
+              <img alt="PI" className="chat-empty-state-logo" src={logo} />
               <h1>
                 {selectedWorkspace
                   ? (
