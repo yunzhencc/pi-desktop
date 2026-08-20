@@ -1547,7 +1547,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   background: color-mix(in srgb, var(--foreground) 7%, transparent);
 }
 
-.composer-link-popover-editor {
+.composer-link-popover-editor-content {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1559,7 +1559,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   box-shadow: 0 4px 8px -2px rgb(0 0 0 / 10%);
 }
 
-.composer-link-popover-editor button {
+.composer-link-popover-editor-content button {
   display: grid;
   width: 28px;
   height: 28px;
@@ -1571,7 +1571,7 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   color: var(--surface);
 }
 
-.composer-link-popover-editor input {
+.composer-link-popover-editor-content input {
   min-width: 0;
   flex: 1;
   height: 28px;

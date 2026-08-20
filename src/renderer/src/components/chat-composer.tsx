@@ -8,6 +8,7 @@ import { schema } from 'prosemirror-schema-basic';
 import { EditorState, Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useIntl } from 'react-intl';
 import { ProjectPicker } from './project-picker';
 
@@ -57,6 +58,29 @@ function validUrl(value: string) {
   catch {
     return undefined;
   }
+}
+
+function linkMarkRange(view: EditorView, element: HTMLElement) {
+  const href = element.dataset.linkHref;
+  if (!href)
+    return;
+  const ranges: { from: number; to: number }[] = [];
+  view.state.doc.descendants((node, pos) => {
+    if (!node.isText)
+      return;
+    const link = node.marks.find(mark => mark.type === composerSchema.marks.link && mark.attrs.href === href);
+    if (!link)
+      return;
+    const previous = ranges.at(-1);
+    if (previous && previous.to === pos)
+      previous.to += node.nodeSize;
+    else
+      ranges.push({ from: pos, to: pos + node.nodeSize });
+  });
+  const index = [...view.dom.querySelectorAll<HTMLElement>('[data-link-href]')]
+    .filter(candidate => candidate.dataset.linkHref === href)
+    .indexOf(element);
+  return ranges[index];
 }
 
 const autolinkPlugin = new Plugin({
@@ -404,10 +428,12 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onSent = ()
         }
       }
     }
-    const from = view.posAtDOM(linkPopover.element, 0);
-    const to = view.posAtDOM(linkPopover.element, linkPopover.element.childNodes.length);
-    const transaction = view.state.tr.replaceWith(from, to, composerSchema.text(text));
-    transaction.addMark(from, from + text.length, composerSchema.marks.link.create({ href, autolink: false }));
+    const range = linkMarkRange(view, linkPopover.element);
+    if (!range)
+      return;
+    const transaction = view.state.tr.insertText(text, range.from, range.to);
+    transaction.removeMark(range.from, range.from + text.length, composerSchema.marks.link);
+    transaction.addMark(range.from, range.from + text.length, composerSchema.marks.link.create({ href, autolink: false }));
     view.dispatch(transaction);
     closeLinkPopover();
   };
@@ -478,7 +504,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onSent = ()
             </div>
           )}
       {error && <p aria-live="polite" className="chat-composer-error" role="status">{error}</p>}
-      {linkPopover && (
+      {linkPopover && createPortal(
         <div
           aria-label="链接选项"
           className={`composer-link-popover composer-link-popover-${linkPopover.mode === 'actions' ? 'actions' : 'editor'}`}
@@ -516,13 +542,36 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onSent = ()
                 </div>
               )
             : (
-                <>
-                  <input aria-invalid={(linkPopover.mode === 'url' && linkPopover.showHrefError) || undefined} aria-label={linkPopover.mode === 'text' ? '文本' : 'URL'} autoFocus onChange={event => setLinkPopover({ ...linkPopover, showHrefError: false, value: event.target.value })} type={linkPopover.mode === 'url' ? 'url' : 'text'} value={linkPopover.value} />
+                <form
+                  className="composer-link-popover-editor-content"
+                  noValidate
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    saveLink();
+                  }}
+                >
+                  <input
+                    aria-invalid={(linkPopover.mode === 'url' && linkPopover.showHrefError) || undefined}
+                    aria-label={linkPopover.mode === 'text' ? '文本' : 'URL'}
+                    autoFocus
+                    onChange={event => setLinkPopover({ ...linkPopover, showHrefError: false, value: event.target.value })}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        saveLink();
+                      }
+                    }}
+                    type={linkPopover.mode === 'url' ? 'url' : 'text'}
+                    value={linkPopover.value}
+                  />
                   {linkPopover.mode === 'url' && linkPopover.showHrefError && <span className="sr-only" role="alert">请输入 HTTP 或 HTTPS 链接</span>}
                   <button aria-label={linkPopover.mode === 'text' ? '保存链接文本' : '保存链接 URL'} onClick={saveLink} type="button"><Check aria-hidden="true" size={14} /></button>
-                </>
+                </form>
               )}
-        </div>
+        </div>,
+        document.body,
       )}
     </form>
   );

@@ -137,6 +137,21 @@ describe('chat composer', () => {
     expect(editor.querySelector('[data-link-href]')?.getAttribute('data-link-href')).toBe('https://example.com/docs');
   });
 
+  it('saves an edited URL with Enter without submitting the composer', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
+
+    await user.type(editor, 'https://example.com/docs');
+    await user.click(editor.querySelector('[data-link-href]')!);
+    await user.click(screen.getByRole('button', { name: '编辑链接' }));
+    await user.clear(screen.getByRole('textbox', { name: 'URL' }));
+    await user.type(screen.getByRole('textbox', { name: 'URL' }), 'https://openai.com{Enter}');
+
+    expect(editor.querySelector('[data-link-href]')?.getAttribute('data-link-href')).toBe('https://openai.com');
+    expect(composer.send).not.toHaveBeenCalled();
+  });
+
   it('opens the selected link in a new browser target', async () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null);
     const user = userEvent.setup();
