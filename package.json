@@ -88,6 +88,7 @@
     "@vitest/coverage-v8": "catalog:test",
     "@vitest/ui": "catalog:test",
     "@vitest/web-worker": "catalog:test",
+    "code-inspector-plugin": "catalog:vite",
     "electron": "catalog:electron",
     "electron-builder": "catalog:electron",
     "electron-vite": "catalog:vite",
