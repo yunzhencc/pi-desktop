@@ -4,7 +4,8 @@ import { messages } from '@renderer/features/i18n';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GeneralSettingsView, SettingsSidebar, SettingsView } from './settings-view';
+import { SettingsSidebar } from './components/sidebar';
+import { GeneralSettingsView, SettingsView } from './settings-view';
 
 const { hotkeys } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>() }));
 

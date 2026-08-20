@@ -1,4 +1,4 @@
-import type { SettingsPath } from '@renderer/features/setting/settings-view';
+import type { SettingsPath } from '@renderer/features/setting';
 
 export type AppLocation
   = | { kind: 'home' }

@@ -14,7 +14,7 @@ import {
   SidebarToggle,
   writeRightPanelWidth,
 } from '@renderer/features/layout';
-import { SettingsSidebar } from '@renderer/features/setting/settings-view';
+import { SettingsSidebar } from '@renderer/features/setting';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
