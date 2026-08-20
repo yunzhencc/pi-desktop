@@ -536,7 +536,8 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   color: var(--foreground);
 }
 
-.workspace-sidebar-list button {
+.workspace-sidebar-list button,
+.workspace-sidebar-pinned-list button {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -558,6 +559,29 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   min-width: 0;
 }
 
+.workspace-sidebar-project-header {
+  display: flex;
+  align-items: center;
+}
+
+.workspace-sidebar-project-toggle {
+  flex: 1;
+  min-width: 0;
+}
+
+.workspace-sidebar-project-pin {
+  width: 26px !important;
+  padding: 0 !important;
+  justify-content: center;
+  color: var(--text-tertiary) !important;
+  opacity: 0;
+}
+
+.workspace-sidebar-project:hover .workspace-sidebar-project-pin,
+.workspace-sidebar-project-pin:focus-visible {
+  opacity: 1;
+}
+
 .workspace-sidebar-session-row > button:first-child {
   padding-left: 28px;
 }
@@ -567,6 +591,22 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   color: var(--text-tertiary);
   font-size: 11px;
   font-weight: 600;
+}
+
+.workspace-sidebar-pinned-list {
+  margin-bottom: 8px;
+}
+
+.workspace-sidebar-pinned-list .workspace-sidebar-session-row > button:first-child {
+  padding-left: 8px;
+}
+
+.workspace-sidebar-pinned-project .workspace-sidebar-session-row > button:first-child {
+  padding-left: 28px;
+}
+
+.workspace-sidebar-pinned-list button {
+  border-radius: 10px;
 }
 
 .workspace-sidebar-session-row {
@@ -595,6 +635,15 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .workspace-sidebar-pin-dropzone {
   height: 4px;
   margin: 0 8px 0 28px;
+}
+
+.workspace-sidebar-project-dropzone {
+  height: 4px;
+  margin: 0 8px;
+}
+
+.workspace-sidebar-pinned-list .workspace-sidebar-pin-dropzone {
+  margin-left: 8px;
 }
 
 .workspace-sidebar-session-title {

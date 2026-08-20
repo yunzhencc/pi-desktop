@@ -41,6 +41,7 @@ declare global {
         pickDirectory: () => Promise<string | undefined>;
         create: (name: string, path: string) => Promise<WorkspaceSnapshot>;
         select: (path: string) => Promise<WorkspaceSnapshot>;
+        setPinned: (workspacePath: string, pinned: boolean, beforeWorkspacePath?: string) => Promise<WorkspaceSnapshot>;
       };
     };
   }

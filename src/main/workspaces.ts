@@ -13,6 +13,7 @@ export interface WorkspaceSummary {
 
 export interface WorkspaceSnapshot {
   pinnedSessionPaths: string[];
+  pinnedWorkspacePaths: string[];
   selectedWorkspacePath?: string;
   workspaces: WorkspaceSummary[];
 }
@@ -28,7 +29,7 @@ export async function getWorkspaceGitBranch(path: string): Promise<string | unde
 }
 
 export class WorkspaceRegistry {
-  #snapshot: WorkspaceSnapshot = { pinnedSessionPaths: [], workspaces: [] };
+  #snapshot: WorkspaceSnapshot = { pinnedSessionPaths: [], pinnedWorkspacePaths: [], workspaces: [] };
 
   constructor(private readonly path: string) {}
 
@@ -36,19 +37,19 @@ export class WorkspaceRegistry {
     try {
       const stored = JSON.parse(await readFile(this.path, 'utf8')) as WorkspaceSnapshot;
       this.#snapshot = isWorkspaceSnapshot(stored)
-        ? { ...stored, pinnedSessionPaths: stored.pinnedSessionPaths ?? [] }
-        : { pinnedSessionPaths: [], workspaces: [] };
+        ? { ...stored, pinnedSessionPaths: stored.pinnedSessionPaths ?? [], pinnedWorkspacePaths: stored.pinnedWorkspacePaths ?? [] }
+        : { pinnedSessionPaths: [], pinnedWorkspacePaths: [], workspaces: [] };
       if (this.#snapshot.selectedWorkspacePath && !(await isDirectory(this.#snapshot.selectedWorkspacePath)))
         this.#snapshot = { ...this.#snapshot, selectedWorkspacePath: undefined };
     }
     catch {
-      this.#snapshot = { pinnedSessionPaths: [], workspaces: [] };
+      this.#snapshot = { pinnedSessionPaths: [], pinnedWorkspacePaths: [], workspaces: [] };
     }
     return this.snapshot();
   }
 
   snapshot(): WorkspaceSnapshot {
-    return { ...this.#snapshot, pinnedSessionPaths: [...this.#snapshot.pinnedSessionPaths], workspaces: [...this.#snapshot.workspaces] };
+    return { ...this.#snapshot, pinnedSessionPaths: [...this.#snapshot.pinnedSessionPaths], pinnedWorkspacePaths: [...this.#snapshot.pinnedWorkspacePaths], workspaces: [...this.#snapshot.workspaces] };
   }
 
   async select(path: string): Promise<WorkspaceSnapshot> {
@@ -102,6 +103,19 @@ export class WorkspaceRegistry {
     return this.snapshot();
   }
 
+  async setWorkspacePinned(workspacePath: string, pinned: boolean, beforeWorkspacePath?: string): Promise<WorkspaceSnapshot> {
+    if (!this.#snapshot.workspaces.some(workspace => workspace.path === workspacePath))
+      throw new Error('工作区不存在');
+    const paths = this.#snapshot.pinnedWorkspacePaths.filter(path => path !== workspacePath);
+    if (pinned) {
+      const beforeIndex = beforeWorkspacePath ? paths.indexOf(beforeWorkspacePath) : -1;
+      beforeIndex < 0 ? paths.push(workspacePath) : paths.splice(beforeIndex, 0, workspacePath);
+    }
+    this.#snapshot = { ...this.#snapshot, pinnedWorkspacePaths: paths };
+    await this.#write();
+    return this.snapshot();
+  }
+
   async #write(): Promise<void> {
     const temporaryPath = join(dirname(this.path), `.${basename(this.path)}.tmp`);
     await writeFile(temporaryPath, JSON.stringify(this.#snapshot), { encoding: 'utf8', mode: 0o600 });
@@ -123,6 +137,7 @@ function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
     return false;
   const snapshot = value as WorkspaceSnapshot;
   return (snapshot.pinnedSessionPaths === undefined || (Array.isArray(snapshot.pinnedSessionPaths) && snapshot.pinnedSessionPaths.every(path => typeof path === 'string')))
+    && (snapshot.pinnedWorkspacePaths === undefined || (Array.isArray(snapshot.pinnedWorkspacePaths) && snapshot.pinnedWorkspacePaths.every(path => typeof path === 'string')))
     && (snapshot.selectedWorkspacePath === undefined || typeof snapshot.selectedWorkspacePath === 'string')
     && snapshot.workspaces.every(workspace => typeof workspace?.path === 'string' && typeof workspace.displayName === 'string' && typeof workspace.lastOpenedAt === 'string');
 }

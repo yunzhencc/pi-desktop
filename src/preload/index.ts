@@ -54,6 +54,7 @@ const api = {
     pickDirectory: (): Promise<string | undefined> => ipcRenderer.invoke('workspaces:pick-directory'),
     create: (name: string, path: string): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:create', name, path),
     select: (path: string): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:select', path),
+    setPinned: (workspacePath: string, pinned: boolean, beforeWorkspacePath?: string): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:set-pinned', workspacePath, pinned, beforeWorkspacePath),
   },
 };
 

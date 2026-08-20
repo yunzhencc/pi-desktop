@@ -1,10 +1,15 @@
-import type { FormEvent, SVGProps } from 'react';
+import type { DragEvent, FormEvent, SVGProps } from 'react';
 import { Folder, FolderPlus, LoaderCircle, Pin, PinOff, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 type PiSessionSummary = Awaited<ReturnType<Window['api']['sessions']['list']>>[number];
+
+interface SessionEntry {
+  session: PiSessionSummary;
+  workspacePath: string;
+}
 
 interface WorkspaceSidebarProps {
   onOpenSession?: (workspacePath: string, sessionPath: string) => void;
@@ -18,6 +23,8 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
   const [selectedSessionPath, setSelectedSessionPath] = useState<string>();
   const [runningSessionPath, setRunningSessionPath] = useState<string>();
   const [draggedSessionPath, setDraggedSessionPath] = useState<string>();
+  const [draggedWorkspacePath, setDraggedWorkspacePath] = useState<string>();
+  const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -100,8 +107,116 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
     }
   };
 
+  const setWorkspacePinned = async (workspacePath: string, pinned: boolean, beforeWorkspacePath?: string) => {
+    const current = workspace;
+    if (!current)
+      return;
+    const paths = (current.pinnedWorkspacePaths ?? []).filter(path => path !== workspacePath);
+    if (pinned) {
+      const beforeIndex = beforeWorkspacePath ? paths.indexOf(beforeWorkspacePath) : -1;
+      beforeIndex < 0 ? paths.push(workspacePath) : paths.splice(beforeIndex, 0, workspacePath);
+    }
+    update({ ...current, pinnedWorkspacePaths: paths });
+    try {
+      update(beforeWorkspacePath === undefined
+        ? await window.api.workspaces.setPinned(workspacePath, pinned)
+        : await window.api.workspaces.setPinned(workspacePath, pinned, beforeWorkspacePath));
+    }
+    catch {
+      update(current);
+    }
+  };
+
+  const sessionEntries: SessionEntry[] = workspace?.workspaces.flatMap(item => (sessionsByWorkspace[item.path] ?? []).map(session => ({ session, workspacePath: item.path }))) ?? [];
+  const sessionByPath = new Map(sessionEntries.map(entry => [entry.session.path, entry]));
+  const pinnedSessions = (workspace?.pinnedSessionPaths ?? []).flatMap(path => sessionByPath.get(path) ?? []);
+  const pinnedPaths = new Set(pinnedSessions.map(entry => entry.session.path));
+  const workspaceByPath = new Map(workspace?.workspaces.map(item => [item.path, item]));
+  const pinnedWorkspaces = (workspace?.pinnedWorkspacePaths ?? []).flatMap(path => workspaceByPath.get(path) ?? []);
+  const pinnedWorkspacePathSet = new Set(pinnedWorkspaces.map(workspace => workspace.path));
+  const pinDraggedSession = (beforeSessionPath?: string) => {
+    const dragged = draggedSessionPath ? sessionByPath.get(draggedSessionPath) : undefined;
+    if (dragged)
+      void setSessionPinned(dragged.workspacePath, dragged.session.path, true, beforeSessionPath);
+  };
+  const pinDraggedWorkspace = (beforeWorkspacePath?: string) => {
+    if (draggedWorkspacePath)
+      void setWorkspacePinned(draggedWorkspacePath, true, beforeWorkspacePath);
+  };
+  const renderProject = (item: NonNullable<typeof workspace>['workspaces'][number], isPinned: boolean) => {
+    const collapsed = collapsedSessionPaths[item.path] ?? false;
+    const sessionListId = `workspace-sessions-${item.path}`;
+    const sessions = sessionsByWorkspace[item.path] ?? [];
+    return (
+      <div className={`workspace-sidebar-project${isPinned ? ' workspace-sidebar-pinned-project' : ''}`} draggable={isPinned} key={item.path} onDragEnd={() => setDraggedWorkspacePath(undefined)} onDragOver={isPinned ? event => event.preventDefault() : undefined} onDragStart={() => setDraggedWorkspacePath(item.path)} onDrop={isPinned ? () => pinDraggedWorkspace(item.path) : undefined}>
+        <div className="workspace-sidebar-project-header">
+          <button aria-controls={sessionListId} aria-expanded={!collapsed} className="workspace-sidebar-project-toggle" onClick={() => setCollapsedSessionPaths(paths => ({ ...paths, [item.path]: !paths[item.path] }))} type="button">
+            <CodexFolder aria-hidden="true" />
+            <span>{item.displayName}</span>
+          </button>
+          <button aria-label={`${isPinned ? '取消置顶项目' : '置顶项目'} ${item.displayName}`} className="workspace-sidebar-project-pin" onClick={() => void setWorkspacePinned(item.path, !isPinned)} title={isPinned ? '取消置顶项目' : '置顶项目'} type="button">
+            {isPinned ? <PinOff aria-hidden="true" size={15} /> : <Pin aria-hidden="true" size={15} />}
+          </button>
+        </div>
+        {!collapsed && (
+          <div id={sessionListId}>
+            {sessions.filter(session => isPinned || !pinnedPaths.has(session.path)).map((session) => {
+              const sessionIsPinned = pinnedPaths.has(session.path);
+              return (
+                <SessionRow
+                  isPinned={sessionIsPinned}
+                  isRunning={session.path === runningSessionPath}
+                  isSelected={session.path === selectedSessionPath}
+                  key={session.path}
+                  onDragEnd={sessionIsPinned ? () => setDraggedSessionPath(undefined) : undefined}
+                  onDragStart={sessionIsPinned ? () => setDraggedSessionPath(session.path) : undefined}
+                  onDropBefore={sessionIsPinned ? () => pinDraggedSession(session.path) : undefined}
+                  onOpen={() => void openSession(item.path, session.path)}
+                  onTogglePin={() => void setSessionPinned(item.path, session.path, !sessionIsPinned)}
+                  session={session}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+  const hasPinnedItems = pinnedWorkspaces.length > 0 || pinnedSessions.length > 0;
+
   return (
     <nav aria-label={formatMessage({ id: 'projects.title' })} className="workspace-sidebar">
+      {hasPinnedItems && (
+        <>
+          <div className="workspace-sidebar-heading">
+            <button aria-expanded={!isPinnedCollapsed} className="workspace-sidebar-toggle" onClick={() => setIsPinnedCollapsed(collapsed => !collapsed)} type="button">
+              <span>置顶</span>
+              <CodexChevron aria-hidden="true" className={isPinnedCollapsed ? 'is-collapsed' : undefined} />
+            </button>
+          </div>
+          {!isPinnedCollapsed && (
+            <div className="workspace-sidebar-pinned-list">
+              {pinnedWorkspaces.map(item => renderProject(item, true))}
+              {pinnedSessions.filter(entry => !pinnedWorkspacePathSet.has(entry.workspacePath)).map(({ session, workspacePath }) => (
+                <SessionRow
+                  isPinned
+                  isRunning={session.path === runningSessionPath}
+                  isSelected={session.path === selectedSessionPath}
+                  key={session.path}
+                  onDragEnd={() => setDraggedSessionPath(undefined)}
+                  onDragStart={() => setDraggedSessionPath(session.path)}
+                  onDropBefore={() => pinDraggedSession(session.path)}
+                  onOpen={() => void openSession(workspacePath, session.path)}
+                  onTogglePin={() => void setSessionPinned(workspacePath, session.path, false)}
+                  session={session}
+                />
+              ))}
+              {pinnedWorkspaces.length > 0 && <div aria-label="移动到置顶项目末尾" className="workspace-sidebar-project-dropzone" onDragOver={event => event.preventDefault()} onDrop={() => pinDraggedWorkspace()} />}
+              <div aria-label="移动到置顶会话末尾" className="workspace-sidebar-pin-dropzone" onDragOver={event => event.preventDefault()} onDrop={() => pinDraggedSession()} />
+            </div>
+          )}
+        </>
+      )}
       <div className="workspace-sidebar-heading">
         <button aria-expanded={!isCollapsed} className="workspace-sidebar-toggle" onClick={() => setIsCollapsed(collapsed => !collapsed)} type="button">
           <span>{formatMessage({ id: 'projects.title' })}</span>
@@ -111,53 +226,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
       </div>
       {!isCollapsed && (
         <div className="workspace-sidebar-list">
-          {workspace?.workspaces.map((item) => {
-            const collapsed = collapsedSessionPaths[item.path] ?? false;
-            const sessionListId = `workspace-sessions-${item.path}`;
-            const sessions = sessionsByWorkspace[item.path] ?? [];
-            const sessionByPath = new Map(sessions.map(session => [session.path, session]));
-            const pinnedSessions = (workspace.pinnedSessionPaths ?? []).flatMap(path => sessionByPath.get(path) ?? []);
-            const pinnedPaths = new Set(pinnedSessions.map(session => session.path));
-            return (
-              <div className="workspace-sidebar-project" key={item.path}>
-                <button aria-controls={sessionListId} aria-expanded={!collapsed} className="workspace-sidebar-project-toggle" onClick={() => setCollapsedSessionPaths(paths => ({ ...paths, [item.path]: !paths[item.path] }))} type="button">
-                  <CodexFolder aria-hidden="true" />
-                  <span>{item.displayName}</span>
-                </button>
-                {!collapsed && (
-                  <div id={sessionListId}>
-                    {pinnedSessions.length > 0 && <p className="workspace-sidebar-session-group">置顶</p>}
-                    {pinnedSessions.map(session => (
-                      <SessionRow
-                        isPinned
-                        isRunning={session.path === runningSessionPath}
-                        isSelected={session.path === selectedSessionPath}
-                        key={session.path}
-                        onDragEnd={() => setDraggedSessionPath(undefined)}
-                        onDragStart={() => setDraggedSessionPath(session.path)}
-                        onDropBefore={() => draggedSessionPath && draggedSessionPath !== session.path && void setSessionPinned(item.path, draggedSessionPath, true, session.path)}
-                        onOpen={() => void openSession(item.path, session.path)}
-                        onTogglePin={() => void setSessionPinned(item.path, session.path, false)}
-                        session={session}
-                      />
-                    ))}
-                    {pinnedSessions.length > 0 && <div aria-label="移动到置顶会话末尾" className="workspace-sidebar-pin-dropzone" onDragOver={event => event.preventDefault()} onDrop={() => draggedSessionPath && void setSessionPinned(item.path, draggedSessionPath, true)} />}
-                    {sessions.filter(session => !pinnedPaths.has(session.path)).map(session => (
-                      <SessionRow
-                        isPinned={false}
-                        isRunning={session.path === runningSessionPath}
-                        isSelected={session.path === selectedSessionPath}
-                        key={session.path}
-                        onOpen={() => void openSession(item.path, session.path)}
-                        onTogglePin={() => void setSessionPinned(item.path, session.path, true)}
-                        session={session}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {workspace?.workspaces.filter(item => !pinnedWorkspacePathSet.has(item.path)).map(item => renderProject(item, false))}
         </div>
       )}
       {isCreating && <CreateProjectDialog onClose={() => setIsCreating(false)} onCreated={update} />}
@@ -177,8 +246,24 @@ function SessionRow({ isPinned, isRunning, isSelected, onDragEnd, onDragStart, o
   session: PiSessionSummary;
 }) {
   const title = session.firstMessage || '新对话';
+  const handleDragEnd = (event: DragEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    onDragEnd?.();
+  };
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  const handleDragStart = (event: DragEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    onDragStart?.();
+  };
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+    onDropBefore?.();
+  };
   return (
-    <div className="workspace-sidebar-session-row" draggable={isPinned} onDragEnd={onDragEnd} onDragOver={isPinned ? event => event.preventDefault() : undefined} onDragStart={onDragStart} onDrop={onDropBefore}>
+    <div className="workspace-sidebar-session-row" draggable={isPinned} onDragEnd={handleDragEnd} onDragOver={isPinned ? handleDragOver : undefined} onDragStart={handleDragStart} onDrop={handleDrop}>
       <button aria-current={isSelected ? 'page' : undefined} onClick={onOpen} type="button">
         <span className="workspace-sidebar-session-title">{title}</span>
         {isRunning && <span aria-label="正在生成" className="workspace-sidebar-session-activity" role="status"><LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /></span>}

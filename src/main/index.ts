@@ -195,6 +195,11 @@ app.whenReady().then(async () => {
     return snapshot;
   };
   ipcMain.handle('workspaces:get', () => workspaceRegistry.snapshot());
+  ipcMain.handle('workspaces:set-pinned', (_event, workspacePath: unknown, pinned: unknown, beforeWorkspacePath: unknown) => {
+    if (typeof workspacePath !== 'string' || !workspacePath.trim() || typeof pinned !== 'boolean' || (beforeWorkspacePath !== undefined && typeof beforeWorkspacePath !== 'string'))
+      throw new TypeError('无效的项目置顶请求');
+    return workspaceRegistry.setWorkspacePinned(workspacePath, pinned, beforeWorkspacePath);
+  });
   ipcMain.handle('workspaces:clear', async () => {
     const snapshot = await workspaceRegistry.clear();
     piRuntime.clearWorkspace();

@@ -24,7 +24,7 @@ describe('workspace registry', () => {
     const path = await registryPath();
     await writeFile(path, '{invalid');
 
-    await expect(new WorkspaceRegistry(path).load()).resolves.toEqual({ pinnedSessionPaths: [], workspaces: [] });
+    await expect(new WorkspaceRegistry(path).load()).resolves.toEqual({ pinnedSessionPaths: [], pinnedWorkspacePaths: [], workspaces: [] });
   });
 
   it('persists the selected directory as a recent workspace', async () => {
@@ -71,6 +71,7 @@ describe('workspace registry', () => {
 
     expect(cleared).toEqual({
       pinnedSessionPaths: [],
+      pinnedWorkspacePaths: [],
       workspaces: [expect.objectContaining({ path: project })],
     });
     await expect(new WorkspaceRegistry(path).load()).resolves.toEqual(cleared);
@@ -93,6 +94,25 @@ describe('workspace registry', () => {
     expect(registry.snapshot().pinnedSessionPaths).toEqual([second, first]);
     await registry.setSessionPinned(second, false);
     await expect(new WorkspaceRegistry(path).load()).resolves.toMatchObject({ pinnedSessionPaths: [first] });
+  });
+
+  it('persists pinned projects in their requested order', async () => {
+    const path = await registryPath();
+    const first = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
+    const second = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
+    directories.push(first, second);
+    await Promise.all([mkdir(first), mkdir(second)]);
+    const registry = new WorkspaceRegistry(path);
+
+    await registry.load();
+    await registry.create(first, 'first');
+    await registry.create(second, 'second');
+    await registry.setWorkspacePinned(first, true);
+    await registry.setWorkspacePinned(second, true, first);
+
+    expect(registry.snapshot().pinnedWorkspacePaths).toEqual([second, first]);
+    await registry.setWorkspacePinned(second, false);
+    await expect(new WorkspaceRegistry(path).load()).resolves.toMatchObject({ pinnedWorkspacePaths: [first] });
   });
 
   it('rejects a path that is not an existing directory', async () => {
