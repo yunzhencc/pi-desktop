@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import type { ThreadLayout, ThreadTurn } from './thread-virtualizer';
+import { useOverlayScrollbarsTheme } from '@renderer/features/theme';
 import { ArrowDown } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useOverlayScrollbarsTheme } from '../providers/theme';
 import { buildThreadLayout, preserveAnchorDistance, visibleThreadRange } from './thread-virtualizer';
 
 const DEFAULT_TURN_HEIGHT = 72;

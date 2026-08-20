@@ -3,7 +3,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useTheme } from 'next-themes';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ThemeProvider, useOverlayScrollbarsTheme } from './provider';
+import { useOverlayScrollbarsTheme } from './hooks/use-overlayscrollbars-theme';
+import { ThemeProvider } from './provider';
 
 const setThemeSource = vi.fn();
 
