@@ -6,7 +6,7 @@ import {
   SIDEBAR_DEFAULT_WIDTH,
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_MIN_WIDTH,
-} from './sidebar-resize';
+} from '../utils';
 
 interface DragState {
   didMove: boolean;

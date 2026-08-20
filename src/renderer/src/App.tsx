@@ -1,7 +1,19 @@
 import type { WorkspaceSnapshot } from '../../main/workspaces';
 import type { AppHistory, AppLocation } from './components/app-history';
 import { useShortcutSettings } from '@renderer/features/hotkeys';
-import { Footer, getExpandedRightPanelWidth, getRightPanelExpansionAfterToggle, getRightPanelHeaderWidth, getRightPanelWidthMode, readRightPanelWidth, RightPanelResizeHandle, writeRightPanelWidth } from '@renderer/features/layout';
+import {
+  Footer,
+  getExpandedRightPanelWidth,
+  getRightPanelExpansionAfterToggle,
+  getRightPanelHeaderWidth,
+  getRightPanelWidthMode,
+  readRightPanelWidth,
+  readSidebarWidth,
+  RightPanelResizeHandle,
+  SidebarResizeHandle,
+  SidebarToggle,
+  writeRightPanelWidth,
+} from '@renderer/features/layout';
 import { SettingsSidebar } from '@renderer/features/setting/settings-view';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
@@ -16,11 +28,6 @@ import {
   moveAppHistory,
   pushAppHistory,
 } from './components/app-history';
-import {
-  readSidebarWidth,
-} from './components/sidebar-resize';
-import { SidebarResizeHandle } from './components/sidebar-resize-handle';
-import { SidebarToggle } from './components/sidebar-toggle';
 import { getToolbarInset } from './components/toolbar-inset';
 import { WorkspaceSidebar } from './components/workspace-sidebar';
 

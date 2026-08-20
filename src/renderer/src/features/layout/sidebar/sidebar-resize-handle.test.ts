@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampSidebarWidth, readSidebarWidth, shouldCollapseSidebar } from './sidebar-resize';
+import { clampSidebarWidth, readSidebarWidth, shouldCollapseSidebar } from '../utils';
 
 describe('clampSidebarWidth', () => {
   it('matches Codex sidebar bounds', () => {

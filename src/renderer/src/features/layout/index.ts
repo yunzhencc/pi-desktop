@@ -1,3 +1,3 @@
-export * from './components/right-panel';
-export * from './components/right-panel-resize-handle';
+export * from './components';
 export * from './sidebar';
+export * from './utils';
