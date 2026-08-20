@@ -1,8 +1,9 @@
 import type { DragEvent, FormEvent, SVGProps } from 'react';
-import { Ellipsis, Folder, FolderPlus, LoaderCircle, MessageSquarePlus, Pencil, Pin, PinOff, X } from 'lucide-react';
+import { Ellipsis, Folder, FolderPlus, MessageSquarePlus, Pencil, Pin, PinOff, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useIntl } from 'react-intl';
+import { SessionItem } from './workspace';
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 type WorkspaceSummary = WorkspaceSnapshot['workspaces'][number];
@@ -479,16 +480,24 @@ function SessionRow({ isPinned, isRunning, isSelected, onDragEnd, onDragStart, o
     event.stopPropagation();
     onDropBefore?.();
   };
+
   return (
-    <div className="workspace-sidebar-session-row" draggable={isPinned} onDragEnd={handleDragEnd} onDragOver={isPinned ? handleDragOver : undefined} onDragStart={handleDragStart} onDrop={handleDrop}>
-      <button aria-current={isSelected ? 'page' : undefined} onClick={onOpen} type="button">
-        <span className="workspace-sidebar-session-title">{title}</span>
-        {isRunning && <span aria-label="正在生成" className="workspace-sidebar-session-activity" role="status"><LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /></span>}
-      </button>
-      <button aria-label={`${isPinned ? '取消置顶' : '置顶'} ${title}`} className="workspace-sidebar-session-pin" onClick={onTogglePin} title={isPinned ? '取消置顶' : '置顶'} type="button">
-        {isPinned ? <PinOff aria-hidden="true" size={15} /> : <Pin aria-hidden="true" size={15} />}
-      </button>
-    </div>
+    <>
+      <SessionItem
+        isRunning={isRunning}
+        isSelected={isSelected}
+        isPinned={isPinned}
+        draggable={isPinned}
+        onClick={onOpen}
+        onDragEnd={handleDragEnd}
+        onDragOver={isPinned ? handleDragOver : undefined}
+        onDragStart={handleDragStart}
+        onDrop={handleDrop}
+        onTogglePin={onTogglePin}
+      >
+        {title}
+      </SessionItem>
+    </>
   );
 }
 
