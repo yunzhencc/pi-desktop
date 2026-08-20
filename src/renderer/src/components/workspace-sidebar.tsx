@@ -9,6 +9,8 @@ type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>
 type WorkspaceSummary = WorkspaceSnapshot['workspaces'][number];
 type PiSessionSummary = Awaited<ReturnType<Window['api']['sessions']['list']>>[number];
 
+const projectHoverCardEnabled = false;
+
 function getHoverCardPosition(target: HTMLElement) {
   const rect = target.getBoundingClientRect();
   const cardWidth = Math.min(336, window.innerWidth - 16);
@@ -337,7 +339,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
             })}
           </div>
         )}
-        {hoverCard?.path === item.path && createPortal(
+        {projectHoverCardEnabled && hoverCard?.path === item.path && createPortal(
           <ProjectHoverCard
             isCurrent={workspace?.selectedWorkspacePath === item.path}
             isLoading={isSessionListLoading}

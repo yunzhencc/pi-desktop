@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../providers/i18n';
 import { WorkspaceSidebar } from './workspace-sidebar';
@@ -143,7 +143,7 @@ describe('workspace sidebar', () => {
     expect(await screen.findByRole('button', { name: edited.displayName })).not.toBeNull();
   });
 
-  it('shows local project context in a hover card', async () => {
+  it('does not show a project info card on hover', async () => {
     window.api.sessions.list.mockResolvedValue([session]);
     render(
       <I18nProvider>
@@ -154,106 +154,7 @@ describe('workspace sidebar', () => {
     const project = (await screen.findByRole('button', { name: 'weather' })).closest('.workspace-sidebar-project')!;
     fireEvent.mouseEnter(project);
 
-    const card = await screen.findByRole('dialog', { name: 'weather 项目信息' });
-    expect(card.textContent).toContain('/projects/weather');
-    expect(card.textContent).toContain('1 个任务');
-    expect(card.textContent).toContain('当前项目');
-  });
-
-  it('opens the project editor from the hover card', async () => {
-    render(
-      <I18nProvider>
-        <WorkspaceSidebar />
-      </I18nProvider>,
-    );
-
-    const project = (await screen.findByRole('button', { name: 'weather' })).closest('.workspace-sidebar-project')!;
-    fireEvent.mouseEnter(project);
-    fireEvent.click(await screen.findByRole('button', { name: '编辑项目' }));
-
-    expect(await screen.findByRole('dialog', { name: '编辑项目' })).not.toBeNull();
-  });
-
-  it('opens the source folder from the project hover card', async () => {
-    render(
-      <I18nProvider>
-        <WorkspaceSidebar />
-      </I18nProvider>,
-    );
-
-    const project = (await screen.findByRole('button', { name: 'weather' })).closest('.workspace-sidebar-project')!;
-    fireEvent.mouseEnter(project);
-    fireEvent.click(await screen.findByRole('button', { name: `在文件管理器中打开 ${weather.path}` }));
-
-    await waitFor(() => expect(window.api.workspaces.openDirectory).toHaveBeenCalledWith(weather.path));
-  });
-
-  it('pins a project from its hover card', async () => {
-    render(
-      <I18nProvider>
-        <WorkspaceSidebar />
-      </I18nProvider>,
-    );
-
-    const project = (await screen.findByRole('button', { name: 'weather' })).closest('.workspace-sidebar-project')!;
-    fireEvent.mouseEnter(project);
-    fireEvent.click(await screen.findByRole('button', { name: '置顶项目 weather' }));
-
-    await waitFor(() => expect(window.api.workspaces.setPinned).toHaveBeenCalledWith(weather.path, true));
-  });
-
-  it('keeps the new-chat action on the project row instead of duplicating it in the hover card', async () => {
-    render(
-      <I18nProvider>
-        <WorkspaceSidebar />
-      </I18nProvider>,
-    );
-
-    const project = (await screen.findByRole('button', { name: 'weather' })).closest('.workspace-sidebar-project')!;
-    fireEvent.mouseEnter(project);
-
-    expect(within(await screen.findByRole('dialog', { name: 'weather 项目信息' })).queryByRole('button', { name: '新建聊天' })).toBeNull();
-  });
-
-  it('keeps the hover card anchored when the sidebar scrolls', async () => {
-    render(
-      <I18nProvider>
-        <WorkspaceSidebar />
-      </I18nProvider>,
-    );
-
-    const project = (await screen.findByRole('button', { name: 'weather' })).closest('.workspace-sidebar-project')!;
-    const firstRect = { bottom: 40, height: 30, left: 0, right: 100, top: 10, width: 100, x: 0, y: 10, toJSON: () => ({}) } as DOMRect;
-    const secondRect = { ...firstRect, right: 140, top: 30 } as DOMRect;
-    const getBoundingClientRect = vi.spyOn(project, 'getBoundingClientRect').mockReturnValue(firstRect);
-    fireEvent.mouseEnter(project);
-
-    const card = await screen.findByRole('dialog', { name: 'weather 项目信息' });
-    expect(card.style.left).toBe('102px');
-    getBoundingClientRect.mockReturnValue(secondRect);
-    fireEvent.scroll(window);
-
-    await waitFor(() => expect(card.style.left).toBe('142px'));
-    expect(card.style.top).toBe('30px');
-  });
-
-  it('shows task loading instead of a zero count before sessions arrive', async () => {
-    let resolveSessions: (value: typeof session[]) => void;
-    window.api.sessions.list.mockImplementationOnce(() => new Promise((resolve) => {
-      resolveSessions = resolve;
-    }));
-    render(
-      <I18nProvider>
-        <WorkspaceSidebar />
-      </I18nProvider>,
-    );
-
-    const project = (await screen.findByRole('button', { name: 'weather' })).closest('.workspace-sidebar-project')!;
-    fireEvent.mouseEnter(project);
-
-    expect(await screen.findByText('正在加载任务')).not.toBeNull();
-    await act(async () => resolveSessions!([session]));
-    expect(await screen.findByText('1 个任务')).not.toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'weather 项目信息' })).toBeNull();
   });
 
   it('reorders pinned projects by dragging them within the global section', async () => {
