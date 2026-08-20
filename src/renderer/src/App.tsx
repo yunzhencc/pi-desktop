@@ -15,6 +15,7 @@ import {
   writeRightPanelWidth,
 } from '@renderer/features/layout';
 import { SettingsSidebar } from '@renderer/features/setting';
+import { WorkspaceSidebar } from '@renderer/features/workspace';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -29,7 +30,6 @@ import {
   pushAppHistory,
 } from './components/app-history';
 import { getToolbarInset } from './components/toolbar-inset';
-import { WorkspaceSidebar } from './components/workspace-sidebar';
 
 const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
