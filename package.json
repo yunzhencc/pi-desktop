@@ -43,6 +43,7 @@
     "@electron-toolkit/preload": "catalog:core",
     "@electron-toolkit/utils": "catalog:core",
     "@pi-desktop/shadcn-ui": "workspace:*",
+    "@pi-desktop/utils": "workspace:*",
     "@tanstack/react-hotkeys": "catalog:core",
     "@tanstack/react-query": "catalog:core",
     "@tanstack/react-router": "catalog:core",

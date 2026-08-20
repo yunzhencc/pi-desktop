@@ -275,6 +275,9 @@ importers:
       '@pi-desktop/shadcn-ui':
         specifier: workspace:*
         version: link:packages/shadcn-ui
+      '@pi-desktop/utils':
+        specifier: workspace:*
+        version: link:packages/utils
       '@tanstack/react-hotkeys':
         specifier: catalog:core
         version: 0.10.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -529,6 +532,12 @@ importers:
       zod:
         specifier: catalog:core
         version: 4.4.3
+
+  packages/utils:
+    dependencies:
+      es-toolkit:
+        specifier: catalog:core
+        version: 1.51.0
 
 packages:
 
