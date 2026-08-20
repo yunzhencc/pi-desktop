@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from 'react';
 import { I18nProvider } from './i18n';
 import { ThemeProvider } from './theme';
 

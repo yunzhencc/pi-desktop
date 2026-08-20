@@ -1,5 +1,6 @@
 import type { WorkspaceSnapshot } from '../../main/workspaces';
 import type { AppHistory, AppLocation } from './components/app-history';
+import { Footer } from '@renderer/features/layout';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -23,7 +24,6 @@ import {
 } from './components/right-panel';
 import { RightPanelResizeHandle } from './components/right-panel-resize-handle';
 import { SettingsSidebar } from './components/settings-view';
-import { Footer } from './components/sidebar';
 import {
   readSidebarWidth,
 } from './components/sidebar-resize';
