@@ -45,10 +45,12 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
   workspaces = {
     get: vi.fn(() => Promise.resolve({
+      pinnedSessionPaths: [],
       selectedWorkspacePath: '/projects/weather',
       workspaces: [{ displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' }],
     })),
     pick: vi.fn(() => Promise.resolve({
+      pinnedSessionPaths: [],
       selectedWorkspacePath: '/projects/weather',
       workspaces: [{ displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' }],
     })),
@@ -206,7 +208,7 @@ describe('home page', () => {
   });
 
   it('directs an unselected workspace to the sidebar', async () => {
-    workspaces.get.mockResolvedValue({ workspaces: [] });
+    workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], workspaces: [] });
     render(<HomePage />);
 
     await waitFor(() => expect(screen.getByRole('heading', { name: '我们要构建什么？' })).not.toBeNull());

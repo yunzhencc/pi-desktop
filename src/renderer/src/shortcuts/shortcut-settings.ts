@@ -7,6 +7,7 @@ export const shortcutDefinitions = [
   { description: 'shortcut.toggleSidebar.description', id: 'toggleSidebar', title: 'shortcut.toggleSidebar.title' },
   { description: 'shortcut.openSettings.description', id: 'openSettings', title: 'shortcut.openSettings.title' },
   { description: 'shortcut.focusSettingsSearch.description', id: 'focusSettingsSearch', title: 'shortcut.focusSettingsSearch.title' },
+  { description: 'shortcut.toggleSessionPin.description', id: 'toggleSessionPin', title: 'shortcut.toggleSessionPin.title' },
 ] as const;
 
 export type ShortcutId = (typeof shortcutDefinitions)[number]['id'];
@@ -16,6 +17,7 @@ const defaultShortcutBindings: ShortcutBindings = {
   focusSettingsSearch: ['Mod+F'],
   newConversation: ['Mod+N', 'Mod+Shift+O'],
   openSettings: ['Mod+,'],
+  toggleSessionPin: ['Mod+Shift+P'],
   toggleSidebar: ['Mod+B'],
 };
 

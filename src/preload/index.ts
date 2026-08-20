@@ -45,6 +45,7 @@ const api = {
   sessions: {
     list: (workspacePath: string): Promise<PiSessionSummary[]> => ipcRenderer.invoke('sessions:list', workspacePath),
     open: (workspacePath: string, sessionPath: string): Promise<{ session: PiSessionSnapshot; workspace: WorkspaceSnapshot }> => ipcRenderer.invoke('sessions:open', workspacePath, sessionPath),
+    setPinned: (workspacePath: string, sessionPath: string, pinned: boolean, beforeSessionPath?: string): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('sessions:set-pinned', workspacePath, sessionPath, pinned, beforeSessionPath),
   },
   workspaces: {
     clear: (): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('workspaces:clear'),

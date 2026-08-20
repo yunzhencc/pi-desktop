@@ -219,6 +219,14 @@ app.whenReady().then(async () => {
     const snapshot = await selectWorkspace(workspacePath);
     return { session: await piRuntime.openSession(sessionPath), workspace: snapshot };
   });
+  ipcMain.handle('sessions:set-pinned', async (_event, workspacePath: unknown, sessionPath: unknown, pinned: unknown, beforeSessionPath: unknown) => {
+    if (typeof workspacePath !== 'string' || !workspacePath.trim() || typeof sessionPath !== 'string' || !sessionPath.trim() || typeof pinned !== 'boolean' || (beforeSessionPath !== undefined && typeof beforeSessionPath !== 'string'))
+      throw new TypeError('无效的会话置顶请求');
+    const sessions = await piRuntime.listWorkspaceSessions(workspacePath);
+    if (!sessions.some(session => session.path === sessionPath) || (beforeSessionPath !== undefined && !sessions.some(session => session.path === beforeSessionPath)))
+      throw new TypeError('会话不属于该工作区');
+    return workspaceRegistry.setSessionPinned(sessionPath, pinned, beforeSessionPath);
+  });
   ipcMain.handle('workspaces:pick-directory', async (event) => {
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender) ?? undefined, {
       properties: ['openDirectory'],

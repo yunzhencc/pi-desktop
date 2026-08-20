@@ -48,15 +48,17 @@ describe('app window surface', () => {
         },
         workspaces: {
           get: () => Promise.resolve({
+            pinnedSessionPaths: [],
             selectedWorkspacePath: '/projects/weather',
             workspaces: [{ displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' }],
           }),
-          pick: () => Promise.resolve({ workspaces: [] }),
-          select: () => Promise.resolve({ workspaces: [] }),
+          pick: () => Promise.resolve({ pinnedSessionPaths: [], workspaces: [] }),
+          select: () => Promise.resolve({ pinnedSessionPaths: [], workspaces: [] }),
         },
         sessions: {
           list: () => Promise.resolve([]),
-          open: () => Promise.resolve({ session: { messages: [], path: '/sessions/default.jsonl' }, workspace: { workspaces: [] } }),
+          open: () => Promise.resolve({ session: { messages: [], path: '/sessions/default.jsonl' }, workspace: { pinnedSessionPaths: [], workspaces: [] } }),
+          setPinned: () => Promise.resolve({ pinnedSessionPaths: [], workspaces: [] }),
         },
       },
     });
@@ -115,8 +117,8 @@ describe('app window surface', () => {
   });
 
   it('ignores a slower session navigation after a newer selection', async () => {
-    const first = deferred<{ session: { messages: []; path: string }; workspace: { workspaces: [] } }>();
-    const second = deferred<{ session: { messages: []; path: string }; workspace: { workspaces: [] } }>();
+    const first = deferred<{ session: { messages: []; path: string }; workspace: { pinnedSessionPaths: []; workspaces: [] } }>();
+    const second = deferred<{ session: { messages: []; path: string }; workspace: { pinnedSessionPaths: []; workspaces: [] } }>();
     const openedSessions: string[] = [];
     window.api.sessions.list = () => Promise.resolve([
       { firstMessage: 'First', id: 'first', modifiedAt: '2026-08-20T00:00:00.000Z', path: '/sessions/first.jsonl' },
@@ -135,8 +137,8 @@ describe('app window surface', () => {
     await screen.findByRole('button', { name: 'First' });
     screen.getByRole('button', { name: 'First' }).click();
     screen.getByRole('button', { name: 'Second' }).click();
-    await act(async () => second.resolve({ session: { messages: [], path: '/sessions/second.jsonl' }, workspace: { workspaces: [] } }));
-    await act(async () => first.resolve({ session: { messages: [], path: '/sessions/first.jsonl' }, workspace: { workspaces: [] } }));
+    await act(async () => second.resolve({ session: { messages: [], path: '/sessions/second.jsonl' }, workspace: { pinnedSessionPaths: [], workspaces: [] } }));
+    await act(async () => first.resolve({ session: { messages: [], path: '/sessions/first.jsonl' }, workspace: { pinnedSessionPaths: [], workspaces: [] } }));
 
     expect(openedSessions).toEqual(['/sessions/second.jsonl']);
     window.removeEventListener('session-changed', onSessionChanged);
@@ -181,6 +183,26 @@ describe('app window surface', () => {
 
     hotkeys.get('Mod+,')?.();
     expect(navigate).toHaveBeenCalledWith({ to: '/settings/general' });
+  });
+
+  it('toggles the current session pin with its shortcut', async () => {
+    const session = { firstMessage: 'Forecast', id: 'session-1', modifiedAt: '2026-08-20T00:00:00.000Z', path: '/sessions/forecast.jsonl' };
+    const open = vi.fn(() => Promise.resolve({ session: { messages: [], path: session.path }, workspace: { pinnedSessionPaths: [], workspaces: [] } }));
+    window.api.sessions.list = () => Promise.resolve([session]);
+    window.api.sessions.open = open;
+    window.api.sessions.setPinned = vi.fn(() => Promise.resolve({ pinnedSessionPaths: [session.path], workspaces: [] }));
+    render(
+      <IntlProvider locale="en" messages={messages.en}>
+        <App />
+      </IntlProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'Forecast' });
+    screen.getByRole('button', { name: 'Forecast' }).click();
+    await waitFor(() => expect(open).toHaveBeenCalled());
+    hotkeys.get('Mod+Shift+P')?.();
+
+    await waitFor(() => expect(window.api.sessions.setPinned).toHaveBeenCalledWith('/projects/weather', session.path, true));
   });
 
   it('does not register global shortcuts for focused inputs', () => {

@@ -13,6 +13,8 @@ const messages = {
   'shortcut.newConversation.title': 'New conversation',
   'shortcut.openSettings.description': 'Open settings',
   'shortcut.openSettings.title': 'Open settings',
+  'shortcut.toggleSessionPin.description': 'Pin or unpin the current conversation',
+  'shortcut.toggleSessionPin.title': 'Toggle conversation pin',
   'shortcut.toggleSidebar.description': 'Show or hide the sidebar',
   'shortcut.toggleSidebar.title': 'Toggle sidebar',
   'shortcuts.add': 'Add shortcut',

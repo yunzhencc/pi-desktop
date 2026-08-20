@@ -48,8 +48,8 @@ export function HomePage() {
       }
     }).catch(() => {
       if (active) {
-        workspaceRef.current = { workspaces: [] };
-        setWorkspace({ workspaces: [] });
+        workspaceRef.current = { pinnedSessionPaths: [], workspaces: [] };
+        setWorkspace({ pinnedSessionPaths: [], workspaces: [] });
       }
     });
     const onWorkspaceChanged = (event: Event) => {

@@ -24,7 +24,7 @@ describe('workspace registry', () => {
     const path = await registryPath();
     await writeFile(path, '{invalid');
 
-    await expect(new WorkspaceRegistry(path).load()).resolves.toEqual({ workspaces: [] });
+    await expect(new WorkspaceRegistry(path).load()).resolves.toEqual({ pinnedSessionPaths: [], workspaces: [] });
   });
 
   it('persists the selected directory as a recent workspace', async () => {
@@ -70,9 +70,29 @@ describe('workspace registry', () => {
     const cleared = await registry.clear();
 
     expect(cleared).toEqual({
+      pinnedSessionPaths: [],
       workspaces: [expect.objectContaining({ path: project })],
     });
     await expect(new WorkspaceRegistry(path).load()).resolves.toEqual(cleared);
+  });
+
+  it('persists pinned sessions in their requested order', async () => {
+    const path = await registryPath();
+    const project = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
+    directories.push(project);
+    await mkdir(project);
+    const registry = new WorkspaceRegistry(path);
+    const first = '/sessions/first.jsonl';
+    const second = '/sessions/second.jsonl';
+
+    await registry.load();
+    await registry.select(project);
+    await registry.setSessionPinned(first, true);
+    await registry.setSessionPinned(second, true, first);
+
+    expect(registry.snapshot().pinnedSessionPaths).toEqual([second, first]);
+    await registry.setSessionPinned(second, false);
+    await expect(new WorkspaceRegistry(path).load()).resolves.toMatchObject({ pinnedSessionPaths: [first] });
   });
 
   it('rejects a path that is not an existing directory', async () => {

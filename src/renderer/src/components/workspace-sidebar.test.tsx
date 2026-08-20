@@ -7,21 +7,23 @@ import { WorkspaceSidebar } from './workspace-sidebar';
 
 const weather = { displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' };
 const session = { firstMessage: 'Summarize the forecast', id: 'session-1', modifiedAt: '2026-08-19T00:00:00.000Z', path: '/sessions/session-1.jsonl' };
+const pinnedSession = { firstMessage: 'Keep this handy', id: 'session-2', modifiedAt: '2026-08-19T00:00:00.000Z', path: '/sessions/session-2.jsonl' };
 
 beforeEach(() => {
   vi.stubGlobal('api', {
     sessions: {
       list: vi.fn(() => Promise.resolve([])),
-      open: vi.fn(() => Promise.resolve({ session: { messages: [], path: session.path }, workspace: { selectedWorkspacePath: weather.path, workspaces: [weather] } })),
+      open: vi.fn(() => Promise.resolve({ session: { messages: [], path: session.path }, workspace: { pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather] } })),
+      setPinned: vi.fn(() => Promise.resolve({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather] })),
     },
     composer: {
       onUpdate: vi.fn(() => () => {}),
     },
     workspaces: {
-      get: vi.fn(() => Promise.resolve({ selectedWorkspacePath: weather.path, workspaces: [weather] })),
+      get: vi.fn(() => Promise.resolve({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather] })),
       pickDirectory: vi.fn(() => Promise.resolve('/projects/weather')),
-      create: vi.fn(() => Promise.resolve({ selectedWorkspacePath: weather.path, workspaces: [weather] })),
-      select: vi.fn(() => Promise.resolve({ selectedWorkspacePath: weather.path, workspaces: [weather] })),
+      create: vi.fn(() => Promise.resolve({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather] })),
+      select: vi.fn(() => Promise.resolve({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather] })),
     },
   });
 });
@@ -74,6 +76,24 @@ describe('workspace sidebar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Summarize the forecast' }));
 
     await waitFor(() => expect(window.api.sessions.open).toHaveBeenCalledWith(weather.path, session.path));
+  });
+
+  it('separates pinned sessions and persists a pin action', async () => {
+    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [pinnedSession.path], selectedWorkspacePath: weather.path, workspaces: [weather] });
+    window.api.sessions.list.mockResolvedValue([session, pinnedSession]);
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'Keep this handy' });
+    expect(screen.getByText('置顶')).not.toBeNull();
+    expect(screen.getByRole('button', { name: '取消置顶 Keep this handy' })).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '置顶 Summarize the forecast' }));
+
+    await waitFor(() => expect(window.api.sessions.setPinned).toHaveBeenCalledWith(weather.path, session.path, true));
   });
 
   it('delegates a session selection to application navigation when provided', async () => {

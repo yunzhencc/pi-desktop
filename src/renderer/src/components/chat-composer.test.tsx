@@ -42,17 +42,17 @@ beforeEach(() => {
   composer.addPastedImage.mockResolvedValue({ attachments: [], failures: [] });
   composer.removeAttachment.mockResolvedValue(undefined);
   composer.send.mockResolvedValue(undefined);
-  workspaces.create.mockResolvedValue({ selectedWorkspacePath: weather.path, workspaces: [weather, notes] });
-  workspaces.clear.mockResolvedValue({ workspaces: [weather, notes] });
+  workspaces.create.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, notes] });
+  workspaces.clear.mockResolvedValue({ pinnedSessionPaths: [], workspaces: [weather, notes] });
   workspaces.getGitBranch.mockResolvedValue('main');
   workspaces.pickDirectory.mockResolvedValue('/projects/weather');
-  workspaces.select.mockResolvedValue({ selectedWorkspacePath: notes.path, workspaces: [notes, weather] });
+  workspaces.select.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: notes.path, workspaces: [notes, weather] });
 });
 
 function renderComposer(onSubmitted = vi.fn(), props: Partial<Parameters<typeof ChatComposer>[0]> = {}) {
   return render(
     <I18nProvider>
-      <ChatComposer onSubmitted={onSubmitted} workspace={{ selectedWorkspacePath: weather.path, workspaces: [weather] }} {...props} />
+      <ChatComposer onSubmitted={onSubmitted} workspace={{ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather] }} {...props} />
     </I18nProvider>,
   );
 }
@@ -60,7 +60,7 @@ function renderComposer(onSubmitted = vi.fn(), props: Partial<Parameters<typeof 
 function renderNewConversationToolbar(props: Partial<Parameters<typeof NewConversationToolbar>[0]> & { onClearProject?: () => void } = {}) {
   return render(
     <I18nProvider>
-      <NewConversationToolbar workspace={{ selectedWorkspacePath: weather.path, workspaces: [weather, notes] }} {...props} />
+      <NewConversationToolbar workspace={{ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, notes] }} {...props} />
     </I18nProvider>,
   );
 }
@@ -327,7 +327,7 @@ describe('chat composer', () => {
   it('opens the project menu and selects a workspace', async () => {
     const user = userEvent.setup();
     const onSelectProject = vi.fn();
-    renderNewConversationToolbar({ onSelectProject, workspace: { workspaces: [weather, notes] } });
+    renderNewConversationToolbar({ onSelectProject, workspace: { pinnedSessionPaths: [], workspaces: [weather, notes] } });
 
     await user.click(screen.getByRole('button', { name: '选择项目' }));
     expect(screen.getByRole('dialog', { name: '选择项目' })).not.toBeNull();
@@ -339,7 +339,7 @@ describe('chat composer', () => {
   it('starts project creation from the project menu', async () => {
     const user = userEvent.setup();
     const onCreateProject = vi.fn();
-    renderNewConversationToolbar({ onCreateProject, workspace: { workspaces: [weather, notes] } });
+    renderNewConversationToolbar({ onCreateProject, workspace: { pinnedSessionPaths: [], workspaces: [weather, notes] } });
 
     await user.click(screen.getByRole('button', { name: '选择项目' }));
     await user.click(screen.getByRole('option', { name: '新建项目' }));

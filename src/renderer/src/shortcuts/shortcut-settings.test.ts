@@ -14,6 +14,7 @@ describe('shortcut settings', () => {
       focusSettingsSearch: ['Mod+F'],
       newConversation: ['Mod+N', 'Mod+Shift+O'],
       openSettings: ['Mod+,'],
+      toggleSessionPin: ['Mod+Shift+P'],
       toggleSidebar: ['Mod+B'],
     });
     expect(shortcutDefinitions.map(definition => definition.id)).toEqual([
@@ -21,6 +22,7 @@ describe('shortcut settings', () => {
       'toggleSidebar',
       'openSettings',
       'focusSettingsSearch',
+      'toggleSessionPin',
     ]);
   });
 
@@ -29,13 +31,14 @@ describe('shortcut settings', () => {
       focusSettingsSearch: ['Mod+F'],
       newConversation: ['Mod+J'],
       openSettings: ['Mod+,'],
+      toggleSessionPin: ['Mod+Shift+P'],
       toggleSidebar: [],
     };
 
     expect(readShortcutBindings(writeShortcutBindings(bindings))).toEqual(bindings);
     expect(readShortcutBindings('{bad json')).toEqual(readShortcutBindings(null));
     expect(readShortcutBindings('{"newConversation":["Not+A+Shortcut"]}')).toEqual(readShortcutBindings(null));
-    expect(readShortcutBindings('{"focusSettingsSearch":["Mod+F"],"newConversation":["C"],"openSettings":["Mod+,"],"toggleSidebar":["Mod+B"]}')).toEqual(readShortcutBindings(null));
+    expect(readShortcutBindings('{"focusSettingsSearch":["Mod+F"],"newConversation":["C"],"openSettings":["Mod+,"],"toggleSessionPin":["Mod+Shift+P"],"toggleSidebar":["Mod+B"]}')).toEqual(readShortcutBindings(null));
   });
 
   it('blocks a shortcut already assigned to another command', () => {

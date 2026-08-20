@@ -1,3 +1,4 @@
+import type { WorkspaceSnapshot } from '../../main/workspaces';
 import type { AppHistory, AppLocation } from './components/app-history';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
@@ -127,6 +128,20 @@ function AppShell() {
     void visitLocation({ kind: 'home' });
   };
   const openSettings = () => void visitLocation({ kind: 'settings', path: '/settings/general' });
+  const toggleCurrentSessionPin = () => {
+    const location = currentAppLocation(historyRef.current);
+    if (location.kind !== 'session')
+      return;
+
+    void window.api.workspaces.get()
+      .then(workspace => window.api.sessions.setPinned(
+        location.workspacePath,
+        location.sessionPath,
+        !(workspace.pinnedSessionPaths ?? []).includes(location.sessionPath),
+      ))
+      .then(workspace => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: workspace })))
+      .catch(() => {});
+  };
   const headerLeftWidth = isSidebarVisible ? sidebarWidth : toolbarInset + 96;
   const mainContentWidth = viewportSize.width - (isSidebarVisible ? sidebarWidth : 0);
   const rightPanelWidth = readRightPanelWidth(
@@ -157,6 +172,7 @@ function AppShell() {
       ...bindings.newConversation.map(hotkey => ({ callback: startNewConversation, hotkey })),
       ...bindings.toggleSidebar.map(hotkey => ({ callback: toggleSidebar, hotkey })),
       ...bindings.openSettings.map(hotkey => ({ callback: openSettings, hotkey })),
+      ...bindings.toggleSessionPin.map(hotkey => ({ callback: toggleCurrentSessionPin, hotkey })),
       { callback: () => void navigateHistory(-1), hotkey: 'Mod+[' },
       { callback: () => void navigateHistory(1), hotkey: 'Mod+]' },
     ],

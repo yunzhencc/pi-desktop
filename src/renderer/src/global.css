@@ -558,8 +558,43 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   min-width: 0;
 }
 
-.workspace-sidebar-project > div > button {
+.workspace-sidebar-session-row > button:first-child {
   padding-left: 28px;
+}
+
+.workspace-sidebar-session-group {
+  margin: 8px 8px 2px 28px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.workspace-sidebar-session-row {
+  display: flex;
+  align-items: center;
+}
+
+.workspace-sidebar-session-row > button:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.workspace-sidebar-session-pin {
+  width: 26px !important;
+  padding: 0 !important;
+  justify-content: center;
+  color: var(--text-tertiary) !important;
+  opacity: 0;
+}
+
+.workspace-sidebar-session-row:hover .workspace-sidebar-session-pin,
+.workspace-sidebar-session-pin:focus-visible {
+  opacity: 1;
+}
+
+.workspace-sidebar-pin-dropzone {
+  height: 4px;
+  margin: 0 8px 0 28px;
 }
 
 .workspace-sidebar-session-title {

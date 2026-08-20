@@ -32,6 +32,7 @@ declare global {
       sessions: {
         list: (workspacePath: string) => Promise<PiSessionSummary[]>;
         open: (workspacePath: string, sessionPath: string) => Promise<{ session: PiSessionSnapshot; workspace: WorkspaceSnapshot }>;
+        setPinned: (workspacePath: string, sessionPath: string, pinned: boolean, beforeSessionPath?: string) => Promise<WorkspaceSnapshot>;
       };
       workspaces: {
         clear: () => Promise<WorkspaceSnapshot>;
