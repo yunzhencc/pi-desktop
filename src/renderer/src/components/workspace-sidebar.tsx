@@ -1,9 +1,9 @@
 import type { DragEvent, FormEvent, SVGProps } from 'react';
+import { SessionItem } from '@renderer/features/workspace';
 import { Ellipsis, Folder, FolderPlus, MessageSquarePlus, Pencil, Pin, PinOff, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useIntl } from 'react-intl';
-import { SessionItem } from './workspace';
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 type WorkspaceSummary = WorkspaceSnapshot['workspaces'][number];
