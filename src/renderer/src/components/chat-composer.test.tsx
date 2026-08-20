@@ -85,11 +85,14 @@ describe('chat composer', () => {
     expect(screen.getByRole('textbox', { name: 'Message Pi' }).textContent).toBe('');
   });
 
-  it('autolinks a typed HTTP URL in the editor', async () => {
+  it('autolinks a typed HTTP URL only after a space', async () => {
     const user = userEvent.setup();
     renderComposer();
+    const editor = screen.getByRole('textbox', { name: 'Message Pi' });
 
-    await user.type(screen.getByRole('textbox', { name: 'Message Pi' }), 'https://example.com/docs');
+    await user.type(editor, 'https://example.com/docs');
+    expect(editor.querySelector('[data-link-href]')).toBeNull();
+    await user.type(editor, ' ');
 
     expect(screen.getByRole('button', { name: 'https://example.com/docs' }).getAttribute('data-link-href')).toBe('https://example.com/docs');
   });
@@ -109,7 +112,7 @@ describe('chat composer', () => {
     renderComposer();
     const editor = screen.getByRole('textbox', { name: 'Message Pi' });
 
-    await user.type(editor, 'https://example.com/docs');
+    await user.type(editor, 'https://example.com/docs ');
     await user.click(editor.querySelector('[data-link-href]')!);
     expect(screen.getByRole('dialog', { name: '链接选项' }).className).toContain('composer-link-popover-actions');
     await user.click(screen.getByRole('button', { name: '编辑链接' }));
@@ -126,14 +129,14 @@ describe('chat composer', () => {
     renderComposer();
     const editor = screen.getByRole('textbox', { name: 'Message Pi' });
 
-    await user.type(editor, 'https://example.com/docs');
+    await user.type(editor, 'https://example.com/docs ');
     await user.click(editor.querySelector('[data-link-href]')!);
     await user.click(screen.getByRole('button', { name: '编辑文本' }));
     await user.clear(screen.getByRole('textbox', { name: '文本' }));
     await user.type(screen.getByRole('textbox', { name: '文本' }), '项目文档');
     await user.click(screen.getByRole('button', { name: '保存链接文本' }));
 
-    expect(editor.textContent).toBe('项目文档');
+    expect(editor.textContent).toBe('项目文档 ');
     expect(editor.querySelector('[data-link-href]')?.getAttribute('data-link-href')).toBe('https://example.com/docs');
   });
 
@@ -142,7 +145,7 @@ describe('chat composer', () => {
     renderComposer();
     const editor = screen.getByRole('textbox', { name: 'Message Pi' });
 
-    await user.type(editor, 'https://example.com/docs');
+    await user.type(editor, 'https://example.com/docs ');
     await user.click(editor.querySelector('[data-link-href]')!);
     await user.click(screen.getByRole('button', { name: '编辑链接' }));
     await user.clear(screen.getByRole('textbox', { name: 'URL' }));
@@ -158,7 +161,7 @@ describe('chat composer', () => {
     renderComposer();
     const editor = screen.getByRole('textbox', { name: 'Message Pi' });
 
-    await user.type(editor, 'https://example.com/docs');
+    await user.type(editor, 'https://example.com/docs ');
     await user.click(editor.querySelector('[data-link-href]')!);
     await user.click(screen.getByRole('button', { name: '打开链接' }));
 
@@ -170,13 +173,13 @@ describe('chat composer', () => {
     renderComposer();
     const editor = screen.getByRole('textbox', { name: 'Message Pi' });
 
-    await user.type(editor, 'https://example.com/docs');
+    await user.type(editor, 'https://example.com/docs ');
     await user.click(editor.querySelector('[data-link-href]')!);
     await user.click(screen.getByRole('button', { name: '编辑链接' }));
     await user.clear(screen.getByRole('textbox', { name: 'URL' }));
     await user.click(screen.getByRole('button', { name: '保存链接 URL' }));
 
-    expect(editor.textContent).toBe('https://example.com/docs');
+    expect(editor.textContent).toBe('https://example.com/docs ');
     expect(editor.querySelector('[data-link-href]')).toBeNull();
   });
 
@@ -185,7 +188,7 @@ describe('chat composer', () => {
     renderComposer();
     const editor = screen.getByRole('textbox', { name: 'Message Pi' });
 
-    await user.type(editor, 'https://example.com/docs');
+    await user.type(editor, 'https://example.com/docs ');
     await user.click(editor.querySelector('[data-link-href]')!);
     await user.click(screen.getByRole('button', { name: '编辑链接' }));
     await user.clear(screen.getByRole('textbox', { name: 'URL' }));
@@ -201,7 +204,7 @@ describe('chat composer', () => {
     renderComposer();
     const editor = screen.getByRole('textbox', { name: 'Message Pi' });
 
-    await user.type(editor, 'https://example.com/docs');
+    await user.type(editor, 'https://example.com/docs ');
     await user.click(editor.querySelector('[data-link-href]')!);
     fireEvent.keyDown(screen.getByRole('dialog', { name: '链接选项' }), { key: 'Escape' });
 

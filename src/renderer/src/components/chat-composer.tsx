@@ -83,49 +83,48 @@ function linkMarkRange(view: EditorView, element: HTMLElement) {
   return ranges[index];
 }
 
-const autolinkPlugin = new Plugin({
-  appendTransaction(transactions, _oldState, state) {
-    if (!transactions.some(transaction => transaction.docChanged))
-      return null;
+let autolinkPastedText = false;
 
+const autolinkPlugin = new Plugin({
+  props: {
+    handleDOMEvents: {
+      paste() {
+        autolinkPastedText = true;
+        return false;
+      },
+    },
+    handleTextInput(view, from, to, text) {
+      if (text !== ' ' || from !== to || view.composing)
+        return false;
+      const $position = view.state.doc.resolve(from);
+      const previous = $position.nodeBefore;
+      if ($position.parent.type.spec.code || $position.textOffset > 0 || view.state.storedMarks != null || !previous?.isText || previous.marks.some(mark => mark.type === composerSchema.marks.link))
+        return false;
+      const word = previous.text?.slice((previous.text.lastIndexOf(' ') ?? -1) + 1);
+      const href = word == null ? undefined : validUrl(word);
+      if (!href)
+        return false;
+      const start = from - word.length;
+      view.dispatch(view.state.tr.addMark(start, start + href.length, composerSchema.marks.link.create({ href, autolink: true })).insertText(text, from, to));
+      return true;
+    },
+  },
+  appendTransaction(transactions, _oldState, state) {
+    if (!autolinkPastedText || !transactions.some(transaction => transaction.docChanged))
+      return null;
+    autolinkPastedText = false;
     const link = state.schema.marks.link;
-    const generated: { from: number; to: number; href: string }[] = [];
-    const links: { from: number; to: number; href: string }[] = [];
-    let text = '';
-    let start = 0;
-    let end = 0;
-    const flush = () => {
-      for (const match of text.matchAll(/https?:\/\/[^\s<>"'`]+/g)) {
+    const transaction = state.tr;
+    state.doc.descendants((node, pos) => {
+      if (!node.isText || node.text == null || node.marks.some(mark => mark.type === link && !mark.attrs.autolink))
+        return;
+      for (const match of node.text.matchAll(/https?:\/\/[^\s<>"'`]+/g)) {
         const href = validUrl(match[0]);
         if (href)
-          links.push({ from: start + (match.index ?? 0), to: start + (match.index ?? 0) + href.length, href });
+          transaction.addMark(pos + (match.index ?? 0), pos + (match.index ?? 0) + href.length, link.create({ href, autolink: true }));
       }
-      text = '';
-    };
-
-    state.doc.descendants((node, pos, parent) => {
-      if (!node.isText || node.text == null || parent?.type.spec.code || node.marks.some(mark => mark.type === state.schema.marks.code || (mark.type === link && !mark.attrs.autolink))) {
-        flush();
-        return;
-      }
-      node.marks
-        .filter(mark => mark.type === link && mark.attrs.autolink && typeof mark.attrs.href === 'string')
-        .forEach(mark => generated.push({ from: pos, to: pos + node.nodeSize, href: mark.attrs.href }));
-      if (text && pos !== end)
-        flush();
-      if (!text)
-        start = pos;
-      text += node.text;
-      end = pos + node.nodeSize;
     });
-    flush();
-
-    if (generated.length === links.length && generated.every((range, index) => range.from === links[index]?.from && range.to === links[index]?.to && range.href === links[index]?.href))
-      return null;
-    const transaction = state.tr;
-    generated.forEach(range => transaction.removeMark(range.from, range.to, link));
-    links.forEach(({ from, to, href }) => transaction.addMark(from, to, link.create({ href, autolink: true })));
-    return transaction;
+    return transaction.docChanged ? transaction : null;
   },
 });
 
