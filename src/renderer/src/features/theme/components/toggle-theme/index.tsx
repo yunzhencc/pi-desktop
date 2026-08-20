@@ -1,15 +1,15 @@
-import type { AppearanceTheme } from '@renderer/features/setting/appearance-settings';
+import type { AppearanceTheme } from '../../types';
+import { useTheme } from 'next-themes';
 import { useIntl } from 'react-intl';
-
-interface ToggleThemeProps {
-  onThemeChange: (theme: AppearanceTheme) => void;
-  theme: AppearanceTheme;
-}
+import { readAppearanceTheme } from '../../utils';
 
 const themeOptions: AppearanceTheme[] = ['system', 'light', 'dark'];
 
-export function ToggleTheme({ onThemeChange, theme }: ToggleThemeProps) {
+export function ToggleTheme() {
   const { formatMessage } = useIntl();
+  const { setTheme, theme } = useTheme();
+
+  const appearanceTheme = readAppearanceTheme(theme ?? 'system');
 
   return (
     <div aria-label={formatMessage({ id: 'settings.theme' })} className="settings-theme-options" role="radiogroup">
@@ -17,12 +17,12 @@ export function ToggleTheme({ onThemeChange, theme }: ToggleThemeProps) {
         <label className="settings-theme-option" key={value}>
           <input
             aria-label={formatMessage({ id: `appearance.${value}` })}
-            checked={theme === value}
+            checked={appearanceTheme === value}
             name="appearance-theme"
-            onChange={() => onThemeChange(value)}
+            onChange={() => setTheme(value)}
             type="radio"
           />
-          <ThemePreview mode={value} selected={theme === value} />
+          <ThemePreview mode={value} selected={appearanceTheme === value} />
           <span>{formatMessage({ id: `appearance.${value}` })}</span>
         </label>
       ))}

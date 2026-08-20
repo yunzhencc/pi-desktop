@@ -1,8 +1,8 @@
 import { useAppLocale } from '@renderer/features/i18n';
-import { GeneralSettingsView } from './settings-view';
+import { GeneralSettings } from './general';
 
 export function GeneralSettingsPage() {
   const { locale, setLocale } = useAppLocale();
 
-  return <GeneralSettingsView locale={locale} onLocaleChange={setLocale} />;
+  return <GeneralSettings locale={locale} onLocaleChange={setLocale} />;
 }

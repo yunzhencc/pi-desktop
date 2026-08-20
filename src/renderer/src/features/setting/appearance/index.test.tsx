@@ -4,10 +4,14 @@ import { messages } from '@renderer/features/i18n';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SettingsSidebar } from './components/sidebar';
-import { GeneralSettingsView, SettingsView } from './settings-view';
+import { SettingsSidebar } from '../components/sidebar';
+import { GeneralSettings } from '../general';
+import { AppearanceSettings } from './';
 
-const { hotkeys } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>() }));
+const { hotkeys, setTheme } = vi.hoisted(() => ({
+  hotkeys: new Map<string, () => void>(),
+  setTheme: vi.fn(),
+}));
 
 vi.mock('@tanstack/react-hotkeys', () => ({
   useHotkey: (key: string, handler: () => void) => hotkeys.set(key, handler),
@@ -25,15 +29,21 @@ vi.mock('@renderer/features/hotkeys', () => ({
   }),
 }));
 
+vi.mock('next-themes', () => ({
+  useTheme: () => ({
+    setTheme,
+    theme: 'system',
+  }),
+}));
+
 describe('settings view', () => {
   afterEach(() => {
     cleanup();
     hotkeys.clear();
+    setTheme.mockReset();
   });
 
   it('renders the settings copy in Chinese when the active locale is Chinese', () => {
-    const onThemeChange = vi.fn();
-
     render(
       <IntlProvider
         locale="zh-CN"
@@ -46,7 +56,7 @@ describe('settings view', () => {
           'settings.theme': '主题',
         }}
       >
-        <SettingsView onThemeChange={onThemeChange} theme="system" />
+        <AppearanceSettings />
       </IntlProvider>,
     );
 
@@ -55,7 +65,7 @@ describe('settings view', () => {
     expect(screen.queryByRole('radiogroup', { name: '语言' })).toBeNull();
 
     fireEvent.click(screen.getByLabelText('深色'));
-    expect(onThemeChange).toHaveBeenCalledWith('dark');
+    expect(setTheme).toHaveBeenCalledWith('dark');
   });
 
   it('opens an accessible language option list from General settings', () => {
@@ -76,7 +86,7 @@ describe('settings view', () => {
           'settings.theme': '主题',
         }}
       >
-        <GeneralSettingsView locale="zh-CN" onLocaleChange={onLocaleChange} />
+        <GeneralSettings locale="zh-CN" onLocaleChange={onLocaleChange} />
       </IntlProvider>,
     );
 

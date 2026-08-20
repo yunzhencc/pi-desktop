@@ -1,4 +1,4 @@
-export type AppearanceTheme = 'system' | 'light' | 'dark';
+import type { AppearanceTheme } from '../types';
 
 export function readAppearanceTheme(value: string | null): AppearanceTheme {
   return value === 'light' || value === 'dark' ? value : 'system';

@@ -1,6 +1,6 @@
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
 import * as React from 'react';
-import { readAppearanceTheme } from '../setting/appearance-settings';
+import { readAppearanceTheme } from './utils';
 
 interface ThemeProviderProps {
   children: React.ReactNode;

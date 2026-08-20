@@ -1,5 +1,4 @@
 import type { AppLocale } from '@renderer/features/i18n';
-import type { AppearanceTheme } from './appearance-settings';
 import {
   Select,
   SelectContent,
@@ -8,36 +7,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
-import { ToggleTheme } from '@renderer/features/theme';
 import { useIntl } from 'react-intl';
 
-interface SettingsViewProps {
-  onThemeChange: (theme: AppearanceTheme) => void;
-  theme: AppearanceTheme;
-}
-
-export function SettingsView({ onThemeChange, theme }: SettingsViewProps) {
-  const { formatMessage } = useIntl();
-
-  return (
-    <div className="settings-view">
-      <section className="settings-content" aria-labelledby="appearance-settings-title">
-        <h1 id="appearance-settings-title">{formatMessage({ id: 'settings.appearance' })}</h1>
-        <div className="settings-section">
-          <h2>{formatMessage({ id: 'settings.theme' })}</h2>
-          <ToggleTheme theme={theme} onThemeChange={onThemeChange} />
-        </div>
-      </section>
-    </div>
-  );
-}
-
-interface GeneralSettingsViewProps {
+interface GeneralSettingsProps {
   locale: AppLocale;
   onLocaleChange: (locale: AppLocale) => void;
 }
 
-export function GeneralSettingsView({ locale, onLocaleChange }: GeneralSettingsViewProps) {
+export function GeneralSettings({ locale, onLocaleChange }: GeneralSettingsProps) {
   const { formatMessage } = useIntl();
 
   return (

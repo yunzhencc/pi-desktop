@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readAppearanceTheme, resolveAppearanceTheme } from './appearance-settings';
+import { readAppearanceTheme, resolveAppearanceTheme } from './';
 
 describe('appearance theme', () => {
   it('accepts only Codex theme preferences', () => {

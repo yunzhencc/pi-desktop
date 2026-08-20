@@ -1,14 +1,7 @@
-import { useTheme } from 'next-themes';
-import { readAppearanceTheme } from './appearance-settings';
-import { SettingsView } from './settings-view';
+import { AppearanceSettings } from './appearance';
 
 export function AppearanceSettingsPage() {
-  const { setTheme, theme } = useTheme();
-
   return (
-    <SettingsView
-      onThemeChange={setTheme}
-      theme={readAppearanceTheme(theme ?? 'system')}
-    />
+    <AppearanceSettings />
   );
 }
