@@ -13,7 +13,7 @@ import { useShortcutSettings } from '@renderer/features/app/hotkeys';
 import { SettingsSidebar } from '@renderer/features/settings';
 import { WorkspaceSidebar } from '@renderer/features/workspace';
 import { useHotkeys } from '@tanstack/react-hotkeys';
-import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -33,11 +33,7 @@ import { readSidebarWidth } from './utils';
 const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
 
-interface BasicLayoutProps {
-  children?: React.ReactNode;
-}
-
-export function BasicLayout(props: BasicLayoutProps) {
+export function BasicLayout() {
   const { formatMessage } = useIntl();
   const navigate = useNavigate();
   const settingsPath = useRouterState({ select: state => state.location.pathname });
@@ -343,7 +339,7 @@ export function BasicLayout(props: BasicLayoutProps) {
         )}
       </aside>
       <main className="app-shell-main-surface min-w-0">
-        {props.children}
+        <Outlet />
       </main>
       <aside
         className="app-shell-right-panel relative shrink-0"

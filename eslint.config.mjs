@@ -16,6 +16,7 @@ export default antfu({
   typescript: true,
   ignores: [
     'packages/shadcn-ui/src',
+    'src/renderer/src/routeTree.gen.ts',
     'local-conversation-page-*.js',
     'thread-app-shell-chrome-*.js',
   ],
