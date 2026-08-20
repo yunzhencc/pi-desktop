@@ -6,7 +6,7 @@ import { messages } from '@renderer/features/app/i18n/locale';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { App } from './App';
+import { BasicLayout } from './basic';
 
 const { hotkeys, hotkeyOptions, navigate } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>(), hotkeyOptions: [] as Array<{ ignoreInputs?: boolean }>, navigate: vi.fn() }));
 
@@ -38,7 +38,7 @@ function renderApp(locale: keyof typeof messages = 'en') {
   return render(
     <IntlProvider locale={locale} messages={messages[locale]}>
       <ShortcutSettingsProvider>
-        <App />
+        <BasicLayout />
       </ShortcutSettingsProvider>
     </IntlProvider>,
   );
