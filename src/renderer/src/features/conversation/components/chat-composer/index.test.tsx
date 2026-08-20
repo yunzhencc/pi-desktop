@@ -4,7 +4,7 @@ import { I18nProvider } from '@renderer/features/app/i18n';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChatComposer, NewConversationToolbar } from './chat-composer';
+import { ChatComposer, NewConversationToolbar } from '.';
 
 const composer = {
   addDroppedAttachments: vi.fn(),

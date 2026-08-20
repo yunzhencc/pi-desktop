@@ -13,22 +13,26 @@ function render(ui: ReactElement) {
   return testingRender(<I18nProvider>{ui}</I18nProvider>);
 }
 
-vi.mock('@renderer/components/chat-composer', () => ({
-  ChatComposer: ({ inlineEdit, isRunning, onStop, onSubmitted }: { inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => void }; isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) => inlineEdit
-    ? (
-        <div>
-          <div aria-label="Edit message" role="textbox">{inlineEdit.initialText}</div>
-          <button aria-label="Cancel edit" onClick={inlineEdit.onCancel}>Cancel</button>
-          <button aria-label="Send edited message" onClick={() => inlineEdit.onSubmit('Build it differently')}>Send</button>
-        </div>
-      )
-    : (
-        <button aria-label={isRunning ? 'Stop generating' : 'Fake composer'} onClick={() => isRunning ? onStop() : onSubmitted('Build this')}>
-          {isRunning ? 'Stop' : 'Fake composer'}
-        </button>
-      ),
-  NewConversationToolbar: () => <div aria-label="新会话项目上下文" role="toolbar" />,
-}));
+vi.mock('./components', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./components')>();
+  return {
+    ...actual,
+    ChatComposer: ({ inlineEdit, isRunning, onStop, onSubmitted }: { inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => void }; isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) => inlineEdit
+      ? (
+          <div>
+            <div aria-label="Edit message" role="textbox">{inlineEdit.initialText}</div>
+            <button aria-label="Cancel edit" onClick={inlineEdit.onCancel}>Cancel</button>
+            <button aria-label="Send edited message" onClick={() => inlineEdit.onSubmit('Build it differently')}>Send</button>
+          </div>
+        )
+      : (
+          <button aria-label={isRunning ? 'Stop generating' : 'Fake composer'} onClick={() => isRunning ? onStop() : onSubmitted('Build this')}>
+            {isRunning ? 'Stop' : 'Fake composer'}
+          </button>
+        ),
+    NewConversationToolbar: () => <div aria-label="新会话项目上下文" role="toolbar" />,
+  };
+});
 
 beforeEach(() => {
   animationFrames = [];

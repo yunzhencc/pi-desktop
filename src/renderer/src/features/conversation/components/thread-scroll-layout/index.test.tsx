@@ -2,7 +2,7 @@
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ThreadScrollLayout } from './thread-scroll-layout';
+import { ThreadScrollLayout } from '.';
 
 function Transcript({ footer, turns }: { footer?: React.ReactNode; turns: { key: string }[] }) {
   return <ThreadScrollLayout footer={footer} turns={turns}>{turn => <article>{turn.key}</article>}</ThreadScrollLayout>;

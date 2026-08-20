@@ -10,7 +10,7 @@ import { EditorView } from 'prosemirror-view';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useIntl } from 'react-intl';
-import { ProjectPicker } from './project-picker';
+import { ProjectPicker } from '../project-picker';
 
 type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>['attachments'][number];
 type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;

@@ -8,14 +8,13 @@ import {
   moveAppHistory,
   pushAppHistory,
 } from '@renderer/components/app-history';
-import { getToolbarInset } from '@renderer/components/toolbar-inset';
 import { useShortcutSettings } from '@renderer/features/app/hotkeys';
 import { SettingsSidebar } from '@renderer/features/settings';
 import { WorkspaceSidebar } from '@renderer/features/workspace';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import {
   getExpandedRightPanelWidth,
@@ -28,7 +27,7 @@ import {
   writeRightPanelWidth,
 } from './components';
 import { Footer, SidebarResizeHandle } from './sidebar';
-import { readSidebarWidth } from './utils';
+import { getToolbarInset, readSidebarWidth } from './utils';
 
 const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
