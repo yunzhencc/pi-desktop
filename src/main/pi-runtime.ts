@@ -6,7 +6,7 @@ export type TranscriptUpdate
   = | { done?: boolean; entryId?: string; text: string; timestamp?: number; type: 'assistant' }
     | { text: string; type: 'error' }
     | { completedAtMs?: number; sessionPath?: string; startedAtMs?: number; status: 'running' | 'settled'; type: 'status'; workStatus?: WorkStatus }
-    | { sessionPath?: string; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string; type: 'tool' };
+    | { args?: unknown; output?: unknown; sessionPath?: string; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string; type: 'tool' };
 
 type WorkStatus = 'stopped' | 'worked';
 const workedForEntryType = 'pi-desktop-worked-for';
@@ -31,6 +31,7 @@ export interface PiSessionSummary {
 export interface PiSessionSnapshot {
   messages: Array<
     | { entryId: string; role: 'assistant' | 'user'; text: string; timestamp: number }
+    | { args?: unknown; output?: unknown; role: 'tool'; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string }
     | { completedAtMs: number; role: 'work'; startedAtMs: number; status: WorkStatus }
   >;
   path: string;
@@ -266,11 +267,11 @@ export class PiRuntime {
       return;
     }
     if (isToolExecutionStartEvent(event)) {
-      this.#emit({ ...this.#sessionMetadata(), status: 'running', toolCallId: event.toolCallId, toolName: event.toolName, type: 'tool' });
+      this.#emit({ args: event.args, ...this.#sessionMetadata(), status: 'running', toolCallId: event.toolCallId, toolName: event.toolName, type: 'tool' });
       return;
     }
     if (isToolExecutionEndEvent(event)) {
-      this.#emit({ ...this.#sessionMetadata(), status: event.isError ? 'failed' : 'completed', toolCallId: event.toolCallId, toolName: event.toolName, type: 'tool' });
+      this.#emit({ ...this.#sessionMetadata(), output: event.result, status: event.isError ? 'failed' : 'completed', toolCallId: event.toolCallId, toolName: event.toolName, type: 'tool' });
       return;
     }
     if (isAssistantTextDeltaEvent(event)) {
@@ -395,11 +396,11 @@ function isAssistantTextDeltaEvent(event: unknown): event is { assistantMessageE
     && typeof event.assistantMessageEvent.delta === 'string';
 }
 
-function isToolExecutionStartEvent(event: unknown): event is { toolCallId: string; toolName: string; type: 'tool_execution_start' } {
+function isToolExecutionStartEvent(event: unknown): event is { args: unknown; toolCallId: string; toolName: string; type: 'tool_execution_start' } {
   return isRecord(event) && event.type === 'tool_execution_start' && typeof event.toolCallId === 'string' && typeof event.toolName === 'string';
 }
 
-function isToolExecutionEndEvent(event: unknown): event is { isError: boolean; toolCallId: string; toolName: string; type: 'tool_execution_end' } {
+function isToolExecutionEndEvent(event: unknown): event is { isError: boolean; result: unknown; toolCallId: string; toolName: string; type: 'tool_execution_end' } {
   return isRecord(event) && event.type === 'tool_execution_end' && typeof event.toolCallId === 'string' && typeof event.toolName === 'string' && typeof event.isError === 'boolean';
 }
 
@@ -410,7 +411,11 @@ function isTextContent(content: unknown): content is { type: 'text'; text: strin
 function toPiSessionMessages(entries: unknown[]): PiSessionSnapshot['messages'] {
   const persistedWork = new Map<string, Extract<PiSessionSnapshot['messages'][number], { role: 'work' }>>();
   const unattachedWork: Extract<PiSessionSnapshot['messages'][number], { role: 'work' }>[] = [];
+  const toolResults = new Map<string, { output?: unknown; status: 'completed' | 'failed' }>();
   for (const entry of entries) {
+    const toolResult = toPiToolResult(entry);
+    if (toolResult != null)
+      toolResults.set(toolResult.toolCallId, toolResult);
     const work = toPiWorkDuration(entry);
     if (work == null)
       continue;
@@ -424,8 +429,9 @@ function toPiSessionMessages(entries: unknown[]): PiSessionSnapshot['messages'] 
   let latestUserTimestamp: number | undefined;
   return entries.flatMap((entry) => {
     const message = toPiSessionMessage(entry);
+    const tools = toPiToolCalls(entry, toolResults);
     if (message == null)
-      return [];
+      return tools;
     if (message.role === 'user') {
       latestUserTimestamp = message.timestamp;
       return [message];
@@ -434,7 +440,7 @@ function toPiSessionMessages(entries: unknown[]): PiSessionSnapshot['messages'] 
       ?? (latestUserTimestamp != null && latestUserTimestamp > 0 && message.timestamp > 0
         ? { completedAtMs: message.timestamp, role: 'work' as const, startedAtMs: latestUserTimestamp, status: 'worked' as const }
         : undefined);
-    return work ? [work, message] : [message];
+    return work ? [work, message, ...tools] : [message, ...tools];
   }).concat(unattachedWork);
 }
 
@@ -455,6 +461,36 @@ function toPiSessionMessage(entry: unknown): ({ entryId: string; role: 'assistan
     text,
     timestamp: typeof message.timestamp === 'number' ? message.timestamp : 0,
   };
+}
+
+function toPiToolCalls(entry: unknown, results: ReadonlyMap<string, { output?: unknown; status: 'completed' | 'failed' }>): Extract<PiSessionSnapshot['messages'][number], { role: 'tool' }>[] {
+  if (!isRecord(entry) || entry.type !== 'message' || !isRecord(entry.message) || entry.message.role !== 'assistant' || !Array.isArray(entry.message.content))
+    return [];
+  return entry.message.content.flatMap((content) => {
+    if (!isRecord(content) || content.type !== 'toolCall' || typeof content.id !== 'string' || typeof content.name !== 'string')
+      return [];
+    const result = results.get(content.id);
+    return [{
+      ...(Object.hasOwn(content, 'arguments') ? { args: content.arguments } : {}),
+      ...(result?.output === undefined ? {} : { output: result.output }),
+      role: 'tool' as const,
+      status: result?.status ?? 'running',
+      toolCallId: content.id,
+      toolName: content.name,
+    }];
+  });
+}
+
+function toPiToolResult(entry: unknown): { output?: unknown; status: 'completed' | 'failed'; toolCallId: string } | undefined {
+  if (!isRecord(entry) || entry.type !== 'message' || !isRecord(entry.message))
+    return undefined;
+  const { message } = entry;
+  if (message.role !== 'toolResult' || typeof message.toolCallId !== 'string')
+    return undefined;
+  const output = typeof message.content === 'string'
+    ? message.content
+    : Array.isArray(message.content) ? message.content.filter(isTextContent).map(content => content.text).join('') : message.details;
+  return { ...(output === undefined ? {} : { output }), status: message.isError === true ? 'failed' : 'completed', toolCallId: message.toolCallId };
 }
 
 function toPiWorkDuration(entry: unknown): (Extract<PiSessionSnapshot['messages'][number], { role: 'work' }> & { assistantEntryId?: string }) | undefined {

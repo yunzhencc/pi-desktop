@@ -951,6 +951,53 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   line-height: 20px;
 }
 
+.chat-tool-activity {
+  width: min(100%, 44rem);
+}
+
+.chat-tool-activity-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-tool-activity-header:disabled {
+  cursor: default;
+}
+
+.chat-tool-activity-header > span:last-child {
+  margin-left: auto;
+}
+
+.chat-tool-activity-details {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0 24px;
+  padding: 8px 10px;
+  overflow: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.chat-tool-activity-details code,
+.chat-tool-activity-details pre {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 .chat-worked-for {
   display: flex;
   width: 100%;

@@ -103,6 +103,26 @@ describe('pi runtime', () => {
     });
   });
 
+  it('restores tool commands and results from a persisted session', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-desktop-session-tools-'));
+    directories.push(root);
+    const workspace = join(root, 'workspace');
+    const agentDir = join(root, 'agent');
+    await mkdir(workspace);
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const sessionDir = join(agentDir, 'sessions', `--${workspace.slice(1).replace(/[/:]/g, '-')}--`);
+    const session = SessionManager.create(workspace, sessionDir);
+    await writeFile(session.getSessionFile()!, `${JSON.stringify(session.getHeader())}\n${JSON.stringify({ id: 'message-1', message: { content: 'Inspect this', role: 'user', timestamp: 1000 }, parentId: null, timestamp: new Date().toISOString(), type: 'message' })}\n${JSON.stringify({ id: 'message-2', message: { content: [{ arguments: { command: 'git status --short' }, id: 'tool-1', name: 'bash', type: 'toolCall' }], role: 'assistant', timestamp: 2000 }, parentId: 'message-1', timestamp: new Date().toISOString(), type: 'message' })}\n${JSON.stringify({ id: 'message-3', message: { content: [{ text: ' M src/main.ts', type: 'text' }], isError: false, role: 'toolResult', timestamp: 3000, toolCallId: 'tool-1', toolName: 'bash' }, parentId: 'message-2', timestamp: new Date().toISOString(), type: 'message' })}\n`);
+    const runtime = new PiRuntime(new AttachmentStore(), { agentDir });
+
+    await expect(runtime.openSession(session.getSessionFile()!)).resolves.toMatchObject({
+      messages: [
+        { role: 'user', text: 'Inspect this', timestamp: 1000 },
+        { args: { command: 'git status --short' }, output: ' M src/main.ts', role: 'tool', status: 'completed', toolCallId: 'tool-1', toolName: 'bash' },
+      ],
+    });
+  });
+
   it('forks a new persisted session at the selected assistant reply', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pi-desktop-session-fork-'));
     directories.push(root);
@@ -353,13 +373,13 @@ describe('pi runtime', () => {
     runtime.setWorkspace('/tmp/project');
 
     await runtime.send('Inspect the project', []);
-    listener?.({ args: {}, toolCallId: 'tool-1', toolName: 'read', type: 'tool_execution_start' });
-    listener?.({ isError: false, result: {}, toolCallId: 'tool-1', toolName: 'read', type: 'tool_execution_end' });
+    listener?.({ args: { path: 'README.md' }, toolCallId: 'tool-1', toolName: 'read', type: 'tool_execution_start' });
+    listener?.({ isError: false, result: { content: 'Hello' }, toolCallId: 'tool-1', toolName: 'read', type: 'tool_execution_end' });
 
     expect(update.mock.calls.map(([event]) => event)).toEqual([
       { sessionPath: '/sessions/active.jsonl', startedAtMs: expect.any(Number), status: 'running', type: 'status' },
-      { sessionPath: '/sessions/active.jsonl', status: 'running', toolCallId: 'tool-1', toolName: 'read', type: 'tool' },
-      { sessionPath: '/sessions/active.jsonl', status: 'completed', toolCallId: 'tool-1', toolName: 'read', type: 'tool' },
+      { args: { path: 'README.md' }, sessionPath: '/sessions/active.jsonl', status: 'running', toolCallId: 'tool-1', toolName: 'read', type: 'tool' },
+      { output: { content: 'Hello' }, sessionPath: '/sessions/active.jsonl', status: 'completed', toolCallId: 'tool-1', toolName: 'read', type: 'tool' },
     ]);
   });
 });

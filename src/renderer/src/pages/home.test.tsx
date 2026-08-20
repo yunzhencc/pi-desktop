@@ -277,14 +277,21 @@ describe('home page', () => {
     expect(screen.getByRole('log').textContent).toContain('Working');
   });
 
-  it('shows an in-progress tool before it produces an assistant reply', () => {
+  it('shows a running tool command and collapses its completed output', () => {
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     render(<HomePage />);
 
-    act(() => onUpdate.mock.calls[0]![0]({ sessionPath: '/sessions/active.jsonl', status: 'running', toolCallId: 'tool-1', toolName: 'read', type: 'tool' }));
+    act(() => onUpdate.mock.calls[0]![0]({ args: { command: 'git status --short' }, sessionPath: '/sessions/active.jsonl', status: 'running', toolCallId: 'tool-1', toolName: 'bash', type: 'tool' }));
 
-    expect(screen.getByRole('status', { name: '正在使用工具 read' })).not.toBeNull();
+    expect(screen.getByRole('status', { name: '正在使用工具 bash' })).not.toBeNull();
+    expect(screen.getByText('git status --short')).not.toBeNull();
+
+    act(() => onUpdate.mock.calls[0]![0]({ output: ' M src/main.ts', sessionPath: '/sessions/active.jsonl', status: 'completed', toolCallId: 'tool-1', toolName: 'bash', type: 'tool' }));
+
+    expect(screen.queryByText(' M src/main.ts')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '显示工具 bash 详情' }));
+    expect(screen.getByText((_, element) => element?.tagName === 'PRE' && element.textContent === ' M src/main.ts')).not.toBeNull();
   });
 
   it('keeps the composer inside the transcript scroll container', () => {

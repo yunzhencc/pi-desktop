@@ -16,9 +16,11 @@ interface Message {
   startedAtMs?: number;
   text: string;
   timestamp?: number;
+  toolArgs?: unknown;
   done?: boolean;
   toolCallId?: string;
   toolName?: string;
+  toolOutput?: unknown;
   toolStatus?: 'completed' | 'failed' | 'running';
   workStatus?: 'stopped' | 'worked';
 }
@@ -81,6 +83,10 @@ export function HomePage() {
       session.messages.forEach((message, index) => {
         if (message.role === 'work') {
           restored.push({ completedAtMs: message.completedAtMs, done: true, id: index, role: 'work', startedAtMs: message.startedAtMs, text: '', workStatus: message.status });
+          return;
+        }
+        if (message.role === 'tool') {
+          restored.push({ done: true, id: index, role: 'activity', text: message.toolName, toolArgs: message.args, toolCallId: message.toolCallId, toolName: message.toolName, toolOutput: message.output, toolStatus: message.status });
           return;
         }
         const timestamp = message.timestamp || undefined;
@@ -180,8 +186,10 @@ export function HomePage() {
             id: index < 0 ? Date.now() : current[index]!.id,
             role: 'activity',
             text: update.toolName,
+            toolArgs: update.args ?? (index < 0 ? undefined : current[index]!.toolArgs),
             toolCallId: update.toolCallId,
             toolName: update.toolName,
+            toolOutput: update.output ?? (index < 0 ? undefined : current[index]!.toolOutput),
             toolStatus: update.status,
           };
           return index < 0 ? [...current, message] : [...current.slice(0, index), message, ...current.slice(index + 1)];
@@ -306,7 +314,7 @@ export function HomePage() {
                                       )
                                 )
                               : message.role === 'activity'
-                                ? <ToolActivity name={message.toolName ?? message.text} status={message.toolStatus ?? 'running'} />
+                                ? <ToolActivity args={message.toolArgs} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />
                                 : message.text}
                         </article>
                       )}
@@ -326,17 +334,57 @@ export function HomePage() {
   );
 }
 
-function ToolActivity({ name, status }: { name: string; status: NonNullable<Message['toolStatus']> }) {
+function ToolActivity({ args, name, output, status }: { args?: unknown; name: string; output?: unknown; status: NonNullable<Message['toolStatus']> }) {
+  const [expanded, setExpanded] = useState(false);
   const label = status === 'running' ? `正在使用工具 ${name}` : status === 'completed' ? `已完成工具 ${name}` : `工具 ${name} 执行失败`;
+  const command = toolSummary(args);
+  const result = toolText(output);
+  const hasDetails = command != null || result != null;
+  const isExpanded = status === 'running' || expanded;
   return (
-    <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-message-activity" role={status === 'running' ? 'status' : undefined}>
-      {status === 'running' && <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} />}
-      <span>
-        {label}
-        {status === 'running' && '…'}
-      </span>
+    <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-tool-activity" role={status === 'running' ? 'status' : undefined}>
+      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="chat-tool-activity-header" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
+        {status === 'running' && <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} />}
+        <span>
+          {label}
+          {status === 'running' ? '…' : ''}
+        </span>
+        {hasDetails && status !== 'running' && <span aria-hidden="true">{isExpanded ? '⌃' : '⌄'}</span>}
+      </button>
+      {isExpanded && hasDetails && (
+        <div className="chat-tool-activity-details">
+          {command != null && <code>{command}</code>}
+          {result != null && <pre>{result}</pre>}
+        </div>
+      )}
     </div>
   );
+}
+
+function toolSummary(args: unknown): string | undefined {
+  if (args == null)
+    return undefined;
+  if (typeof args === 'object' && !Array.isArray(args)) {
+    const { command, path } = args as Record<string, unknown>;
+    if (typeof command === 'string')
+      return command;
+    if (typeof path === 'string')
+      return path;
+  }
+  return toolText(args);
+}
+
+function toolText(value: unknown): string | undefined {
+  if (value == null)
+    return undefined;
+  if (typeof value === 'string')
+    return value;
+  try {
+    return JSON.stringify(value, null, 2);
+  }
+  catch {
+    return String(value);
+  }
 }
 
 function WorkedFor({ completedAtMs, done, startedAtMs, status }: Pick<Message, 'completedAtMs' | 'done' | 'startedAtMs' | 'workStatus'> & { status?: 'stopped' | 'worked' }) {
