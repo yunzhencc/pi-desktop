@@ -67,6 +67,21 @@ export class WorkspaceRegistry {
     return this.snapshot();
   }
 
+  async activate(path: string): Promise<WorkspaceSnapshot> {
+    if (!(await isDirectory(path)))
+      throw new Error('工作区不存在或不可访问');
+
+    const existing = this.#snapshot.workspaces.find(workspace => workspace.path === path);
+    const next = { displayName: existing?.displayName ?? (basename(path) || path), lastOpenedAt: new Date().toISOString(), path };
+    this.#snapshot = {
+      ...this.#snapshot,
+      selectedWorkspacePath: path,
+      workspaces: existing ? this.#snapshot.workspaces.map(workspace => workspace.path === path ? next : workspace) : [...this.#snapshot.workspaces, next],
+    };
+    await this.#write();
+    return this.snapshot();
+  }
+
   async create(path: string, displayName: string): Promise<WorkspaceSnapshot> {
     const name = displayName.trim() || basename(path) || path;
     if (!(await isDirectory(path)))

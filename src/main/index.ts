@@ -194,6 +194,11 @@ app.whenReady().then(async () => {
     piRuntime.setWorkspace(snapshot.selectedWorkspacePath!);
     return snapshot;
   };
+  const activateWorkspace = async (path: string) => {
+    const snapshot = await workspaceRegistry.activate(path);
+    piRuntime.setWorkspace(snapshot.selectedWorkspacePath!);
+    return snapshot;
+  };
   ipcMain.handle('workspaces:get', () => workspaceRegistry.snapshot());
   ipcMain.handle('workspaces:set-pinned', (_event, workspacePath: unknown, pinned: unknown, beforeWorkspacePath: unknown) => {
     if (typeof workspacePath !== 'string' || !workspacePath.trim() || typeof pinned !== 'boolean' || (beforeWorkspacePath !== undefined && typeof beforeWorkspacePath !== 'string'))
@@ -221,7 +226,7 @@ app.whenReady().then(async () => {
     const sessions = await piRuntime.listWorkspaceSessions(workspacePath);
     if (!sessions.some(session => session.path === sessionPath))
       throw new TypeError('会话不属于该工作区');
-    const snapshot = await selectWorkspace(workspacePath);
+    const snapshot = await activateWorkspace(workspacePath);
     return { session: await piRuntime.openSession(sessionPath), workspace: snapshot };
   });
   ipcMain.handle('sessions:set-pinned', async (_event, workspacePath: unknown, sessionPath: unknown, pinned: unknown, beforeSessionPath: unknown) => {

@@ -108,6 +108,27 @@ describe('workspace registry', () => {
     await expect(new WorkspaceRegistry(path).load()).resolves.toEqual(cleared);
   });
 
+  it('activates a project without changing the persisted project order', async () => {
+    const path = await registryPath();
+    const first = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
+    const second = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
+    directories.push(first, second);
+    await Promise.all([mkdir(first), mkdir(second)]);
+    const registry = new WorkspaceRegistry(path);
+
+    await registry.load();
+    await registry.create(first, 'first');
+    await registry.create(second, 'second');
+    const order = registry.snapshot().workspaces.map(workspace => workspace.path);
+
+    await expect(registry.activate(first)).resolves.toMatchObject({ selectedWorkspacePath: first });
+    expect(registry.snapshot().workspaces.map(workspace => workspace.path)).toEqual(order);
+    await expect(new WorkspaceRegistry(path).load()).resolves.toMatchObject({
+      selectedWorkspacePath: first,
+      workspaces: order.map(path => expect.objectContaining({ path })),
+    });
+  });
+
   it('persists pinned sessions in their requested order', async () => {
     const path = await registryPath();
     const project = join(tmpdir(), `pi-desktop-project-${crypto.randomUUID()}`);
