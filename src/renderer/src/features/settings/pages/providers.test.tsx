@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DeepSeekSettingsView } from './deepseek-settings-page';
+import { DeepSeekSettingsView } from './providers';
 
 describe('deepSeekSettingsView', () => {
   afterEach(cleanup);

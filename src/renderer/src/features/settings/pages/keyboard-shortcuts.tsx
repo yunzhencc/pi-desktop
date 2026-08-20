@@ -1,5 +1,5 @@
 import { useShortcutSettings } from '@renderer/features/app/hotkeys';
-import { KeyboardShortcutsView } from './keyboard-shortcuts-settings';
+import { KeyboardShortcutsView } from '../keyboard-shortcuts-settings';
 
 export function KeyboardShortcutsPage() {
   const { appendShortcut, bindings, removeShortcut, resetAllShortcuts, resetShortcut, updateShortcut } = useShortcutSettings();

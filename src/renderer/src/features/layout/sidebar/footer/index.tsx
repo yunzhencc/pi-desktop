@@ -14,7 +14,7 @@ export function Footer() {
       }}
     >
       <Button variant="ghost" size="sm">
-        <Link to="/settings/appearance">
+        <Link to="/settings/general">
           <Settings />
         </Link>
       </Button>

@@ -79,7 +79,7 @@ export function DeepSeekSettingsView({ configured, model: initialModel, onSave }
   );
 }
 
-export function DeepSeekSettingsPage() {
+export function ProvidersPage() {
   const [settings, setSettings] = useState({ configured: false, model: 'deepseek-v4-flash' as DeepSeekModel });
 
   useEffect(() => {
