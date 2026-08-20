@@ -1,4 +1,4 @@
-import { useShortcutSettings } from '../shortcuts/shortcut-context';
+import { useShortcutSettings } from '@renderer/features/hotkeys';
 import { KeyboardShortcutsView } from './keyboard-shortcuts-settings';
 
 export function KeyboardShortcutsPage() {

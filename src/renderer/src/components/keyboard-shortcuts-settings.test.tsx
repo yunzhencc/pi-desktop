@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
+import { getDefaultShortcutBindings } from '@renderer/features/hotkeys';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getDefaultShortcutBindings } from '../shortcuts/shortcut-settings';
 import { KeyboardShortcutsView } from './keyboard-shortcuts-settings';
 
 const messages = {

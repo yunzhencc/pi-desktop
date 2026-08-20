@@ -9,11 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
+import { useShortcutSettings } from '@renderer/features/hotkeys';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { ArrowLeft, Bot, Keyboard, Search, Settings, Sun, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useShortcutSettings } from '../shortcuts/shortcut-context';
 
 interface SettingsViewProps {
   onThemeChange: (theme: AppearanceTheme) => void;

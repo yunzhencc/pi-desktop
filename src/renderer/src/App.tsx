@@ -1,5 +1,6 @@
 import type { WorkspaceSnapshot } from '../../main/workspaces';
 import type { AppHistory, AppLocation } from './components/app-history';
+import { useShortcutSettings } from '@renderer/features/hotkeys';
 import { Footer } from '@renderer/features/layout';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
@@ -31,16 +32,11 @@ import { SidebarResizeHandle } from './components/sidebar-resize-handle';
 import { SidebarToggle } from './components/sidebar-toggle';
 import { getToolbarInset } from './components/toolbar-inset';
 import { WorkspaceSidebar } from './components/workspace-sidebar';
-import { ShortcutSettingsProvider, useShortcutSettings } from './shortcuts/shortcut-context';
 
 const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
 
 export function App() {
-  return <ShortcutSettingsProvider><AppShell /></ShortcutSettingsProvider>;
-}
-
-function AppShell() {
   const { formatMessage } = useIntl();
   const navigate = useNavigate();
   const settingsPath = useRouterState({ select: state => state.location.pathname });

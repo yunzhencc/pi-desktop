@@ -1,3 +1,4 @@
+import { ShortcutSettingsProvider } from '@renderer/features/hotkeys';
 import { I18nProvider } from '@renderer/features/i18n';
 import { ThemeProvider } from '@renderer/features/theme';
 import { RouterProvider } from '@tanstack/react-router';
@@ -12,7 +13,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nProvider>
       <ThemeProvider>
-        <RouterProvider router={router} />
+        <ShortcutSettingsProvider>
+          <RouterProvider router={router} />
+        </ShortcutSettingsProvider>
       </ThemeProvider>
     </I18nProvider>
   </StrictMode>,

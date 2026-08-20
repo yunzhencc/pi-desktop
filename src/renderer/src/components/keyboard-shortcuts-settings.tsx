@@ -1,15 +1,15 @@
-import type { ShortcutBindings, ShortcutId } from '../shortcuts/shortcut-settings';
+import type { ShortcutBindings, ShortcutId } from '@renderer/features/hotkeys';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
-import { formatForDisplay, hasNonModifierKey, normalizeHotkey, normalizeHotkeyFromEvent, useHotkeyRecorder } from '@tanstack/react-hotkeys';
-import { Keyboard, Search } from 'lucide-react';
-import { useState } from 'react';
-import { useIntl } from 'react-intl';
 import {
   findShortcutConflict,
   hasCustomShortcutBindings,
   isShortcutAllowed,
   shortcutDefinitions,
-} from '../shortcuts/shortcut-settings';
+} from '@renderer/features/hotkeys';
+import { formatForDisplay, hasNonModifierKey, normalizeHotkey, normalizeHotkeyFromEvent, useHotkeyRecorder } from '@tanstack/react-hotkeys';
+import { Keyboard, Search } from 'lucide-react';
+import { useState } from 'react';
+import { useIntl } from 'react-intl';
 
 interface KeyboardShortcutsViewProps {
   bindings: ShortcutBindings;

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import type { ReactNode } from 'react';
+import { ShortcutSettingsProvider } from '@renderer/features/hotkeys';
 import { messages } from '@renderer/features/i18n/locale';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
@@ -32,6 +33,16 @@ function getSessionItem(name: string) {
 type OpaqueSurfaceListener = (opaque: boolean) => void;
 
 let opaqueSurfaceListener: OpaqueSurfaceListener | undefined;
+
+function renderApp(locale: keyof typeof messages = 'en') {
+  return render(
+    <IntlProvider locale={locale} messages={messages[locale]}>
+      <ShortcutSettingsProvider>
+        <App />
+      </ShortcutSettingsProvider>
+    </IntlProvider>,
+  );
+}
 
 describe('app window surface', () => {
   beforeEach(() => {
@@ -79,14 +90,7 @@ describe('app window surface', () => {
   });
 
   it('uses an opaque document surface while the macOS window is unfocused', async () => {
-    render(
-      <IntlProvider
-        locale="en"
-        messages={messages.en}
-      >
-        <App />
-      </IntlProvider>,
-    );
+    renderApp('en');
 
     await waitFor(() => expect(opaqueSurfaceListener).toBeDefined());
 
@@ -98,28 +102,14 @@ describe('app window surface', () => {
   });
 
   it('shows Codex’s new-conversation controls outside settings', () => {
-    render(
-      <IntlProvider
-        locale="zh-CN"
-        messages={messages['zh-CN']}
-      >
-        <App />
-      </IntlProvider>,
-    );
+    renderApp('zh-CN');
 
     expect(screen.getByRole('button', { name: '新对话' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '快速聊天' })).toBeTruthy();
   });
 
   it('shows disabled application-history controls before any navigation', () => {
-    render(
-      <IntlProvider
-        locale="zh-CN"
-        messages={messages['zh-CN']}
-      >
-        <App />
-      </IntlProvider>,
-    );
+    renderApp('zh-CN');
 
     expect(screen.getByRole('button', { name: '后退' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: '前进' }).hasAttribute('disabled')).toBe(true);
@@ -137,11 +127,7 @@ describe('app window surface', () => {
     const onSessionChanged = (event: Event) => openedSessions.push((event as CustomEvent<{ path: string }>).detail.path);
     window.addEventListener('session-changed', onSessionChanged);
 
-    render(
-      <IntlProvider locale="en" messages={messages.en}>
-        <App />
-      </IntlProvider>,
-    );
+    renderApp('en');
 
     await screen.findByRole('button', { name: 'First' });
     fireEvent.click(getSessionItem('First'));
@@ -154,11 +140,7 @@ describe('app window surface', () => {
   });
 
   it('shows projects and an add-project entry in the sidebar', async () => {
-    render(
-      <IntlProvider locale="en" messages={messages.en}>
-        <App />
-      </IntlProvider>,
-    );
+    renderApp('en');
 
     await waitFor(() => expect(screen.getByText('weather')).toBeTruthy());
     expect(screen.getByRole('button', { name: 'Add project' })).toBeTruthy();
@@ -172,11 +154,7 @@ describe('app window surface', () => {
       return Promise.resolve();
     });
 
-    render(
-      <IntlProvider locale="en" messages={messages.en}>
-        <App />
-      </IntlProvider>,
-    );
+    renderApp('en');
     fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
 
     await waitFor(() => expect(onNewConversation).toHaveBeenCalledOnce());
@@ -184,11 +162,7 @@ describe('app window surface', () => {
   });
 
   it('opens settings with Codex’s shortcut', () => {
-    render(
-      <IntlProvider locale="en" messages={messages.en}>
-        <App />
-      </IntlProvider>,
-    );
+    renderApp('en');
 
     hotkeys.get('Mod+,')?.();
     expect(navigate).toHaveBeenCalledWith({ to: '/settings/general' });
@@ -200,11 +174,7 @@ describe('app window surface', () => {
     window.api.sessions.list = () => Promise.resolve([session]);
     window.api.sessions.open = open;
     window.api.sessions.setPinned = vi.fn(() => Promise.resolve({ pinnedSessionPaths: [session.path], workspaces: [] }));
-    render(
-      <IntlProvider locale="en" messages={messages.en}>
-        <App />
-      </IntlProvider>,
-    );
+    renderApp('en');
 
     await screen.findByRole('button', { name: 'Forecast' });
     fireEvent.click(getSessionItem('Forecast'));
@@ -215,11 +185,7 @@ describe('app window surface', () => {
   });
 
   it('does not register global shortcuts for focused inputs', () => {
-    render(
-      <IntlProvider locale="en" messages={messages.en}>
-        <App />
-      </IntlProvider>,
-    );
+    renderApp('en');
 
     expect(hotkeyOptions[0]).toMatchObject({ ignoreInputs: true });
   });
