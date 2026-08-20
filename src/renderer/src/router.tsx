@@ -1,11 +1,11 @@
 import type { RouterHistory } from '@tanstack/react-router';
+import { HomePage } from '@renderer/features/home';
 import { AppearanceSettingsPage } from '@renderer/features/setting/appearance-settings-page';
 import { DeepSeekSettingsPage } from '@renderer/features/setting/deepseek-settings-page';
 import { GeneralSettingsPage } from '@renderer/features/setting/general-settings-page';
 import { KeyboardShortcutsPage } from '@renderer/features/setting/keyboard-shortcuts-page';
 import { createHashHistory, createMemoryHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 import { App } from './App';
-import { HomePage } from './pages/home';
 
 export const settingsAppearancePath = '/settings/appearance';
 export const settingsGeneralPath = '/settings/general';

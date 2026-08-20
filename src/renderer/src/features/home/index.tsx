@@ -1,12 +1,12 @@
 import type { CSSProperties } from 'react';
 import logo from '@renderer/assets/icon.svg';
+import { ChatComposer, NewConversationToolbar } from '@renderer/components/chat-composer';
+import { MarkdownMessage } from '@renderer/components/markdown-message';
+import { ProjectPicker } from '@renderer/components/project-picker';
+import { ThreadScrollLayout } from '@renderer/components/thread-scroll-layout';
 import { Copy, GitFork, LoaderCircle, Pencil } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { ChatComposer, NewConversationToolbar } from '../components/chat-composer';
-import { MarkdownMessage } from '../components/markdown-message';
-import { ProjectPicker } from '../components/project-picker';
-import { ThreadScrollLayout } from '../components/thread-scroll-layout';
 
 interface Message {
   completedAtMs?: number;

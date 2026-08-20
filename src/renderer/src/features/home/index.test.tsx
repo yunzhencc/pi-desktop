@@ -4,7 +4,7 @@ import type { ReactElement } from 'react';
 import { I18nProvider } from '@renderer/features/i18n';
 import { act, cleanup, fireEvent, screen, render as testingRender, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HomePage } from './home';
+import { HomePage } from './';
 
 let animationFrames: FrameRequestCallback[];
 let workspaces: { get: ReturnType<typeof vi.fn>; pick: ReturnType<typeof vi.fn>; select: ReturnType<typeof vi.fn> };
@@ -13,7 +13,7 @@ function render(ui: ReactElement) {
   return testingRender(<I18nProvider>{ui}</I18nProvider>);
 }
 
-vi.mock('../components/chat-composer', () => ({
+vi.mock('@renderer/components/chat-composer', () => ({
   ChatComposer: ({ inlineEdit, isRunning, onStop, onSubmitted }: { inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => void }; isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) => inlineEdit
     ? (
         <div>
