@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { messages } from '@renderer/features/i18n/locale';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
-import { messages } from './providers/i18n/locale';
 
 const { hotkeys, hotkeyOptions, navigate } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>(), hotkeyOptions: [] as Array<{ ignoreInputs?: boolean }>, navigate: vi.fn() }));
 
@@ -15,10 +16,18 @@ vi.mock('@tanstack/react-hotkeys', () => ({
   },
 }));
 vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
   Outlet: () => null,
   useNavigate: () => navigate,
   useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => string }) => select({ location: { pathname: '/' } }),
 }));
+
+function getSessionItem(name: string) {
+  const item = screen.getByText(name).closest('[data-slot="item"]');
+  if (!(item instanceof HTMLElement))
+    throw new Error(`Session item not found: ${name}`);
+  return item;
+}
 
 type OpaqueSurfaceListener = (opaque: boolean) => void;
 
@@ -135,8 +144,8 @@ describe('app window surface', () => {
     );
 
     await screen.findByRole('button', { name: 'First' });
-    screen.getByRole('button', { name: 'First' }).click();
-    screen.getByRole('button', { name: 'Second' }).click();
+    fireEvent.click(getSessionItem('First'));
+    fireEvent.click(getSessionItem('Second'));
     await act(async () => second.resolve({ session: { messages: [], path: '/sessions/second.jsonl' }, workspace: { pinnedSessionPaths: [], workspaces: [] } }));
     await act(async () => first.resolve({ session: { messages: [], path: '/sessions/first.jsonl' }, workspace: { pinnedSessionPaths: [], workspaces: [] } }));
 
@@ -168,7 +177,7 @@ describe('app window surface', () => {
         <App />
       </IntlProvider>,
     );
-    screen.getByRole('button', { name: 'New chat' }).click();
+    fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
 
     await waitFor(() => expect(onNewConversation).toHaveBeenCalledOnce());
     window.removeEventListener('new-conversation', onNewConversation);
@@ -198,7 +207,7 @@ describe('app window surface', () => {
     );
 
     await screen.findByRole('button', { name: 'Forecast' });
-    screen.getByRole('button', { name: 'Forecast' }).click();
+    fireEvent.click(getSessionItem('Forecast'));
     await waitFor(() => expect(open).toHaveBeenCalled());
     hotkeys.get('Mod+Shift+P')?.();
 

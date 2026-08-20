@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
+import { I18nProvider } from '@renderer/features/i18n';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { I18nProvider } from '../providers/i18n';
 import { WorkspaceSidebar } from './workspace-sidebar';
 
 const weather = { displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' };

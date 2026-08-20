@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
 import type { ReactElement } from 'react';
+import { I18nProvider } from '@renderer/features/i18n';
 import { act, cleanup, fireEvent, screen, render as testingRender, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { I18nProvider } from '../providers/i18n';
 import { HomePage } from './home';
 
 let animationFrames: FrameRequestCallback[];

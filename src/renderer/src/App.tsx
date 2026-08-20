@@ -219,7 +219,7 @@ function AppShell() {
 
   return (
     <div className="app-shell relative flex h-svh min-h-0 overflow-hidden bg-transparent" data-resizing={isResizing}>
-      <header className="app-shell-header draggable absolute inset-x-0 top-0 z-30 flex h-[46px]">
+      <header className="app-shell-header draggable absolute inset-x-0 top-0 z-30 flex h-11.5">
         <div
           className="app-shell-toolbar app-shell-header-left flex shrink-0 items-center"
           style={{

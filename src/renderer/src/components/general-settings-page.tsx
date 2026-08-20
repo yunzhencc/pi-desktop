@@ -1,4 +1,4 @@
-import { useAppLocale } from '../providers/i18n';
+import { useAppLocale } from '@renderer/features/i18n';
 import { GeneralSettingsView } from './settings-view';
 
 export function GeneralSettingsPage() {

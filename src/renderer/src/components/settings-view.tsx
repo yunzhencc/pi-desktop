@@ -1,4 +1,4 @@
-import type { AppLocale } from '../providers/i18n';
+import type { AppLocale } from '@renderer/features/i18n';
 import type { AppearanceTheme } from './appearance-settings';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
 import {

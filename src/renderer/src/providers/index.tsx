@@ -1,5 +1,5 @@
+import { I18nProvider } from '@renderer/features/i18n';
 import React from 'react';
-import { I18nProvider } from './i18n';
 import { ThemeProvider } from './theme';
 
 interface ProvidersProps {
