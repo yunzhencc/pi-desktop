@@ -1,0 +1,19 @@
+{
+  "name": "@pi-desktop/components",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./components/*": "./src/components/*.tsx"
+  },
+  "dependencies": {
+    "@pi-desktop/shadcn-ui": "workspace:*",
+    "prosemirror-commands": "catalog:core",
+    "prosemirror-history": "catalog:core",
+    "prosemirror-keymap": "catalog:core",
+    "prosemirror-model": "catalog:core",
+    "prosemirror-schema-basic": "catalog:core",
+    "prosemirror-state": "catalog:core",
+    "prosemirror-view": "catalog:core"
+  }
+}
