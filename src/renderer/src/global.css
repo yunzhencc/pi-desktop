@@ -679,14 +679,16 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   display: grid;
   place-items: center;
   padding: 16px;
-  background: color-mix(in srgb, #000 13%, transparent);
+  background: color-mix(in srgb, #000 24%, transparent);
 }
 
 .project-dialog {
-  width: min(520px, 92vw);
+  width: min(448px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   padding: 20px;
   border: 0.5px solid var(--border-subtle);
-  border-radius: 24px;
+  border-radius: 16px;
   background: var(--surface);
   box-shadow: 0 8px 24px color-mix(in srgb, #000 20%, transparent);
 }
@@ -705,9 +707,8 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .project-dialog-header h2 {
   margin: 0;
   color: var(--foreground);
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.04em;
+  font-size: 18px;
+  font-weight: 400;
 }
 
 .project-dialog-header button,
@@ -790,6 +791,15 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   font-size: 14px;
 }
 
+.project-dialog-source.has-source {
+  flex-direction: row;
+  justify-content: flex-start;
+  min-height: 48px;
+  gap: 8px;
+  padding: 0 12px;
+  text-align: start;
+}
+
 .project-dialog-source svg {
   width: 16px;
   height: 16px;
@@ -800,6 +810,13 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 .project-dialog-header button:hover,
 .project-dialog-header button:focus-visible {
   background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+.project-dialog-source:disabled,
+.project-dialog-header button:disabled,
+.project-dialog-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .project-dialog-source span {
@@ -834,10 +851,6 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   color: var(--background);
 }
 
-.project-dialog-actions button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
 
 .chat-message {
   width: fit-content;

@@ -68,9 +68,7 @@ export class WorkspaceRegistry {
   }
 
   async create(path: string, displayName: string): Promise<WorkspaceSnapshot> {
-    const name = displayName.trim();
-    if (!name)
-      throw new Error('项目名称不能为空');
+    const name = displayName.trim() || basename(path) || path;
     if (!(await isDirectory(path)))
       throw new Error('工作区不存在或不可访问');
 

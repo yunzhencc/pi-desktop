@@ -240,7 +240,7 @@ app.whenReady().then(async () => {
     return result.canceled ? undefined : result.filePaths[0];
   });
   ipcMain.handle('workspaces:create', async (_event, name: unknown, path: unknown) => {
-    if (typeof name !== 'string' || !name.trim() || typeof path !== 'string' || !path.trim())
+    if (typeof name !== 'string' || typeof path !== 'string' || !path.trim())
       throw new TypeError('无效的项目');
     const snapshot = await workspaceRegistry.create(path, name);
     piRuntime.setWorkspace(snapshot.selectedWorkspacePath!);

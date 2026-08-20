@@ -260,6 +260,22 @@ describe('workspace sidebar', () => {
     await waitFor(() => expect(window.api.workspaces.create).toHaveBeenCalledWith('天气助手', '/projects/weather'));
   });
 
+  it('creates a project without requiring a project name', async () => {
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: '添加项目' }));
+    fireEvent.click(screen.getByRole('button', { name: '添加 Codex 可读取和编辑的文件夹' }));
+    await waitFor(() => expect(window.api.workspaces.pickDirectory).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole('button', { name: '创建项目' }));
+
+    await waitFor(() => expect(window.api.workspaces.create).toHaveBeenCalledWith('', '/projects/weather'));
+  });
+
   it('opens project creation when requested by the composer', async () => {
     render(
       <I18nProvider>
@@ -271,5 +287,47 @@ describe('workspace sidebar', () => {
     fireEvent(window, new Event('create-project'));
 
     expect(screen.getByRole('dialog', { name: '创建项目' })).not.toBeNull();
+  });
+
+  it('closes the create-project dialog from Escape or its backdrop', async () => {
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: '添加项目' }));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: '创建项目' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '添加项目' }));
+    fireEvent.mouseDown(screen.getByRole('dialog', { name: '创建项目' }).parentElement!);
+    expect(screen.queryByRole('dialog', { name: '创建项目' })).toBeNull();
+  });
+
+  it('keeps the create-project dialog open while the project is saving', async () => {
+    let finishCreate: (workspace: Awaited<ReturnType<Window['api']['workspaces']['create']>>) => void;
+    window.api.workspaces.create.mockImplementationOnce(() => new Promise((resolve) => {
+      finishCreate = resolve;
+    }));
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: '添加项目' }));
+    fireEvent.click(screen.getByRole('button', { name: '添加 Codex 可读取和编辑的文件夹' }));
+    await waitFor(() => expect(window.api.workspaces.pickDirectory).toHaveBeenCalledOnce());
+    fireEvent.change(screen.getByRole('textbox', { name: '项目名称' }), { target: { value: '天气助手' } });
+    fireEvent.click(screen.getByRole('button', { name: '创建项目' }));
+
+    expect(screen.getByRole('button', { name: '关闭' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: '创建项目' })).not.toBeNull();
+
+    await act(async () => finishCreate!({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather] }));
   });
 });

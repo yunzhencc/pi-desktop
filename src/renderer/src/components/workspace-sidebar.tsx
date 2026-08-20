@@ -1,6 +1,6 @@
 import type { DragEvent, FormEvent, SVGProps } from 'react';
 import { Folder, FolderPlus, LoaderCircle, Pin, PinOff, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
@@ -304,19 +304,47 @@ export function CreateProjectDialog({ onClose, onCreated }: { onClose: () => voi
   const [sourcePath, setSourcePath] = useState<string>();
   const [error, setError] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+
+  isSubmittingRef.current = isSubmitting;
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+    const dismiss = () => {
+      if (!isSubmittingRef.current)
+        onCloseRef.current();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        dismiss();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, []);
 
   const pickDirectory = async () => {
+    if (isSubmitting)
+      return;
     const path = await window.api.workspaces.pickDirectory();
-    if (path)
+    if (path) {
       setSourcePath(path);
+      setError(undefined);
+    }
   };
 
   const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting)
       return;
-    if (!name.trim() || !sourcePath) {
-      setError('请填写项目名称并添加源文件夹');
+    if (!sourcePath) {
+      setError('请添加源文件夹');
       return;
     }
     setIsSubmitting(true);
@@ -334,24 +362,33 @@ export function CreateProjectDialog({ onClose, onCreated }: { onClose: () => voi
   };
 
   return (
-    <div className="project-dialog-backdrop" role="presentation">
+    <div className="project-dialog-backdrop" onMouseDown={event => event.target === event.currentTarget && !isSubmitting && onClose()} role="presentation">
       <form aria-labelledby="create-project-title" aria-modal="true" className="project-dialog" onSubmit={event => void create(event)} role="dialog">
         <div className="project-dialog-header">
           <h2 id="create-project-title">创建项目</h2>
-          <button aria-label="关闭" onClick={onClose} type="button"><X aria-hidden="true" size={22} /></button>
+          <button aria-label="关闭" disabled={isSubmitting} onClick={onClose} type="button"><X aria-hidden="true" size={22} /></button>
         </div>
         <label className="project-dialog-name">
           <Folder aria-hidden="true" size={24} />
-          <input aria-label="项目名称" autoFocus onChange={event => setName(event.target.value)} placeholder="项目名称" value={name} />
+          <input
+            aria-label="项目名称"
+            autoFocus
+            onChange={(event) => {
+              setName(event.target.value);
+              setError(undefined);
+            }}
+            placeholder="项目名称"
+            value={name}
+          />
         </label>
         <span className="project-dialog-label">源文件夹</span>
-        <button className="project-dialog-source" onClick={() => void pickDirectory()} type="button">
-          <FolderPlus aria-hidden="true" size={28} />
+        <button className={`project-dialog-source${sourcePath ? ' has-source' : ''}`} disabled={isSubmitting} onClick={() => void pickDirectory()} type="button">
+          {sourcePath ? <Folder aria-hidden="true" size={20} /> : <FolderPlus aria-hidden="true" size={28} />}
           <span>{sourcePath ?? '添加 Codex 可读取和编辑的文件夹'}</span>
         </button>
         {error && <p className="project-dialog-error" role="alert">{error}</p>}
         <div className="project-dialog-actions">
-          <button onClick={onClose} type="button">取消</button>
+          <button disabled={isSubmitting} onClick={onClose} type="button">取消</button>
           <button disabled={isSubmitting} type="submit">{isSubmitting ? '创建中…' : '创建项目'}</button>
         </div>
       </form>
