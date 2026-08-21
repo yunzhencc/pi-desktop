@@ -10,6 +10,7 @@ import {
   ProjectPicker,
   ThreadScrollLayout,
 } from './components';
+import './style.css';
 
 interface Message {
   completedAtMs?: number;
