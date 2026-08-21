@@ -42,8 +42,8 @@ export function ToolActivity({ args, name, output, status }: ToolActivityProps) 
   const hasDetails = command != null || result != null;
   const isExpanded = status === 'running' || expanded;
   return (
-    <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-tool-activity" role={status === 'running' ? 'status' : undefined}>
-      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="chat-tool-activity-header" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
+    <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-tool-activity w-[min(100%,44rem)]" role={status === 'running' ? 'status' : undefined}>
+      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="chat-tool-activity-header flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit disabled:cursor-default [&>span:last-child]:ml-auto" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
         {status === 'running' && <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} />}
         <span>
           {label}
@@ -52,7 +52,7 @@ export function ToolActivity({ args, name, output, status }: ToolActivityProps) 
         {hasDetails && status !== 'running' && <span aria-hidden="true">{isExpanded ? '⌃' : '⌄'}</span>}
       </button>
       {isExpanded && hasDetails && (
-        <div className="chat-tool-activity-details">
+        <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
           {command != null && <code>{command}</code>}
           {result != null && <pre>{result}</pre>}
         </div>
@@ -116,9 +116,9 @@ export function WorkedFor({ completedAtMs, done, startedAtMs, status }: WorkedFo
         ? formatMessage({ id: 'conversation.workingFor' }, { duration })
         : formatMessage({ id: 'conversation.working' });
   return (
-    <div className="chat-worked-for" data-duration-divider>
-      <p>{label}</p>
-      <div aria-hidden="true" className="chat-worked-for-rule" />
+    <div className="chat-worked-for flex w-full flex-col gap-2 text-[13px] leading-5 text-text-tertiary" data-duration-divider>
+      <p className="m-0">{label}</p>
+      <div aria-hidden="true" className="chat-worked-for-rule w-full border-t border-border-subtle" />
     </div>
   );
 }

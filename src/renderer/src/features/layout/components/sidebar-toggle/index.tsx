@@ -1,5 +1,4 @@
 import { useIntl } from 'react-intl';
-import './style.css';
 
 interface SidebarToggleProps {
   isSidebarVisible: boolean;
@@ -15,15 +14,15 @@ export function SidebarToggle({ isSidebarVisible, onToggle }: SidebarToggleProps
     <button
       aria-label={label}
       aria-keyshortcuts="Meta+B Control+B"
-      className="sidebar-trigger group relative flex size-8 items-center justify-center"
+      className="sidebar-trigger group relative flex size-8 cursor-default items-center justify-center rounded-lg text-text-secondary outline-none [-webkit-app-region:no-drag] hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] hover:text-foreground focus-visible:shadow-[0_0_0_2px_var(--focus)] disabled:pointer-events-none disabled:opacity-35"
       data-app-shell-sidebar-trigger
       onClick={onToggle}
       type="button"
     >
       <SidebarIcon isSidebarVisible={isSidebarVisible} />
-      <span className="sidebar-trigger-tooltip" role="tooltip">
+      <span className="pointer-events-none absolute top-[calc(100%+6px)] left-0 z-50 w-max -translate-y-0.5 rounded-md bg-surface-elevated px-2 py-1.5 text-xs leading-none text-foreground opacity-0 shadow-[0_0_0_0.5px_color-mix(in_oklab,var(--foreground)_12%,transparent),0_3px_7.5px_#0000000a,0_0_20px_#0000000d] transition-[opacity,transform] duration-[120ms] group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100 motion-reduce:transition-none" role="tooltip">
         {formatMessage({ id: 'sidebar.toggle' })}
-        <kbd>{shortcut}</kbd>
+        <kbd className="ml-2 text-text-tertiary">{shortcut}</kbd>
       </span>
     </button>
   );

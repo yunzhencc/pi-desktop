@@ -32,6 +32,7 @@ import {
 
 const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
+const sidebarTriggerClass = 'sidebar-trigger flex size-8 cursor-default items-center justify-center rounded-lg text-text-secondary outline-none [-webkit-app-region:no-drag] hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] hover:text-foreground focus-visible:shadow-[0_0_0_2px_var(--focus)] disabled:pointer-events-none disabled:opacity-35';
 
 export function BasicLayout() {
   const { formatMessage } = useIntl();
@@ -212,9 +213,9 @@ export function BasicLayout() {
 
   return (
     <div className="app-shell relative flex h-svh min-h-0 overflow-hidden bg-transparent" data-resizing={isResizing}>
-      <header className="app-shell-header draggable absolute inset-x-0 top-0 z-30 flex h-11.5">
+      <header className="draggable absolute inset-x-0 top-0 z-30 flex h-11.5">
         <div
-          className="app-shell-toolbar app-shell-header-left flex shrink-0 items-center"
+          className="app-shell-header-left flex shrink-0 items-center px-4 pe-0 transition-[width] duration-500 ease-[cubic-bezier(0.34,1.1,0.64,1)] motion-reduce:transition-none"
           style={{
             paddingInlineStart: toolbarInset,
             width: headerLeftWidth,
@@ -223,7 +224,7 @@ export function BasicLayout() {
           {!isSettingsPage && <SidebarToggle isSidebarVisible={isSidebarVisible} onToggle={toggleSidebar} />}
           <button
             aria-label={formatMessage({ id: 'navigation.back' })}
-            className="sidebar-trigger flex size-8 items-center justify-center disabled:pointer-events-none disabled:opacity-35"
+            className={sidebarTriggerClass}
             disabled={!canGoBack(appHistory)}
             onClick={() => void navigateHistory(-1)}
             title={formatMessage({ id: 'navigation.back' })}
@@ -233,7 +234,7 @@ export function BasicLayout() {
           </button>
           <button
             aria-label={formatMessage({ id: 'navigation.forward' })}
-            className="sidebar-trigger flex size-8 items-center justify-center disabled:pointer-events-none disabled:opacity-35"
+            className={sidebarTriggerClass}
             disabled={!canGoForward(appHistory)}
             onClick={() => void navigateHistory(1)}
             title={formatMessage({ id: 'navigation.forward' })}
@@ -244,7 +245,7 @@ export function BasicLayout() {
         </div>
         <div className="min-w-0 flex-1" />
         <div
-          className="app-shell-toolbar app-shell-header-right flex shrink-0 items-center justify-end"
+          className="app-shell-header-right flex shrink-0 items-center justify-end px-4 ps-0 pe-2 transition-[width] duration-500 ease-[cubic-bezier(0.34,1.1,0.64,1)] motion-reduce:transition-none"
           style={{
             width: isRightPanelOpen ? headerRightWidth : 40,
           }}
@@ -253,7 +254,7 @@ export function BasicLayout() {
             <button
               aria-label={formatMessage({ id: isRightPanelExpanded ? 'panel.restore' : 'panel.expand' })}
               aria-pressed={isRightPanelExpanded}
-              className="right-panel-expand-trigger sidebar-trigger flex size-8 items-center justify-center"
+              className={`${sidebarTriggerClass} aria-pressed:bg-surface-editor`}
               onClick={toggleRightPanelExpanded}
               title={formatMessage({ id: isRightPanelExpanded ? 'panel.restore' : 'panel.expand' })}
               type="button"
@@ -275,7 +276,7 @@ export function BasicLayout() {
           <button
             aria-expanded={isRightPanelOpen}
             aria-label={formatMessage({ id: isRightPanelOpen ? 'panel.hide' : 'panel.show' })}
-            className="sidebar-trigger flex size-8 items-center justify-center"
+            className={sidebarTriggerClass}
             onClick={toggleRightPanel}
             title={formatMessage({ id: 'panel.toggle' })}
             type="button"
@@ -315,15 +316,15 @@ export function BasicLayout() {
                 )
               : (
                   <>
-                    <div className="sidebar-new-conversation">
-                      <button aria-keyshortcuts="Meta+N Control+N Meta+Shift+O Control+Shift+O" className="sidebar-new-conversation__main" onClick={startNewConversation} type="button">
+                    <div className="mx-2 mt-[54px] flex h-[31px] items-center gap-2 rounded-[10px] px-2 hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]">
+                      <button aria-keyshortcuts="Meta+N Control+N Meta+Shift+O Control+Shift+O" className="flex h-[31px] flex-1 items-center gap-2 text-left text-sm leading-[21px] text-foreground focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--focus)]" onClick={startNewConversation} type="button">
                         <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
                           <path d="M6.33325 1.80763C6.62314 1.80763 6.85855 2.04315 6.85864 2.33302C6.85864 2.62297 6.6232 2.85841 6.33325 2.85841H4.66626C3.66786 2.85859 2.85891 3.66765 2.85864 4.66603V11.333C2.85864 12.3316 3.66769 13.1414 4.66626 13.1416H11.3333C12.332 13.1416 13.1418 12.3317 13.1418 11.333V9.66603C13.1421 9.37642 13.3766 9.14179 13.6663 9.14161C13.956 9.14161 14.1914 9.37631 14.1917 9.66603V11.333C14.1917 12.9116 12.9119 14.1914 11.3333 14.1914H4.66626C3.0878 14.1912 1.80786 12.9115 1.80786 11.333V4.66603C1.80813 3.08775 3.08796 1.80781 4.66626 1.80763H6.33325Z" fill="currentColor" />
                           <path clipRule="evenodd" d="M10.842 2.32228C11.6259 1.55049 12.8863 1.55435 13.6643 2.33204C14.4442 3.11205 14.4469 4.37706 13.6702 5.16017L9.41626 9.4463C9.05652 9.80879 8.59956 10.0601 8.10083 10.1699L6.19263 10.5899C5.7111 10.6958 5.28165 10.2666 5.38794 9.78517L5.80884 7.88185C5.9196 7.38036 6.17342 6.92096 6.53931 6.56056L10.842 2.32228ZM12.9221 3.07521C12.552 2.7051 11.9524 2.70322 11.5793 3.07033L7.27563 7.30861C7.05429 7.52663 6.90125 7.80504 6.83423 8.10841L6.54028 9.43849L7.87524 9.14454C8.17687 9.07807 8.45355 8.92625 8.67114 8.70704L12.9241 4.41993C13.2934 4.04741 13.2928 3.44631 12.9221 3.07521Z" fill="currentColor" fillRule="evenodd" />
                         </svg>
                         {formatMessage({ id: 'conversation.new' })}
                       </button>
-                      <button aria-label={formatMessage({ id: 'conversation.quick' })} className="sidebar-new-conversation__quick" onClick={startNewConversation} title={formatMessage({ id: 'conversation.quick' })} type="button">
+                      <button aria-label={formatMessage({ id: 'conversation.quick' })} className="flex size-6 items-center justify-center rounded-lg p-1 text-[color-mix(in_srgb,var(--foreground)_50%,transparent)] hover:text-foreground focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[var(--focus)]" onClick={startNewConversation} title={formatMessage({ id: 'conversation.quick' })} type="button">
                         <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
                           <path d="M7.9834 5.3042C8.27312 5.30446 8.50879 5.5398 8.50879 5.82959V7.479H10.1582C10.4482 7.479 10.6836 7.71445 10.6836 8.00439C10.6836 8.29434 10.4482 8.52979 10.1582 8.52979H8.50879V10.1802C8.50853 10.4697 8.27296 10.7053 7.9834 10.7056C7.69361 10.7056 7.45827 10.4699 7.45801 10.1802V8.52979H5.80762C5.51767 8.52979 5.28223 8.29434 5.28223 8.00439C5.28223 7.71445 5.51767 7.479 5.80762 7.479H7.45801V5.82959C7.45801 5.53964 7.69345 5.3042 7.9834 5.3042Z" fill="currentColor" />
                           <path clipRule="evenodd" d="M8 1.80811C11.575 1.80811 14.5254 4.55306 14.5254 8.00049C14.5252 11.4478 11.5749 14.1919 8 14.1919C6.78477 14.1919 5.75932 13.8294 4.75488 13.3599L2.9873 13.8188C2.5113 13.9421 2.07317 13.5186 2.17969 13.0386L2.5498 11.3638C2.03641 10.3602 1.4747 9.38219 1.47461 8.00049C1.47461 4.55306 4.42502 1.80811 8 1.80811ZM8 2.85889C4.94756 2.85889 2.52539 5.18869 2.52539 8.00049C2.52548 9.13389 2.98018 9.88342 3.55176 11.0151C3.62017 11.1507 3.63938 11.3062 3.60645 11.4546L3.34277 12.6411L4.62598 12.3091L4.74023 12.2896C4.81669 12.2837 4.89333 12.2917 4.9668 12.312L5.0752 12.3521L5.44238 12.522C6.29248 12.8997 7.09158 13.1421 8 13.1421C11.0523 13.1421 13.4744 10.8121 13.4746 8.00049C13.4746 5.18869 11.0524 2.85889 8 2.85889Z" fill="currentColor" fillRule="evenodd" />
@@ -338,7 +339,7 @@ export function BasicLayout() {
           </>
         )}
       </aside>
-      <main className="app-shell-main-surface min-w-0">
+      <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface">
         <Outlet />
       </main>
       <aside
