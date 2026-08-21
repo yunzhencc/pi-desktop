@@ -1,3 +1,5 @@
+"use client"
+
 import { Separator as SeparatorPrimitive } from "@base-ui/react/separator"
 
 import { cn } from "@pi-desktop/shadcn-ui/lib/utils"
