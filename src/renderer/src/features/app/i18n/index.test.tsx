@@ -2,7 +2,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { I18nProvider, readLocale, useAppLocale } from '.';
+import { I18nProvider, LocaleEnum, readLocale, useAppLocale } from '.';
 
 function LocaleProbe() {
   const { locale, setLocale } = useAppLocale();
@@ -33,7 +33,7 @@ describe('i18n provider', () => {
   });
 
   it('allows only Chinese and English locales', () => {
-    expect(readLocale('en')).toBe('en');
-    expect(readLocale('fr-FR')).toBe('zh-CN');
+    expect(readLocale(LocaleEnum.English)).toBe(LocaleEnum.English);
+    expect(readLocale('fr-FR')).toBe(LocaleEnum.Chinese);
   });
 });

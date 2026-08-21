@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
+import { LocaleEnum } from '@renderer/features/app/i18n';
 import { useIntl } from 'react-intl';
 
 interface GeneralSettingsProps {
@@ -26,10 +27,7 @@ export function GeneralSettings({ locale, onLocaleChange }: GeneralSettingsProps
           <label className="flex min-h-10 items-center justify-between rounded-md border border-border-subtle py-2 pr-2.5 pl-3 text-sm text-foreground">
             <span>{formatMessage({ id: 'settings.language' })}</span>
             <Select
-              items={[
-                { label: formatMessage({ id: 'settings.chinese' }), value: 'zh-CN' },
-                { label: formatMessage({ id: 'settings.english' }), value: 'en' },
-              ]}
+              items={LocaleEnum.items.map(locale => ({ label: formatMessage({ id: locale.label }), value: locale.value }))}
               onValueChange={value => onLocaleChange(value as AppLocale)}
               value={locale}
             >
@@ -38,8 +36,11 @@ export function GeneralSettings({ locale, onLocaleChange }: GeneralSettingsProps
               </SelectTrigger>
               <SelectContent align="end" alignItemWithTrigger={false}>
                 <SelectGroup>
-                  <SelectItem value="zh-CN">{formatMessage({ id: 'settings.chinese' })}</SelectItem>
-                  <SelectItem value="en">{formatMessage({ id: 'settings.english' })}</SelectItem>
+                  {LocaleEnum.items.map(locale => (
+                    <SelectItem key={locale.value} value={locale.value}>
+                      {formatMessage({ id: locale.label })}
+                    </SelectItem>
+                  ))}
                 </SelectGroup>
               </SelectContent>
             </Select>

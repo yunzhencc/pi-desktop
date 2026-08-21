@@ -1,6 +1,13 @@
-export type AppLocale = 'zh-CN' | 'en';
+import { Enum } from 'enum-plus';
 
-export const DEFAULT_LOCALE: AppLocale = 'zh-CN';
+export const LocaleEnum = Enum({
+  Chinese: { value: 'zh-CN', label: 'settings.chinese' },
+  English: { value: 'en', label: 'settings.english' },
+});
+
+export type AppLocale = typeof LocaleEnum.valueType;
+
+export const DEFAULT_LOCALE: AppLocale = LocaleEnum.Chinese;
 export const LOCALE_STORAGE_KEY = 'pi-desktop-locale';
 
 export const messages = {
@@ -273,5 +280,5 @@ export const messages = {
 } as const;
 
 export function readLocale(value: string | null): AppLocale {
-  return value === 'en' ? 'en' : DEFAULT_LOCALE;
+  return LocaleEnum.has(value) ? value : DEFAULT_LOCALE;
 }
