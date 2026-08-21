@@ -8,11 +8,19 @@ const messages: Record<string, string> = {
   'providers.chatgpt.login': '登录 ChatGPT',
   'providers.scope': '模型选择范围',
   'providers.title': '模型提供商',
+  'profileStats.activeProjectsTitle': '最常用项目',
+  'profileStats.activeProjectSessions': '当前项目会话',
+  'profileStats.activityTitle': '会话活动',
+  'profileStats.insightsTitle': '活动洞察',
+  'profileStats.projects': '项目',
+  'profileStats.sessions': '会话',
+  'profileStats.title': '统计',
   'settings.appearance': '外观',
   'settings.chinese': '中文',
   'settings.english': '英语',
-  'settings.general': '个人',
+  'settings.general': '常规',
   'settings.language': '语言',
+  'settings.profile': '个人资料',
   'settings.theme': '主题',
   'shortcut.newConversation.title': '新建聊天',
   'shortcut.openSettings.title': '打开设置',
@@ -37,6 +45,14 @@ describe('settings search', () => {
       label: '键盘快捷键',
       path: '/settings/keyboard-shortcuts',
       priority: 0,
+    });
+  });
+
+  it('finds profile stats from stat labels', () => {
+    expect(searchSettings('会话', formatMessage)[0]).toMatchObject({
+      label: '会话',
+      panel: '个人资料',
+      path: '/settings/profile',
     });
   });
 

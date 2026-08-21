@@ -1,4 +1,4 @@
-export type SettingsPath = '/settings/general' | '/settings/appearance' | '/settings/keyboard-shortcuts' | '/settings/providers';
+export type SettingsPath = '/settings/general' | '/settings/profile' | '/settings/appearance' | '/settings/keyboard-shortcuts' | '/settings/providers';
 
 interface SettingsSearchTarget {
   messages: string[];
@@ -19,6 +19,11 @@ const settingsSearchTargets: SettingsSearchTarget[] = [
     messages: ['settings.language', 'settings.chinese', 'settings.english'],
     panel: 'settings.general',
     path: '/settings/general',
+  },
+  {
+    messages: ['profileStats.title', 'profileStats.projects', 'profileStats.sessions', 'profileStats.activeProjectSessions', 'profileStats.activityTitle'],
+    panel: 'settings.profile',
+    path: '/settings/profile',
   },
   {
     messages: ['settings.theme', 'appearance.system', 'appearance.light', 'appearance.dark'],

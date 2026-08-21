@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './pages/index'
 import { Route as SettingsAppearanceRouteImport } from './pages/settings/appearance'
 import { Route as SettingsGeneralRouteImport } from './pages/settings/general'
 import { Route as SettingsKeyboardShortcutsRouteImport } from './pages/settings/keyboard-shortcuts'
+import { Route as SettingsProfileRouteImport } from './pages/settings/profile'
 import { Route as SettingsProvidersRouteImport } from './pages/settings/providers'
 
 const IndexRoute = IndexRouteImport.update({
@@ -36,6 +37,11 @@ const SettingsKeyboardShortcutsRoute =
     path: '/settings/keyboard-shortcuts',
     getParentRoute: () => rootRouteImport,
   } as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsProvidersRoute = SettingsProvidersRouteImport.update({
   id: '/settings/providers',
   path: '/settings/providers',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/general': typeof SettingsGeneralRoute
   '/settings/keyboard-shortcuts': typeof SettingsKeyboardShortcutsRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/settings/providers': typeof SettingsProvidersRoute
 }
 export interface FileRoutesByTo {
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/general': typeof SettingsGeneralRoute
   '/settings/keyboard-shortcuts': typeof SettingsKeyboardShortcutsRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/settings/providers': typeof SettingsProvidersRoute
 }
 export interface FileRoutesById {
@@ -62,6 +70,7 @@ export interface FileRoutesById {
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/general': typeof SettingsGeneralRoute
   '/settings/keyboard-shortcuts': typeof SettingsKeyboardShortcutsRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/settings/providers': typeof SettingsProvidersRoute
 }
 export interface FileRouteTypes {
@@ -71,6 +80,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/general'
     | '/settings/keyboard-shortcuts'
+    | '/settings/profile'
     | '/settings/providers'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -78,6 +88,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/general'
     | '/settings/keyboard-shortcuts'
+    | '/settings/profile'
     | '/settings/providers'
   id:
     | '__root__'
@@ -85,6 +96,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/general'
     | '/settings/keyboard-shortcuts'
+    | '/settings/profile'
     | '/settings/providers'
   fileRoutesById: FileRoutesById
 }
@@ -93,6 +105,7 @@ export interface RootRouteChildren {
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsGeneralRoute: typeof SettingsGeneralRoute
   SettingsKeyboardShortcutsRoute: typeof SettingsKeyboardShortcutsRoute
+  SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsProvidersRoute: typeof SettingsProvidersRoute
 }
 
@@ -126,6 +139,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsKeyboardShortcutsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/providers': {
       id: '/settings/providers'
       path: '/settings/providers'
@@ -141,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsGeneralRoute: SettingsGeneralRoute,
   SettingsKeyboardShortcutsRoute: SettingsKeyboardShortcutsRoute,
+  SettingsProfileRoute: SettingsProfileRoute,
   SettingsProvidersRoute: SettingsProvidersRoute,
 }
 export const routeTree = rootRouteImport

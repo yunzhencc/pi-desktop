@@ -3,7 +3,7 @@ import { Input } from '@pi-desktop/shadcn-ui/components/input';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { useShortcutSettings } from '@renderer/features/app/hotkeys';
 import { useHotkeys } from '@tanstack/react-hotkeys';
-import { ArrowLeft, Bot, Keyboard, Search, Settings, Sun, X } from 'lucide-react';
+import { ArrowLeft, Bot, Keyboard, Search, Settings, Sun, UserRound, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { searchSettings } from '../../search';
@@ -94,6 +94,15 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
               >
                 <Settings aria-hidden="true" size={16} strokeWidth={1.75} />
                 {formatMessage({ id: 'settings.general' })}
+              </button>
+              <button
+                aria-current={activePath === '/settings/profile' ? 'page' : undefined}
+                className={cn(navigationButtonClass, 'mt-px')}
+                onClick={() => onNavigate('/settings/profile')}
+                type="button"
+              >
+                <UserRound aria-hidden="true" size={16} strokeWidth={1.75} />
+                {formatMessage({ id: 'settings.profile' })}
               </button>
               <button
                 aria-current={activePath === '/settings/appearance' ? 'page' : undefined}
