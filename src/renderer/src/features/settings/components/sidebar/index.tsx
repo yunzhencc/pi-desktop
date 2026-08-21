@@ -1,7 +1,7 @@
 import type { SettingsPath, SettingsSearchResult } from '../../search';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
-import { useShortcutSettings } from '@renderer/features/app/hotkeys';
+import { useShortcutSettings } from '@renderer/features/app/shortcuts';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { ArrowLeft, Bot, Keyboard, Search, Settings, Sun, UserRound, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
@@ -31,16 +31,23 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
   useHotkeys(bindings.focusSettingsSearch.map(hotkey => ({ callback: focusSearch, hotkey })), { ignoreInputs: true, preventDefault: true });
 
   return (
-    <nav className="flex h-full flex-col px-3 pt-12 pb-[18px]" aria-label={formatMessage({ id: 'settings.navigation' })}>
-      <button className="flex h-8 w-full items-center gap-2 rounded-md bg-transparent px-2 text-left text-sm font-normal text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] hover:text-foreground" onClick={onClose} type="button">
+    <nav
+      className="flex h-full flex-col px-3 pt-12 pb-4.5"
+      aria-label={formatMessage({ id: 'settings.navigation' })}
+    >
+      <button
+        className="flex h-8 w-full items-center gap-2 rounded-md bg-transparent px-2 text-left text-sm font-normal text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] hover:text-foreground"
+        onClick={onClose}
+        type="button"
+      >
         <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
         {formatMessage({ id: 'settings.backToApp' })}
       </button>
       <div className="relative mt-3 flex items-center">
-        <Search aria-hidden="true" className="pointer-events-none absolute left-[9px] z-[1] text-text-tertiary" size={16} strokeWidth={1.75} />
+        <Search aria-hidden="true" className="pointer-events-none absolute left-2 z-1 text-text-tertiary" size={16} strokeWidth={1.75} />
         <Input
           aria-label={formatMessage({ id: 'settings.search.label' })}
-          className="[&::-webkit-search-cancel-button]:hidden h-[30px] border-transparent bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] ps-[30px] pe-7 text-[13px] text-foreground shadow-none focus-visible:border-border-subtle focus-visible:shadow-none"
+          className="[&::-webkit-search-cancel-button]:hidden h-7.5 border-transparent bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] ps-7.5 pe-7 text-[13px] text-foreground shadow-none focus-visible:border-border-subtle focus-visible:shadow-none"
           onChange={(event) => {
             setQuery(event.target.value);
             setHighlightedIndex(-1);
@@ -70,7 +77,7 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
         {query && (
           <button
             aria-label={formatMessage({ id: 'settings.search.clear' })}
-            className="absolute right-[7px] z-[1] grid size-5 place-items-center rounded-sm p-0 text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-foreground"
+            className="absolute right-2 z-1 grid size-5 place-items-center rounded-sm p-0 text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-foreground"
             onClick={() => {
               setQuery('');
               setHighlightedIndex(-1);
@@ -154,7 +161,7 @@ function SettingsSearchResults({ highlightedIndex, onHighlight, onNavigate, resu
       {results.map((result, index) => (
         <button
           aria-label={formatMessage({ id: 'settings.search.result' }, { label: result.label, panel: result.panel })}
-          className="flex min-h-[34px] w-full flex-col items-start rounded-md px-2 py-[5px] text-left text-[13px] text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:outline-none data-[highlighted=true]:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)]"
+          className="flex min-h-8.5 w-full flex-col items-start rounded-md px-2 py-1.25 text-left text-[13px] text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:outline-none data-[highlighted=true]:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)]"
           data-highlighted={highlightedIndex === index || undefined}
           key={result.path}
           onClick={() => onNavigate(result.path)}

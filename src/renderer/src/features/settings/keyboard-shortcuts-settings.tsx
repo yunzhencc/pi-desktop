@@ -1,4 +1,4 @@
-import type { ShortcutBindings, ShortcutId } from '@renderer/features/app/hotkeys';
+import type { ShortcutBindings, ShortcutId } from '@renderer/features/app/shortcuts';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   hasCustomShortcutBindings,
   isShortcutAllowed,
   shortcutDefinitions,
-} from '@renderer/features/app/hotkeys';
+} from '@renderer/features/app/shortcuts';
 import { formatForDisplay, hasNonModifierKey, normalizeHotkey, normalizeHotkeyFromEvent, useHotkeyRecorder } from '@tanstack/react-hotkeys';
 import { Keyboard, Search } from 'lucide-react';
 import { useState } from 'react';

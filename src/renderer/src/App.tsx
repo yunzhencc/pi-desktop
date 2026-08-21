@@ -1,5 +1,5 @@
-import { ShortcutSettingsProvider } from '@renderer/features/app/hotkeys';
 import { I18nProvider } from '@renderer/features/app/i18n';
+import { ShortcutSettingsProvider } from '@renderer/features/app/shortcuts';
 import { ThemeProvider } from '@renderer/features/app/theme';
 import { RouterProvider } from '@tanstack/react-router';
 import React from 'react';

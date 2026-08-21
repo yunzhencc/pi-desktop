@@ -19,7 +19,7 @@ vi.mock('@tanstack/react-hotkeys', () => ({
   useHotkeys: (definitions: Array<{ hotkey: string; callback: () => void }>) => definitions.forEach(({ callback, hotkey }) => hotkeys.set(hotkey, callback)),
 }));
 
-vi.mock('@renderer/features/app/hotkeys', () => ({
+vi.mock('@renderer/features/app/shortcuts', () => ({
   useShortcutSettings: () => ({
     bindings: {
       focusSettingsSearch: ['Mod+F'],

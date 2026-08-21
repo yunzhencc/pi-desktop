@@ -1,6 +1,6 @@
 import type { WorkspaceSnapshot } from '@shared/types';
 import type { AppHistory, AppLocation } from './utils';
-import { useShortcutSettings } from '@renderer/features/app/hotkeys';
+import { useShortcutSettings } from '@renderer/features/app/shortcuts';
 import { SettingsSidebar } from '@renderer/features/settings';
 import { WorkspaceSidebar } from '@renderer/features/workspace';
 import { useHotkeys } from '@tanstack/react-hotkeys';
