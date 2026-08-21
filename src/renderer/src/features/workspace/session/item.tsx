@@ -52,7 +52,7 @@ export function SessionItem(props: SessionItemProps) {
         className="flex w-full"
       >
         <Item
-          size="xs"
+          size="default"
           className={cn(
             'py-1.5 pl-7',
             'hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]',
@@ -62,8 +62,8 @@ export function SessionItem(props: SessionItemProps) {
           onClick={onClick}
           {...rest}
         >
-          <ItemContent className="overflow-hidden">
-            <ItemTitle className="text-xs font-normal">
+          <ItemContent className="min-w-0 overflow-hidden">
+            <ItemTitle className="block w-full min-w-0 truncate text-sm font-normal">
               {children}
             </ItemTitle>
           </ItemContent>
@@ -102,7 +102,7 @@ export function SessionItem(props: SessionItemProps) {
           <div className="flex min-w-0 flex-col gap-1 pb-0.5">
             <div className="flex w-full min-w-0 items-baseline gap-3">
               <div className="flex min-w-0 flex-1 items-start gap-1">
-                <div className="-ms-0.5 min-w-0 flex-1 break-words px-1.5 text-base leading-5 font-medium">
+                <div className="-ms-0.5 min-w-0 flex-1 wrap-break-word px-1.5 text-sm leading-5 font-medium">
                   {children}
                 </div>
                 <span className="flex h-5 shrink-0 items-center text-muted-foreground">
