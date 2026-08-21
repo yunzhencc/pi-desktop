@@ -35,6 +35,7 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
+    "@dnd-kit/react": "catalog:core",
     "@earendil-works/pi-agent-core": "catalog:core",
     "@earendil-works/pi-ai": "catalog:core",
     "@earendil-works/pi-coding-agent": "catalog:core",
