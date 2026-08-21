@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProviderSettings } from './provider-settings';
 
 const directories: string[] = [];
@@ -106,5 +106,56 @@ describe('provider settings', () => {
     const snapshot = await settings.snapshot();
 
     expect(snapshot.availableProviders.some(provider => provider.id === 'custom-key')).toBe(false);
+  });
+
+  it('opens the ChatGPT browser login without requiring in-app credential input', async () => {
+    const root = await tempDirectory();
+    const openExternal = vi.fn();
+    const login = vi.fn(async (_providerId, _type, interaction: {
+      notify: (event: unknown) => void | Promise<void>;
+      prompt: (prompt: { options?: readonly { id: string; label: string }[]; signal?: AbortSignal; type: string }) => Promise<string>;
+    }) => {
+      await expect(interaction.prompt({
+        options: [
+          { id: 'browser', label: 'Browser login (default)' },
+          { id: 'device_code', label: 'Device code login (headless)' },
+        ],
+        type: 'select',
+      })).resolves.toBe('browser');
+      await interaction.notify({ type: 'auth_url', url: 'https://chatgpt.com/oauth' });
+
+      const abort = new AbortController();
+      let settled = false;
+      const manualPrompt = interaction.prompt({ signal: abort.signal, type: 'manual_code' })
+        .finally(() => {
+          settled = true;
+        });
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(settled).toBe(false);
+      abort.abort();
+      await manualPrompt.catch(() => undefined);
+    });
+    const settings = new ProviderSettings(join(root, 'userData'), {
+      createServices: async () => ({
+        modelRuntime: {
+          getAvailable: async () => [],
+          getProviderAuthStatus: () => ({ configured: true }),
+          getProviders: () => [{ auth: { oauth: true }, id: 'openai-codex', name: 'OpenAI Codex' }],
+          login,
+        },
+        settingsManager: {
+          getDefaultModel: () => undefined,
+          getDefaultProvider: () => undefined,
+          getEnabledModels: () => [],
+          setDefaultModelAndProvider: vi.fn(),
+        },
+      }),
+      openExternal,
+    });
+
+    await settings.loginChatGPT();
+
+    expect(login).toHaveBeenCalledWith('openai-codex', 'oauth', expect.any(Object));
+    expect(openExternal).toHaveBeenCalledWith('https://chatgpt.com/oauth');
   });
 });

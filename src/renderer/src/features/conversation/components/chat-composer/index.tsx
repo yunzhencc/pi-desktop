@@ -334,6 +334,9 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
     if (typeof window.api.providers?.get !== 'function')
       return;
     window.api.providers.get().then(setProvidersSnapshot).catch(() => undefined);
+    return typeof window.api.providers.onChanged === 'function'
+      ? window.api.providers.onChanged(setProvidersSnapshot)
+      : undefined;
   }, [inlineEdit]);
 
   useEffect(() => {

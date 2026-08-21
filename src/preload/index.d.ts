@@ -28,6 +28,7 @@ declare global {
       providers: {
         get: () => Promise<ProvidersSnapshot>;
         loginChatGPT: () => Promise<ProvidersSnapshot>;
+        onChanged: (callback: (snapshot: ProvidersSnapshot) => void) => () => void;
         remove: (providerId: ProviderId) => Promise<ProvidersSnapshot>;
         saveApiKey: (providerId: ProviderId, apiKey: string) => Promise<ProvidersSnapshot>;
         setDefaultModel: (providerId: ProviderId, modelId: string) => Promise<ProvidersSnapshot>;

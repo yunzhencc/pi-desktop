@@ -420,6 +420,7 @@ export function ProvidersPage() {
 
   useEffect(() => {
     window.api.providers.get().then(setSnapshot);
+    return window.api.providers.onChanged(setSnapshot);
   }, []);
 
   if (!snapshot)

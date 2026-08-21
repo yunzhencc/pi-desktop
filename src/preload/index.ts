@@ -41,6 +41,11 @@ const api = {
   providers: {
     get: (): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:get'),
     loginChatGPT: (): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:chatgpt:login'),
+    onChanged: (callback: (snapshot: ProvidersSnapshot) => void) => {
+      const listener = (_: Electron.IpcRendererEvent, snapshot: ProvidersSnapshot) => callback(snapshot);
+      ipcRenderer.on('providers:changed', listener);
+      return () => ipcRenderer.removeListener('providers:changed', listener);
+    },
     remove: (providerId: ProviderId): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:remove', providerId),
     saveApiKey: (providerId: ProviderId, apiKey: string): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:api-key:save', providerId, apiKey),
     setDefaultModel: (providerId: ProviderId, modelId: string): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:default-model:set', providerId, modelId),

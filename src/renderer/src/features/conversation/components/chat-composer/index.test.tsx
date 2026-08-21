@@ -15,8 +15,10 @@ const composer = {
 };
 const providers = {
   get: vi.fn(),
+  onChanged: vi.fn(),
   setDefaultModel: vi.fn(),
 };
+let onProvidersChanged: ((snapshot: Awaited<ReturnType<Window['api']['providers']['get']>>) => void) | undefined;
 const weather = { displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' };
 const notes = { displayName: 'notes', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/notes' };
 const workspaces = {
@@ -30,6 +32,7 @@ const workspaces = {
 
 beforeEach(() => {
   localStorage.clear();
+  onProvidersChanged = undefined;
   vi.stubGlobal('ResizeObserver', class {
     disconnect() {}
     observe() {}
@@ -46,6 +49,10 @@ beforeEach(() => {
   composer.addPastedImage.mockResolvedValue({ attachments: [], failures: [] });
   composer.removeAttachment.mockResolvedValue(undefined);
   composer.send.mockResolvedValue(undefined);
+  providers.onChanged.mockImplementation((callback) => {
+    onProvidersChanged = callback;
+    return vi.fn();
+  });
   providers.get.mockResolvedValue({
     availableProviders: [],
     connectedProviders: [
@@ -397,6 +404,56 @@ describe('chat composer', () => {
 
     expect(document.querySelector('[cmdk-group-heading]')).toBeNull();
     expect(screen.getByRole('option', { name: /DeepSeek Reasoner/ })).not.toBeNull();
+  });
+
+  it('updates composer models when provider settings change', async () => {
+    const user = userEvent.setup();
+    providers.get.mockResolvedValueOnce({
+      availableProviders: [],
+      connectedProviders: [
+        {
+          authType: 'api_key',
+          configured: true,
+          id: 'deepseek',
+          models: [{ id: 'deepseek-chat', name: 'DeepSeek Chat', providerId: 'deepseek', reasoning: false, supportsImages: false }],
+          name: 'DeepSeek',
+          primary: true,
+        },
+      ],
+      defaultModel: { modelId: 'deepseek-chat', providerId: 'deepseek' },
+      modelPickerScope: 'all-providers',
+      primaryProvider: 'deepseek',
+    });
+    renderComposer();
+
+    expect(await screen.findByRole('button', { name: '选择模型，当前 DeepSeek Chat' })).not.toBeNull();
+    onProvidersChanged?.({
+      availableProviders: [],
+      connectedProviders: [
+        {
+          authType: 'api_key',
+          configured: true,
+          id: 'deepseek',
+          models: [{ id: 'deepseek-chat', name: 'DeepSeek Chat', providerId: 'deepseek', reasoning: false, supportsImages: false }],
+          name: 'DeepSeek',
+          primary: true,
+        },
+        {
+          authType: 'api_key',
+          configured: true,
+          id: 'openrouter',
+          models: [{ id: 'qwen/qwen3-coder', name: 'Qwen3 Coder', providerId: 'openrouter', reasoning: false, supportsImages: false }],
+          name: 'OpenRouter',
+          primary: false,
+        },
+      ],
+      defaultModel: { modelId: 'qwen/qwen3-coder', providerId: 'openrouter' },
+      modelPickerScope: 'all-providers',
+      primaryProvider: 'deepseek',
+    });
+    await user.click(await screen.findByRole('button', { name: '选择模型，当前 Qwen3 Coder' }));
+
+    expect(screen.getByRole('option', { name: /Qwen3 Coder/ })).not.toBeNull();
   });
 
   it('groups models when all connected providers are in scope even if only one has selectable models', async () => {

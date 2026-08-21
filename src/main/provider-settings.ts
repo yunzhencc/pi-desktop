@@ -37,6 +37,7 @@ interface ProviderPreferences {
 
 interface ProviderSettingsOptions {
   agentDir?: string;
+  createServices?: () => Promise<ProviderSettingsServices>;
   cwd?: string;
   openExternal?: (url: string) => Promise<void>;
 }
@@ -115,9 +116,7 @@ export class ProviderSettings {
         if (isRecord(event) && event.type === 'auth_url' && typeof event.url === 'string')
           await this.options.openExternal?.(event.url);
       },
-      prompt: async () => {
-        throw new Error('ChatGPT 登录不支持在应用内输入凭据');
-      },
+      prompt: promptForChatGPTLogin,
     });
     return this.snapshot();
   }
@@ -159,6 +158,8 @@ export class ProviderSettings {
   }
 
   private async createServices() {
+    if (this.options.createServices)
+      return this.options.createServices();
     const { createAgentSessionServices } = await import('@earendil-works/pi-coding-agent');
     return createAgentSessionServices({
       ...(this.options.agentDir ? { agentDir: this.options.agentDir } : {}),
@@ -241,6 +242,36 @@ interface ModelLike {
 
 interface ModelRuntimeLike {
   getAvailable: () => Promise<ModelLike[]>;
+  getProviderAuthStatus: (providerId: string) => Promise<ProviderAuthStatusLike> | ProviderAuthStatusLike;
+  getProviders: () => RuntimeProviderLike[];
+  login: (providerId: string, type: 'oauth', interaction: AuthInteractionLike) => Promise<unknown>;
+}
+
+interface SettingsManagerLike {
+  getDefaultModel: () => unknown;
+  getDefaultProvider: () => unknown;
+  getEnabledModels: () => unknown;
+  setDefaultModelAndProvider: (providerId: string, modelId: string) => void;
+}
+
+interface ProviderSettingsServices {
+  modelRuntime: ModelRuntimeLike;
+  settingsManager: SettingsManagerLike;
+}
+
+type AuthPromptLike = {
+  signal?: AbortSignal;
+} & ({
+  options: readonly { id: string; label: string }[];
+  type: 'select';
+} | {
+  type: 'manual_code' | 'secret' | 'text';
+});
+
+interface AuthInteractionLike {
+  notify: (event: unknown) => void | Promise<void>;
+  prompt: (prompt: AuthPromptLike) => Promise<string>;
+  signal?: AbortSignal;
 }
 
 export function isProviderId(value: unknown): value is ProviderId {
@@ -289,6 +320,26 @@ function providerDisplayName(provider: RuntimeProviderLike): string {
   if (provider.id === 'deepseek')
     return 'DeepSeek';
   return provider.name ?? provider.id;
+}
+
+function promptForChatGPTLogin(prompt: AuthPromptLike): Promise<string> {
+  if (prompt.type === 'select')
+    return Promise.resolve(prompt.options.find(option => option.label.toLocaleLowerCase().includes('browser'))?.id ?? prompt.options[0]?.id ?? '');
+  if (prompt.type === 'manual_code')
+    return waitForPromptAbort(prompt.signal);
+  return Promise.reject(new Error('ChatGPT 登录不支持在应用内输入凭据'));
+}
+
+function waitForPromptAbort(signal?: AbortSignal): Promise<string> {
+  return new Promise((_resolve, reject) => {
+    const abort = () => reject(new Error('Login cancelled'));
+    if (!signal)
+      return;
+    if (signal.aborted)
+      abort();
+    else
+      signal.addEventListener('abort', abort, { once: true });
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

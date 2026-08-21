@@ -1,3 +1,4 @@
+import type { ProvidersSnapshot } from './provider-settings';
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
@@ -21,6 +22,11 @@ const attachmentStore = new AttachmentStore();
 const piRuntime = new PiRuntime(attachmentStore);
 let providerSettings: ProviderSettings;
 let workspaceRegistry: WorkspaceRegistry;
+
+function broadcastProvidersChanged(snapshot: ProvidersSnapshot): void {
+  for (const window of BrowserWindow.getAllWindows())
+    window.webContents.send('providers:changed', snapshot);
+}
 
 function getPrimaryWindowStatePath(): string {
   return join(app.getPath('userData'), 'window-state.json');
@@ -172,6 +178,7 @@ app.whenReady().then(async () => {
       throw new TypeError('无效的模型供应商配置');
     const snapshot = await providerSettings.saveApiKey(providerId, apiKey);
     piRuntime.refreshModelSettings();
+    broadcastProvidersChanged(snapshot);
     return snapshot;
   });
   ipcMain.handle('providers:remove', async (_event, providerId: unknown) => {
@@ -179,28 +186,36 @@ app.whenReady().then(async () => {
       throw new TypeError('无效的模型供应商');
     const snapshot = await providerSettings.removeProvider(providerId);
     piRuntime.refreshModelSettings();
+    broadcastProvidersChanged(snapshot);
     return snapshot;
   });
   ipcMain.handle('providers:chatgpt:login', async () => {
     const snapshot = await providerSettings.loginChatGPT();
     piRuntime.refreshModelSettings();
+    broadcastProvidersChanged(snapshot);
     return snapshot;
   });
   ipcMain.handle('providers:primary:set', async (_event, providerId: unknown) => {
     if (!isProviderId(providerId))
       throw new TypeError('无效的主模型供应商');
-    return providerSettings.setPrimaryProvider(providerId);
+    const snapshot = await providerSettings.setPrimaryProvider(providerId);
+    piRuntime.refreshModelSettings();
+    broadcastProvidersChanged(snapshot);
+    return snapshot;
   });
   ipcMain.handle('providers:scope:set', async (_event, scope: unknown) => {
     if (!isModelPickerScope(scope))
       throw new TypeError('无效的模型选择范围');
-    return providerSettings.setModelPickerScope(scope);
+    const snapshot = await providerSettings.setModelPickerScope(scope);
+    broadcastProvidersChanged(snapshot);
+    return snapshot;
   });
   ipcMain.handle('providers:default-model:set', async (_event, providerId: unknown, modelId: unknown) => {
     if (!isProviderId(providerId) || typeof modelId !== 'string' || !modelId.trim())
       throw new TypeError('无效的默认模型');
     const snapshot = await providerSettings.setDefaultModel(providerId, modelId);
     piRuntime.refreshModelSettings();
+    broadcastProvidersChanged(snapshot);
     return snapshot;
   });
   const selectWorkspace = async (path: string) => {
