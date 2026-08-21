@@ -13,6 +13,10 @@ const composer = {
   removeAttachment: vi.fn(),
   send: vi.fn(),
 };
+const providers = {
+  get: vi.fn(),
+  setDefaultModel: vi.fn(),
+};
 const weather = { displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' };
 const notes = { displayName: 'notes', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/notes' };
 const workspaces = {
@@ -37,11 +41,57 @@ beforeEach(() => {
   Object.defineProperty(Range.prototype, 'getBoundingClientRect', { configurable: true, value: () => rect });
   Object.defineProperty(Range.prototype, 'getClientRects', { configurable: true, value: () => [rect] });
   Object.defineProperty(window, 'scrollBy', { configurable: true, value: () => {} });
-  vi.stubGlobal('api', { composer, workspaces });
+  vi.stubGlobal('api', { composer, providers, workspaces });
   composer.addDroppedAttachments.mockResolvedValue({ attachments: [], failures: [] });
   composer.addPastedImage.mockResolvedValue({ attachments: [], failures: [] });
   composer.removeAttachment.mockResolvedValue(undefined);
   composer.send.mockResolvedValue(undefined);
+  providers.get.mockResolvedValue({
+    availableProviders: [],
+    connectedProviders: [
+      {
+        authType: 'api_key',
+        configured: true,
+        id: 'deepseek',
+        models: [
+          { id: 'deepseek-chat', name: 'DeepSeek Chat', providerId: 'deepseek', reasoning: false, supportsImages: false },
+          { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', providerId: 'deepseek', reasoning: true, supportsImages: false },
+        ],
+        name: 'DeepSeek',
+        primary: true,
+      },
+      {
+        authType: 'api_key',
+        configured: true,
+        id: 'openrouter',
+        models: [{ id: 'qwen/qwen3-coder', name: 'Qwen3 Coder', providerId: 'openrouter', reasoning: false, supportsImages: false }],
+        name: 'OpenRouter',
+        primary: false,
+      },
+    ],
+    defaultModel: { modelId: 'deepseek-chat', providerId: 'deepseek' },
+    modelPickerScope: 'all-providers',
+    primaryProvider: 'deepseek',
+  });
+  providers.setDefaultModel.mockResolvedValue({
+    availableProviders: [],
+    connectedProviders: [
+      {
+        authType: 'api_key',
+        configured: true,
+        id: 'deepseek',
+        models: [
+          { id: 'deepseek-chat', name: 'DeepSeek Chat', providerId: 'deepseek', reasoning: false, supportsImages: false },
+          { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', providerId: 'deepseek', reasoning: true, supportsImages: false },
+        ],
+        name: 'DeepSeek',
+        primary: true,
+      },
+    ],
+    defaultModel: { modelId: 'deepseek-reasoner', providerId: 'deepseek' },
+    modelPickerScope: 'all-providers',
+    primaryProvider: 'deepseek',
+  });
   workspaces.create.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, notes] });
   workspaces.clear.mockResolvedValue({ pinnedSessionPaths: [], workspaces: [weather, notes] });
   workspaces.getGitBranch.mockResolvedValue('main');
@@ -303,6 +353,18 @@ describe('chat composer', () => {
     renderComposer();
 
     expect(screen.getByRole('button', { name: 'Send message' }).querySelector('.lucide-arrow-up')).not.toBeNull();
+  });
+
+  it('searches and switches the model from the composer action row', async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    await user.click(await screen.findByRole('button', { name: '选择模型，当前 DeepSeek Chat' }));
+    await user.type(screen.getByRole('combobox', { name: '搜索模型' }), 'reason');
+    await waitFor(() => expect(screen.queryByRole('option', { name: /Qwen3 Coder/ })).toBeNull());
+    await user.click(screen.getByRole('option', { name: /DeepSeek Reasoner/ }));
+
+    expect(providers.setDefaultModel).toHaveBeenCalledWith('deepseek', 'deepseek-reasoner');
   });
 
   it('uses the localized Codex default placeholder', () => {

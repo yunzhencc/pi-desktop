@@ -1,5 +1,12 @@
 import type { CSSProperties } from 'react';
-import { ArrowUp, Check, ExternalLink, FileText, Folder, GitBranch, Laptop, Link, LoaderCircle, Pencil, Square, X } from 'lucide-react';
+import type { ProviderModelSnapshot, ProvidersSnapshot } from '../../../../../main/provider-settings';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@pi-desktop/shadcn-ui/components/popover';
+import { Command } from 'cmdk';
+import { ArrowUp, Bot, Check, ChevronDown, ExternalLink, FileText, Folder, GitBranch, Laptop, Link, LoaderCircle, Pencil, Search, Square, X } from 'lucide-react';
 import { baseKeymap, splitBlock } from 'prosemirror-commands';
 import { history } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -16,6 +23,7 @@ import './style.css';
 type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>['attachments'][number];
 type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
+type ModelOption = ProviderModelSnapshot & { providerName: string };
 interface LinkPopover {
   element: HTMLElement;
   href: string;
@@ -45,6 +53,19 @@ const composerSchema = new Schema({
   nodes: schema.spec.nodes,
 });
 const trailingUrlPunctuation = new Set(['.', ',', '!', '?', ';', ':', ']', '}']);
+
+function availableModelOptions(snapshot?: ProvidersSnapshot) {
+  if (!snapshot)
+    return [];
+  const providers = snapshot.modelPickerScope === 'all-providers'
+    ? snapshot.connectedProviders
+    : snapshot.connectedProviders.filter(provider => provider.id === snapshot.primaryProvider);
+  return providers.flatMap(provider => provider.models.map(model => ({ ...model, providerName: provider.name })));
+}
+
+function selectedModelOption(models: ModelOption[], snapshot?: ProvidersSnapshot) {
+  return models.find(model => model.providerId === snapshot?.defaultModel?.providerId && model.id === snapshot.defaultModel.modelId) ?? models[0];
+}
 
 function validUrl(value: string) {
   let url = value;
@@ -206,12 +227,15 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   const [isSending, setIsSending] = useState(false);
   const [linkPopover, setLinkPopover] = useState<LinkPopover>();
   const [linkPopoverPosition, setLinkPopoverPosition] = useState({ left: 0, top: 0 });
+  const [providersSnapshot, setProvidersSnapshot] = useState<ProvidersSnapshot>();
   const [text, setText] = useState('');
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
   const initialText = inlineEdit?.initialText ?? draft?.text;
   const canSend = Boolean(inlineEdit ? text.trim() : selectedWorkspace && (text.trim() || attachments.length)) && !isSending && !isRunning;
   const placeholder = inlineEdit ? 'Edit message' : formatMessage({ id: 'composer.placeholder' });
   const editorLabel = inlineEdit ? 'Edit message' : 'Message Pi';
+  const modelOptions = availableModelOptions(providersSnapshot);
+  const selectedModel = selectedModelOption(modelOptions, providersSnapshot);
   const closeLinkPopover = useCallback(() => {
     if (linkPopover?.element.isConnected)
       linkPopover.element.focus();
@@ -287,6 +311,14 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
       view.destroy();
     };
   }, [editorLabel]);
+
+  useEffect(() => {
+    if (inlineEdit)
+      return;
+    if (typeof window.api.providers?.get !== 'function')
+      return;
+    window.api.providers.get().then(setProvidersSnapshot).catch(() => undefined);
+  }, [inlineEdit]);
 
   useEffect(() => {
     if (!linkPopover)
@@ -489,6 +521,16 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
           )
         : (
             <div className="chat-composer-actions">
+              {modelOptions.length > 0 && selectedModel && (
+                <ModelPicker
+                  models={modelOptions}
+                  onSelect={async (model) => {
+                    const next = await window.api.providers.setDefaultModel(model.providerId, model.id);
+                    setProvidersSnapshot(next);
+                  }}
+                  selectedModel={selectedModel}
+                />
+              )}
               <button
                 aria-label={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
                 className="chat-composer-send"
@@ -572,5 +614,53 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
         document.body,
       )}
     </form>
+  );
+}
+
+function ModelPicker({ models, onSelect, selectedModel }: { models: ModelOption[]; onSelect: (model: ModelOption) => Promise<void>; selectedModel: ModelOption }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger render={<button aria-label={`选择模型，当前 ${selectedModel.name}`} className="chat-composer-model-trigger" type="button" />}>
+        <Bot aria-hidden="true" size={14} />
+        <span>{selectedModel.name}</span>
+        <ChevronDown aria-hidden="true" size={13} />
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        aria-label="选择模型"
+        className="chat-composer-model-popover"
+        role="dialog"
+        side="top"
+        sideOffset={10}
+      >
+        <Command className="chat-composer-model-command" label="搜索模型">
+          <div className="chat-composer-model-search">
+            <Search aria-hidden="true" size={14} />
+            <Command.Input aria-label="搜索模型" autoFocus placeholder="搜索模型" />
+          </div>
+          <Command.List className="chat-composer-model-list">
+            <Command.Empty className="chat-composer-model-empty">未找到模型</Command.Empty>
+            {models.map(model => (
+              <Command.Item
+                className="chat-composer-model-item"
+                key={`${model.providerId}:${model.id}`}
+                onSelect={() => {
+                  void onSelect(model).then(() => setOpen(false));
+                }}
+                value={`${model.providerName} ${model.name} ${model.id}`}
+              >
+                <span>
+                  <strong>{model.name}</strong>
+                  <small>{model.providerName}</small>
+                </span>
+                {model.providerId === selectedModel.providerId && model.id === selectedModel.id && <Check aria-hidden="true" size={14} />}
+              </Command.Item>
+            ))}
+          </Command.List>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
