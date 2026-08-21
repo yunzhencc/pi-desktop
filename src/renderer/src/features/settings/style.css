@@ -264,17 +264,54 @@
   width: 15rem;
   min-height: 0;
   flex: 0 0 15rem;
+  display: flex;
+  flex-direction: column;
   border-inline-end: 1px solid var(--border-subtle);
   background: color-mix(in srgb, var(--foreground) 2%, transparent);
 }
 
 .settings-provider-nav-scroll {
-  height: 100%;
   min-height: 0;
+  flex: 1 1 auto;
 }
 
 .settings-provider-nav-scroll [data-overlayscrollbars-viewport] {
   min-height: 0;
+}
+
+.settings-provider-search {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 12px 12px 6px;
+}
+
+.settings-provider-search-icon {
+  position: absolute;
+  left: 21px;
+  z-index: 1;
+  pointer-events: none;
+  color: var(--text-tertiary);
+}
+
+.settings-provider-search-input {
+  height: 30px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  padding-inline-start: 30px;
+  box-shadow: none;
+  color: var(--foreground);
+  font-size: 13px;
+}
+
+.settings-provider-search-input:focus-visible {
+  border-color: var(--border-subtle);
+  box-shadow: none;
+}
+
+.settings-provider-search-input::-webkit-search-cancel-button {
+  display: none;
 }
 
 .settings-provider-nav-list {

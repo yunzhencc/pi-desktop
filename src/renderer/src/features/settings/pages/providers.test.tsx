@@ -28,6 +28,9 @@ const messages: Record<string, string> = {
   'providers.scope': '模型选择范围',
   'providers.scope.all': '已接入供应商',
   'providers.scope.primary': '主供应商',
+  'providers.search': '搜索模型供应商',
+  'providers.search.empty': '未找到供应商',
+  'providers.search.placeholder': '搜索供应商',
   'providers.setPrimary': '设为主供应商',
   'providers.title': 'Providers',
 };
@@ -107,6 +110,15 @@ describe('providers settings view', () => {
 
     expect(providerButtons.map(button => button.querySelector('strong')?.textContent)).toEqual(['DeepSeek', 'ChatGPT', 'OpenCode Go']);
     expect(container.querySelector('.settings-provider-nav .settings-provider-nav-title')).toBeNull();
+  });
+
+  it('filters providers with fuzzy search', () => {
+    const { container } = renderView(snapshot);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: '搜索模型供应商' }), { target: { value: 'ocg' } });
+
+    const providerButtons = [...container.querySelectorAll('.settings-provider-nav-item')];
+    expect(providerButtons.map(button => button.querySelector('strong')?.textContent)).toEqual(['OpenCode Go']);
   });
 
   it('submits API keys without keeping the key rendered', async () => {
