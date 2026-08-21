@@ -1,5 +1,5 @@
 import type { WorkspaceSnapshot, WorkspaceSummary } from '@shared/types';
-import type { FormEvent } from 'react';
+import type { SubmitEvent } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,7 @@ export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: 
     }
   };
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting)
       return;

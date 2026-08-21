@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import type { SubmitEvent } from 'react';
 import type { ModelPickerScope, ProviderId, ProviderSnapshot, ProvidersSnapshot } from '../../../../../main/provider-settings';
 import AntGroupIcon from '@lobehub/icons/es/AntGroup/components/Color.js';
 import AnthropicIcon from '@lobehub/icons/es/Anthropic/components/Mono.js';
@@ -398,7 +398,7 @@ function ApiKeyForm({ buttonLabel, disabled, onSubmit }: { buttonLabel: string; 
   const { formatMessage } = useIntl();
   const [apiKey, setApiKey] = useState('');
 
-  function submit(event: FormEvent) {
+  function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     onSubmit(apiKey);
     setApiKey('');
