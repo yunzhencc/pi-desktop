@@ -8,7 +8,7 @@ import { router } from './router';
 export function App() {
   React.useEffect(
     () => {
-      if (import.meta.env.DEV) {
+      if (import.meta.env.DEV && import.meta.env.VITE_DEV_REACT_GRAB === 'open') {
         void import('react-grab');
       }
     },
@@ -16,7 +16,7 @@ export function App() {
   );
 
   React.useEffect(() => {
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV && import.meta.env.VITE_DEV_REACT_GRAB === 'open') {
       void import('react-scan').then(({ scan }) => {
         scan({ enabled: true });
       });
