@@ -129,8 +129,8 @@ export function UserMessageFooter({ canEdit, onEdit, text, timestamp }: UserMess
   return (
     <footer className="chat-message-user-footer">
       {time != null && <time dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
-      {canEdit && <button aria-label="Edit message" className="chat-message-user-copy" onClick={onEdit} title="Edit message" type="button"><Pencil aria-hidden="true" size={14} /></button>}
-      <button aria-label="Copy message" className="chat-message-user-copy" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button">
+      {canEdit && <button aria-label="Edit message" className="chat-message-user-copy grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary" onClick={onEdit} title="Edit message" type="button"><Pencil aria-hidden="true" size={14} /></button>}
+      <button aria-label="Copy message" className="chat-message-user-copy grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button">
         <Copy aria-hidden="true" size={14} />
       </button>
     </footer>
@@ -141,8 +141,8 @@ export function AssistantMessageFooter({ entryId, isLatest, isRunning, onFork, t
   const time = formatMessageTime(timestamp);
   return (
     <footer className={`chat-message-assistant-footer${isLatest ? ' is-latest' : ''}`}>
-      <button aria-label="Copy assistant message" className="chat-message-assistant-action" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button"><Copy aria-hidden="true" size={18} /></button>
-      {entryId != null && !isRunning && <button aria-label="Fork conversation from this message" className="chat-message-assistant-action" onClick={() => void onFork(entryId)} title="Fork conversation" type="button"><GitFork aria-hidden="true" size={18} /></button>}
+      <button aria-label="Copy assistant message" className="chat-message-assistant-action grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button"><Copy aria-hidden="true" size={18} /></button>
+      {entryId != null && !isRunning && <button aria-label="Fork conversation from this message" className="chat-message-assistant-action grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void onFork(entryId)} title="Fork conversation" type="button"><GitFork aria-hidden="true" size={18} /></button>}
       {time != null && <time className="chat-message-assistant-timestamp" dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
     </footer>
   );

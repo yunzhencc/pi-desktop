@@ -26,7 +26,7 @@ export function ProfilePage() {
   return (
     <div className="h-full min-h-0 overflow-y-auto pt-[46px]">
       <section className="mx-auto w-full min-w-0 max-w-[45.75rem] px-8 pt-12 pb-12" aria-label={formatMessage({ id: 'settings.profile' })}>
-        <section className="settings-profile-stats" aria-label={formatMessage({ id: 'profileStats.title' })}>
+        <section className="settings-profile-stats flex min-h-[60px] overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--foreground)_8%,transparent)] max-[720px]:flex-col" aria-label={formatMessage({ id: 'profileStats.title' })}>
           {stats
             ? (
                 <>
@@ -59,9 +59,9 @@ export function ProfilePage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="settings-stat">
-      <strong>{value}</strong>
-      <span>{label}</span>
+    <div className="settings-stat flex min-w-px flex-1 basis-0 flex-col items-center justify-center overflow-hidden px-3 py-2.5 text-center text-base font-normal">
+      <strong className="w-full truncate leading-5 font-normal text-foreground">{value}</strong>
+      <span className="w-full truncate leading-5 text-text-tertiary">{label}</span>
     </div>
   );
 }

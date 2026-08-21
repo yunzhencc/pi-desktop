@@ -493,7 +493,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   return (
     <form
       aria-label={editorLabel}
-      className={inlineEdit ? 'chat-message-user-editor' : 'chat-composer relative rounded-[18px] border border-border-subtle bg-surface-elevated shadow-[0_10px_28px_color-mix(in_srgb,#000_8%,transparent)]'}
+      className={inlineEdit ? 'chat-message-user-editor relative flex min-h-0 w-full flex-col rounded-3xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)]' : 'chat-composer relative rounded-[18px] border border-border-subtle bg-surface-elevated shadow-[0_10px_28px_color-mix(in_srgb,#000_8%,transparent)]'}
       style={{ '--chat-composer-placeholder': JSON.stringify(placeholder) } as CSSProperties}
       onDragOver={inlineEdit ? undefined : event => event.preventDefault()}
       onDrop={(event) => {

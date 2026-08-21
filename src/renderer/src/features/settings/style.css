@@ -1,25 +1,3 @@
-.settings-profile-stats {
-  display: flex;
-  min-height: 60px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
-  border-radius: 16px;
-}
-
-.settings-stat {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 1px;
-  overflow: hidden;
-  padding: 10px 12px;
-  text-align: center;
-  font-size: 16px;
-  font-weight: 400;
-}
-
 .settings-stat + .settings-stat {
   border-left: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
 }
@@ -38,31 +16,7 @@
   width: 66px;
 }
 
-.settings-stat span {
-  width: 100%;
-  color: var(--text-tertiary);
-  line-height: 20px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.settings-stat strong {
-  width: 100%;
-  color: var(--foreground);
-  font-weight: 400;
-  line-height: 20px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 @media (max-width: 720px) {
-  .settings-profile-stats {
-    flex-direction: column;
-    display: flex;
-  }
-
   .settings-stat + .settings-stat {
     border-top: 1px solid var(--border-subtle);
     border-left: 0;

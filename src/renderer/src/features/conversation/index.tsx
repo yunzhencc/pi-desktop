@@ -220,7 +220,7 @@ export function ConversationPage() {
                   {message.role === 'work'
                     ? <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} status={message.workStatus} />
                     : (
-                        <article className={`chat-message chat-message-${message.role}${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
+                        <article className={`chat-message chat-message-${message.role} w-fit max-w-[min(100%,44rem)] text-base leading-normal${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
                           {message.role === 'assistant'
                             ? (
                                 <>
@@ -234,7 +234,7 @@ export function ConversationPage() {
                                     ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
                                     : (
                                         <>
-                                          <div className="chat-message-user-content" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>{message.text}</div>
+                                          <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>{message.text}</div>
                                           <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={message.text} timestamp={message.timestamp} />
                                         </>
                                       )
