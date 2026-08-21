@@ -42,6 +42,7 @@
     "@earendil-works/pi-tui": "catalog:core",
     "@electron-toolkit/preload": "catalog:core",
     "@electron-toolkit/utils": "catalog:core",
+    "@lobehub/icons": "catalog:core",
     "@pi-desktop/shadcn-ui": "workspace:*",
     "@pi-desktop/utils": "workspace:*",
     "@tanstack/react-hotkeys": "catalog:core",
