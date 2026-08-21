@@ -5,6 +5,7 @@ import { ArrowDown } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { buildThreadLayout, preserveAnchorDistance, visibleThreadRange } from './thread-virtualizer';
+import './style.css';
 
 const DEFAULT_TURN_HEIGHT = 72;
 const FOLLOW_THRESHOLD = 24;

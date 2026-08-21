@@ -3,6 +3,7 @@ import { fromMarkdown } from 'mdast-util-from-markdown';
 import { gfmFromMarkdown } from 'mdast-util-gfm';
 import { gfm } from 'micromark-extension-gfm';
 import { Fragment } from 'react';
+import './style.css';
 
 interface MarkdownNode {
   align?: Array<'center' | 'left' | 'right' | null>;
