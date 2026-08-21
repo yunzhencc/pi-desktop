@@ -25,11 +25,20 @@ import XAIIcon from '@lobehub/icons/es/XAI/components/Mono.js';
 import XiaomiMiMoIcon from '@lobehub/icons/es/XiaomiMiMo/components/Mono.js';
 import ZAIIcon from '@lobehub/icons/es/ZAI/components/Mono.js';
 import ZhipuIcon from '@lobehub/icons/es/Zhipu/components/Color.js';
+import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { Bot } from 'lucide-react';
 
 export function ProviderMark({ provider }: { provider: ProviderSnapshot }) {
   return (
-    <span className="settings-provider-mark" data-color-icon={providerIconHasColor(provider.id) ? 'true' : undefined} data-provider={provider.id}>
+    <span
+      className={cn(
+        'inline-flex size-[26px] shrink-0 basis-[26px] items-center justify-center rounded-md border border-border-subtle bg-surface text-xs font-semibold text-foreground',
+        providerIconHasColor(provider.id) && 'bg-transparent',
+        provider.id === 'deepseek' && 'text-[#16a34a]',
+        (provider.id === 'opencode' || provider.id.startsWith('opencode-')) && 'text-[#2563eb]',
+      )}
+      data-provider={provider.id}
+    >
       {renderProviderIcon(provider.id, provider.name)}
     </span>
   );

@@ -36,46 +36,46 @@ export function ProviderDetail({
   const selectedModel = defaultModel?.providerId === provider.id ? defaultModel.modelId : provider.models[0]?.id;
 
   return (
-    <article className="settings-provider-detail">
-      <header className="settings-provider-detail-header">
+    <article className="flex min-h-0 min-w-0 flex-1 flex-col gap-[18px] p-[18px]">
+      <header className="flex items-center gap-4">
         <ProviderMark provider={provider} />
         <div>
-          <h2>{provider.name}</h2>
-          <p className="settings-provider-status">
+          <h2 className="m-0 text-lg font-semibold">{provider.name}</h2>
+          <p className="m-0 text-sm text-foreground">
             {provider.configured ? formatMessage({ id: 'providers.connected' }) : formatMessage({ id: 'providers.notConnected' })}
             {provider.primary ? ` · ${formatMessage({ id: 'providers.primary' })}` : ''}
           </p>
         </div>
       </header>
 
-      <div className="settings-provider-detail-section">
-        <div className="settings-provider-nav-title">{formatMessage({ id: 'providers.auth' })}</div>
+      <div className="flex flex-col gap-2.5 border-t border-border-subtle pt-4">
+        <div className="settings-provider-nav-title text-[11px] font-semibold tracking-[0.06em] text-text-tertiary uppercase">{formatMessage({ id: 'providers.auth' })}</div>
         {provider.authType === 'oauth'
-          ? <button disabled={busy === 'login-openai-codex'} onClick={onLoginChatGPT} type="button">{formatMessage({ id: 'providers.chatgpt.login' })}</button>
+          ? <button className="w-fit rounded-md bg-foreground px-3 py-[7px] text-background disabled:opacity-[0.55]" disabled={busy === 'login-openai-codex'} onClick={onLoginChatGPT} type="button">{formatMessage({ id: 'providers.chatgpt.login' })}</button>
           : onSaveApiKey && <ApiKeyForm disabled={busy === `save-${provider.id}`} onSubmit={onSaveApiKey} />}
-        {error && <p className="settings-provider-error" role="alert">{error}</p>}
+        {error && <p className="m-0 text-[13px] text-destructive" role="alert">{error}</p>}
         {provider.authType === 'api_key' && provider.configured && onRemove && (
-          <button className="settings-provider-danger" disabled={busy === `remove-${provider.id}`} onClick={onRemove} type="button">
+          <button className="w-fit self-start rounded-md border border-[color-mix(in_srgb,#ef4444_35%,transparent)] bg-transparent px-3 py-[7px] text-[#ef4444] disabled:opacity-[0.55]" disabled={busy === `remove-${provider.id}`} onClick={onRemove} type="button">
             {formatMessage({ id: 'providers.remove' })}
           </button>
         )}
       </div>
 
-      <div className="settings-provider-detail-section">
-        <div className="settings-provider-nav-title">{formatMessage({ id: 'providers.modelSettings' })}</div>
+      <div className="flex flex-col gap-2.5 border-t border-border-subtle pt-4">
+        <div className="settings-provider-nav-title text-[11px] font-semibold tracking-[0.06em] text-text-tertiary uppercase">{formatMessage({ id: 'providers.modelSettings' })}</div>
         {!provider.primary && (
-          <button disabled={!provider.configured || busy === `primary-${provider.id}`} onClick={onSetPrimaryProvider} type="button">{formatMessage({ id: 'providers.setPrimary' })}</button>
+          <button className="w-fit rounded-md bg-foreground px-3 py-[7px] text-background disabled:opacity-[0.55]" disabled={!provider.configured || busy === `primary-${provider.id}`} onClick={onSetPrimaryProvider} type="button">{formatMessage({ id: 'providers.setPrimary' })}</button>
         )}
         {provider.models.length > 0 && selectedModel
           ? (
-              <label className="settings-provider-field">
+              <label className="flex w-[min(100%,28rem)] flex-col gap-2 text-sm">
                 <span>{formatMessage({ id: 'providers.defaultModel' })}</span>
                 <Select
                   items={provider.models.map(model => ({ label: model.name, value: model.id }))}
                   onValueChange={onSetDefaultModel}
                   value={selectedModel}
                 >
-                  <SelectTrigger aria-label={`${provider.name} ${formatMessage({ id: 'providers.defaultModel' })}`} className="settings-language-select">
+                  <SelectTrigger aria-label={`${provider.name} ${formatMessage({ id: 'providers.defaultModel' })}`} className="min-w-32 bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] font-inherit text-inherit">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent align="start" alignItemWithTrigger={false}>
@@ -86,7 +86,7 @@ export function ProviderDetail({
                 </Select>
               </label>
             )
-          : <p className="settings-provider-description">{formatMessage({ id: 'providers.noModels' })}</p>}
+          : <p className="settings-provider-description m-0 text-sm text-text-tertiary">{formatMessage({ id: 'providers.noModels' })}</p>}
       </div>
     </article>
   );

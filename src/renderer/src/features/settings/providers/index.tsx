@@ -57,14 +57,14 @@ export function ProvidersSettingsView({
   }
 
   return (
-    <div className="settings-view settings-provider-view">
-      <section className="settings-content settings-provider-content" aria-labelledby="providers-settings-title">
-        <div className="settings-provider-titlebar">
+    <div className="settings-provider-view h-full min-h-0 overflow-hidden pt-[46px]">
+      <section className="mx-auto box-border flex h-full w-full max-w-[58rem] min-w-0 flex-col px-8 pt-[22px] pb-6" aria-labelledby="providers-settings-title">
+        <div className="flex items-start justify-between gap-4 max-[760px]:flex-col">
           <div>
-            <h1 id="providers-settings-title">{formatMessage({ id: 'providers.title' })}</h1>
-            <p className="settings-provider-description">{formatMessage({ id: 'providers.description' })}</p>
+            <h1 id="providers-settings-title" className="m-0 text-xl font-semibold">{formatMessage({ id: 'providers.title' })}</h1>
+            <p className="settings-provider-description mt-2 m-0 text-sm text-text-tertiary">{formatMessage({ id: 'providers.description' })}</p>
           </div>
-          <label className="settings-provider-scope">
+          <label className="flex min-w-52 flex-col items-end gap-2 text-xs text-text-tertiary">
             <span>{formatMessage({ id: 'providers.scope' })}</span>
             <Select
               items={[
@@ -74,7 +74,7 @@ export function ProvidersSettingsView({
               onValueChange={scope => void run('scope', async () => onSetScope(scope as ModelPickerScope).then(() => undefined))}
               value={snapshot.modelPickerScope}
             >
-              <SelectTrigger aria-label={formatMessage({ id: 'providers.scope' })} className="settings-language-select">
+              <SelectTrigger aria-label={formatMessage({ id: 'providers.scope' })} className="min-w-32 bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] font-inherit text-inherit">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="start" alignItemWithTrigger={false}>
@@ -87,8 +87,8 @@ export function ProvidersSettingsView({
           </label>
         </div>
 
-        <div className="settings-provider-config">
-          <aside className="settings-provider-nav" aria-label={formatMessage({ id: 'providers.title' })}>
+        <div className="mt-7 flex min-h-0 flex-1 items-stretch gap-4 overflow-hidden rounded-md border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] max-[760px]:flex-col">
+          <aside className="settings-provider-nav flex min-h-0 w-60 basis-60 flex-col border-e border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_2%,transparent)] max-[760px]:min-h-48 max-[760px]:w-auto max-[760px]:basis-auto max-[760px]:border-e-0 max-[760px]:border-b" aria-label={formatMessage({ id: 'providers.title' })}>
             <ProviderNavList
               empty={formatMessage({ id: 'providers.empty' })}
               providers={[...snapshot.connectedProviders, ...connectableProviders]}

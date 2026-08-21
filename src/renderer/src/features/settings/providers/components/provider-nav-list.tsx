@@ -25,11 +25,11 @@ export function ProviderNavList({
 
   return (
     <>
-      <div className="settings-provider-search">
-        <Search aria-hidden="true" className="settings-provider-search-icon" size={15} strokeWidth={1.75} />
+      <div className="relative flex shrink-0 items-center px-3 pt-3 pb-1.5">
+        <Search aria-hidden="true" className="pointer-events-none absolute left-[21px] z-[1] text-text-tertiary" size={15} strokeWidth={1.75} />
         <Input
           aria-label={formatMessage({ id: 'providers.search' })}
-          className="settings-provider-search-input"
+          className="[&::-webkit-search-cancel-button]:hidden h-[30px] border-transparent bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] ps-[30px] text-[13px] text-foreground shadow-none focus-visible:border-border-subtle focus-visible:shadow-none"
           onChange={event => setQuery(event.target.value)}
           placeholder={formatMessage({ id: 'providers.search.placeholder' })}
           type="search"
@@ -37,26 +37,26 @@ export function ProviderNavList({
         />
       </div>
       <OverlayScrollbarsComponent
-        className="settings-provider-nav-scroll"
+        className="min-h-0 flex-1 [&_[data-overlayscrollbars-viewport]]:min-h-0"
         options={{ scrollbars: { autoHide: 'leave', theme: overlayScrollbarsTheme } }}
       >
-        <div className="settings-provider-nav-list">
+        <div className="flex flex-col gap-1.5 p-3">
           {providers.length === 0
-            ? <p className="settings-provider-description">{empty}</p>
+            ? <p className="settings-provider-description m-0 text-sm text-text-tertiary">{empty}</p>
             : filteredProviders.length === 0
-              ? <p className="settings-provider-description">{formatMessage({ id: 'providers.search.empty' })}</p>
+              ? <p className="settings-provider-description m-0 text-sm text-text-tertiary">{formatMessage({ id: 'providers.search.empty' })}</p>
               : filteredProviders.map(provider => (
                   <button
                     aria-current={selection === provider.id ? 'page' : undefined}
-                    className="settings-provider-nav-item"
+                    className="settings-provider-nav-item flex w-full min-w-0 items-center gap-[9px] rounded-md p-[7px] text-start text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] aria-[current=page]:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)]"
                     key={provider.id}
                     onClick={() => onSelect(provider.id)}
                     type="button"
                   >
                     <ProviderMark provider={provider} />
-                    <span>
-                      <strong>{provider.name}</strong>
-                      <small>{provider.configured ? formatMessage({ id: 'providers.connected' }) : formatMessage({ id: 'providers.notConnected' })}</small>
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-medium">{provider.name}</strong>
+                      <small className="overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-text-tertiary">{provider.configured ? formatMessage({ id: 'providers.connected' }) : formatMessage({ id: 'providers.notConnected' })}</small>
                     </span>
                   </button>
                 ))}
