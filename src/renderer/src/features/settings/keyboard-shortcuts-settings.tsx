@@ -1,4 +1,9 @@
 import type { ShortcutBindings, ShortcutId } from '@renderer/features/app/hotkeys';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@pi-desktop/shadcn-ui/components/dialog';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import {
@@ -120,10 +125,10 @@ export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, o
           ))}
         </div>
       </section>
-      {isConfirmingReset && (
-        <div aria-modal="true" className="fixed inset-0 z-50 grid place-items-center bg-[color-mix(in_srgb,#000_28%,transparent)]" role="dialog">
-          <div className="w-[min(24rem,calc(100vw-32px))] rounded-lg border border-border-subtle bg-surface p-5 shadow-[0_18px_50px_color-mix(in_srgb,#000_26%,transparent)]">
-            <h2 className="m-0 text-sm font-medium">{formatMessage({ id: 'shortcuts.resetAll.title' })}</h2>
+      <Dialog onOpenChange={setIsConfirmingReset} open={isConfirmingReset}>
+        <DialogContent className="block w-[min(24rem,calc(100vw-32px))] rounded-lg border border-border-subtle bg-surface p-5 shadow-[0_18px_50px_color-mix(in_srgb,#000_26%,transparent)] ring-0" showCloseButton={false}>
+          <div>
+            <DialogTitle className="m-0 text-sm font-medium">{formatMessage({ id: 'shortcuts.resetAll.title' })}</DialogTitle>
             <p className="m-0 mt-1 text-[13px] text-text-tertiary">{formatMessage({ id: 'shortcuts.resetAll.description' })}</p>
             <div className="mt-5 flex justify-end gap-2">
               <button className={shortcutButtonClass} onClick={() => setIsConfirmingReset(false)} type="button">{formatMessage({ id: 'shortcuts.cancel' })}</button>
@@ -139,8 +144,8 @@ export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, o
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
