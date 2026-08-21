@@ -54,6 +54,9 @@ catalogs:
     electron-updater:
       specifier: 6.8.9
       version: 6.8.9
+    enum-plus:
+      specifier: ^3.3.0
+      version: 3.3.0
     es-toolkit:
       specifier: 1.51.0
       version: 1.51.0
@@ -303,6 +306,9 @@ importers:
       electron-updater:
         specifier: catalog:core
         version: 6.8.9(supports-color@7.2.0)
+      enum-plus:
+        specifier: catalog:core
+        version: 3.3.0
       es-toolkit:
         specifier: catalog:core
         version: 1.51.0
@@ -4425,6 +4431,10 @@ packages:
   entities@8.0.0:
     resolution: {integrity: sha512-zwfzJecQ/Uej6tusMqwAqU/6KL2XaB2VZ2Jg54Je6ahNBGNH6Ek6g3jjNCF0fG9EWQKGZNddNjU5F1ZQn/sBnA==}
     engines: {node: '>=20.19.0'}
+
+  enum-plus@3.3.0:
+    resolution: {integrity: sha512-phi3+ci+ZB7Qba6j8DJJ4RQUukk4kEtiPjsYrh6Ps2XYV4hi9tqccRrg4MXUYJ9U8l1m26VmTkp1zeonUmXCTA==}
+    engines: {node: '>=7.10.1'}
 
   env-paths@2.2.1:
     resolution: {integrity: sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==}
@@ -11565,6 +11575,8 @@ snapshots:
   entities@7.0.1: {}
 
   entities@8.0.0: {}
+
+  enum-plus@3.3.0: {}
 
   env-paths@2.2.1: {}
 

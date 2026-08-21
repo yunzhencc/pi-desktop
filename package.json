@@ -50,6 +50,7 @@
     "better-sqlite3": "catalog:core",
     "cmdk": "catalog:core",
     "electron-updater": "catalog:core",
+    "enum-plus": "catalog:core",
     "es-toolkit": "catalog:core",
     "jotai": "catalog:core",
     "js-yaml": "catalog:core",

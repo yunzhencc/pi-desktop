@@ -37,6 +37,7 @@ catalogs:
     clsx: 2.1.1
     cmdk: 1.1.1
     electron-updater: 6.8.9
+    enum-plus: ^3.3.0
     es-toolkit: 1.51.0
     jotai: 2.20.2
     js-yaml: ^5.3.0
