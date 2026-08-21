@@ -39,12 +39,12 @@ export function ProfilePage() {
               )
             : <ProfileStatsLoading />}
         </section>
-        <section className="settings-profile-section" aria-label={formatMessage({ id: 'profileStats.activityTitle' })}>
-          <div className="settings-profile-section-header">
-            <h2>{formatMessage({ id: 'profileStats.activityTitle' })}</h2>
-            <div className="settings-profile-tabs">
+        <section className="mt-10" aria-label={formatMessage({ id: 'profileStats.activityTitle' })}>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="text-base leading-tight font-medium text-foreground">{formatMessage({ id: 'profileStats.activityTitle' })}</h2>
+            <div className="flex gap-4">
               {(['daily', 'weekly', 'cumulative'] as const).map(tab => (
-                <button aria-pressed={view === tab} key={tab} onClick={() => setView(tab)} type="button">
+                <button aria-pressed={view === tab} className="cursor-pointer p-0 text-base leading-5 font-normal text-text-tertiary outline-none hover:text-foreground focus-visible:rounded-sm focus-visible:text-foreground focus-visible:shadow-[0_0_0_2px_var(--ring)] disabled:cursor-default aria-pressed:text-foreground" key={tab} onClick={() => setView(tab)} type="button">
                   {formatMessage({ id: `profileStats.${tab}` })}
                 </button>
               ))}
@@ -69,13 +69,13 @@ function Stat({ label, value }: { label: string; value: string }) {
 function ActivityGrid({ cells, monthLabels }: ProfileActivity) {
   const columnCount = Math.ceil(cells.length / 7);
   return (
-    <div className="settings-profile-chart">
-      <div className="settings-profile-heatmap" style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(1px, 1fr))` }}>
+    <div className="settings-profile-chart flex flex-col gap-2">
+      <div className="settings-profile-heatmap grid auto-cols-fr grid-flow-col grid-rows-[repeat(7,minmax(1px,1fr))] gap-[3px] overflow-hidden" style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(1px, 1fr))` }}>
         {cells.map(cell => (
-          <span aria-label={`${cell.iso}: ${cell.count}`} data-level={cell.level} key={cell.iso} title={`${cell.iso}: ${cell.count}`} />
+          <span aria-label={`${cell.iso}: ${cell.count}`} className="aspect-square w-full min-w-0 rounded bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] data-[level='1']:bg-[color-mix(in_srgb,var(--foreground)_18%,transparent)] data-[level='2']:bg-[color-mix(in_srgb,var(--foreground)_34%,transparent)] data-[level='3']:bg-[color-mix(in_srgb,var(--foreground)_52%,transparent)] data-[level='4']:bg-foreground" data-level={cell.level} key={cell.iso} title={`${cell.iso}: ${cell.count}`} />
         ))}
       </div>
-      <div className="settings-profile-months" aria-hidden="true">
+      <div className="settings-profile-months flex items-center justify-between text-sm leading-tight text-text-tertiary" aria-hidden="true">
         {monthLabels.map(label => <span key={label}>{label}</span>)}
       </div>
     </div>
@@ -93,11 +93,11 @@ function ProfileStatsLoading() {
 function ActivityGridLoading() {
   const columnCount = 53;
   return (
-    <div className="settings-profile-chart" aria-hidden="true">
-      <div className="settings-profile-heatmap" style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(1px, 1fr))` }}>
-        {Array.from({ length: 371 }, (_, index) => <span data-level="0" key={index} />)}
+    <div className="settings-profile-chart flex flex-col gap-2" aria-hidden="true">
+      <div className="settings-profile-heatmap grid auto-cols-fr grid-flow-col grid-rows-[repeat(7,minmax(1px,1fr))] gap-[3px] overflow-hidden" style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(1px, 1fr))` }}>
+        {Array.from({ length: 371 }, (_, index) => <span className="aspect-square w-full min-w-0 rounded bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]" data-level="0" key={index} />)}
       </div>
-      <div className="settings-profile-months">
+      <div className="settings-profile-months flex items-center justify-between text-sm leading-tight text-text-tertiary">
         {Array.from({ length: 12 }, (_, index) => <span key={index} />)}
       </div>
     </div>

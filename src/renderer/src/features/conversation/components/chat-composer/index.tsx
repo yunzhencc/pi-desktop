@@ -57,6 +57,9 @@ const composerSchema = new Schema({
   nodes: schema.spec.nodes,
 });
 const trailingUrlPunctuation = new Set(['.', ',', '!', '?', ';', ':', ']', '}']);
+const toolbarProjectClass = 'new-conversation-toolbar-project new-conversation-toolbar-project-picker relative flex min-w-0 max-w-full items-center gap-1.5 text-xs text-text-secondary [&_svg]:shrink-0 [&_span]:truncate';
+const toolbarProjectTriggerClass = 'new-conversation-toolbar-project-trigger flex h-7 min-w-0 items-center gap-1.5 rounded-full border-0 bg-transparent px-3 text-left font-[inherit] text-inherit transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] hover:text-text-primary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:text-text-primary focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--focus)] aria-expanded:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] aria-expanded:text-text-primary [&_svg]:shrink-0 [&_span]:truncate';
+const toolbarItemClass = 'new-conversation-toolbar-item inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs text-text-secondary transition-colors duration-150 hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] hover:text-text-primary [&_svg]:shrink-0';
 
 function availableModelOptions(snapshot?: ProvidersSnapshot) {
   if (!snapshot)
@@ -179,15 +182,15 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
   const branch = selectedWorkspace && selectedWorkspace.path === branchResult?.path ? branchResult?.branch : undefined;
 
   return (
-    <div aria-label="新会话项目上下文" className="new-conversation-toolbar" data-has-project={Boolean(selectedWorkspace)} role="toolbar">
+    <div aria-label="新会话项目上下文" className="new-conversation-toolbar mx-2 -mb-px flex min-h-10 items-center gap-2 rounded-t-2xl bg-surface-tertiary px-2 dark:bg-[color-mix(in_oklab,var(--foreground)_2.5%,transparent)]" data-has-project={Boolean(selectedWorkspace)} role="toolbar">
       {selectedWorkspace
         ? (
             <ProjectPicker
-              className="new-conversation-toolbar-project new-conversation-toolbar-project-picker"
+              className={toolbarProjectClass}
               onClearProject={onClearProject}
               onCreateProject={onCreateProject}
               onSelectProject={onSelectProject}
-              triggerClassName="new-conversation-toolbar-project-trigger"
+              triggerClassName={toolbarProjectTriggerClass}
               workspace={workspace}
             >
               <Folder aria-hidden="true" className="new-conversation-toolbar-project-icon" data-project-selector-icon size={16} />
@@ -196,10 +199,10 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
           )
         : (
             <ProjectPicker
-              className="new-conversation-toolbar-project new-conversation-toolbar-project-picker"
+              className={toolbarProjectClass}
               onCreateProject={onCreateProject}
               onSelectProject={onSelectProject}
-              triggerClassName="new-conversation-toolbar-project-trigger"
+              triggerClassName={toolbarProjectTriggerClass}
               workspace={workspace}
             >
               <Folder aria-hidden="true" size={16} />
@@ -208,12 +211,12 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
           )}
       {selectedWorkspace && (
         <>
-          <span className="new-conversation-toolbar-item">
+          <span className={toolbarItemClass}>
             <Laptop aria-hidden="true" size={16} />
             本地
           </span>
           {branch && (
-            <span className="new-conversation-toolbar-item">
+            <span className={toolbarItemClass}>
               <GitBranch aria-hidden="true" size={16} />
               {branch}
             </span>
@@ -490,7 +493,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   return (
     <form
       aria-label={editorLabel}
-      className={inlineEdit ? 'chat-message-user-editor' : 'chat-composer'}
+      className={inlineEdit ? 'chat-message-user-editor' : 'chat-composer relative rounded-[18px] border border-border-subtle bg-surface-elevated shadow-[0_10px_28px_color-mix(in_srgb,#000_8%,transparent)]'}
       style={{ '--chat-composer-placeholder': JSON.stringify(placeholder) } as CSSProperties}
       onDragOver={inlineEdit ? undefined : event => event.preventDefault()}
       onDrop={(event) => {
@@ -513,33 +516,33 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
       }}
     >
       {!inlineEdit && attachments.length > 0 && (
-        <div aria-label="Attachments" className="chat-composer-attachments">
+        <div aria-label="Attachments" className="chat-composer-attachments flex flex-wrap gap-2 px-3 pt-3">
           {attachments.map(attachment => attachment.kind === 'image'
             ? (
-                <div className="chat-composer-image" key={attachment.id}>
-                  <img alt={attachment.name} src={attachment.previewDataUrl} />
-                  <button aria-label={`Remove ${attachment.name}`} onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={10} /></button>
+                <div className="chat-composer-image relative size-20 shrink-0 overflow-visible rounded-lg border border-[color-mix(in_srgb,var(--foreground)_20%,transparent)]" key={attachment.id}>
+                  <img alt={attachment.name} className="block size-full rounded-[7px] object-cover" src={attachment.previewDataUrl} />
+                  <button aria-label={`Remove ${attachment.name}`} className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-foreground p-0 text-background shadow-[0_1px_2px_color-mix(in_srgb,#000_28%,transparent)]" onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={10} /></button>
                 </div>
               )
             : (
-                <div className="chat-composer-chip" key={attachment.id}>
+                <div className="chat-composer-chip flex h-[30px] max-w-60 items-center gap-1.5 rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] py-[3px] pr-[5px] pl-[7px] text-xs text-text-secondary" key={attachment.id}>
                   <FileText aria-hidden="true" size={15} />
-                  <span>{attachment.name}</span>
-                  <button aria-label={`Remove ${attachment.name}`} onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={14} /></button>
+                  <span className="truncate">{attachment.name}</span>
+                  <button aria-label={`Remove ${attachment.name}`} className="grid place-items-center rounded-lg p-0.5 text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-foreground" onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={14} /></button>
                 </div>
               ))}
         </div>
       )}
-      <div className="chat-composer-editor" ref={editorHostRef} />
+      <div className="chat-composer-editor mb-1 min-h-0 px-3" ref={editorHostRef} />
       {inlineEdit
         ? (
-            <div className="chat-message-user-editor-actions">
-              <button aria-label="Cancel edit" disabled={isSending} onClick={inlineEdit.onCancel} type="button">取消</button>
-              <button aria-label="Send edited message" disabled={!canSend} type="submit">{isSending ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} /> : '发送'}</button>
+            <div className="chat-message-user-editor-actions flex justify-end gap-1.5 px-3 pb-3">
+              <button aria-label="Cancel edit" className="grid h-7 min-w-0 cursor-pointer place-items-center rounded-lg border border-border-subtle bg-transparent px-3 font-[inherit] text-inherit disabled:cursor-default disabled:opacity-55" disabled={isSending} onClick={inlineEdit.onCancel} type="button">取消</button>
+              <button aria-label="Send edited message" className="grid h-7 min-w-0 cursor-pointer place-items-center rounded-lg bg-foreground px-3 font-[inherit] text-surface disabled:cursor-default disabled:opacity-55" disabled={!canSend} type="submit">{isSending ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} /> : '发送'}</button>
             </div>
           )
         : (
-            <div className="chat-composer-actions">
+            <div className="chat-composer-actions flex min-h-0 items-center justify-end gap-2 px-2 pb-2">
               {modelOptions.length > 0 && selectedModel && (
                 <ModelPicker
                   models={modelOptions}
@@ -553,7 +556,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
               )}
               <button
                 aria-label={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
-                className="chat-composer-send"
+                className="chat-composer-send grid size-7 place-items-center rounded-full bg-foreground p-0.5 text-background transition-opacity duration-150 disabled:cursor-default disabled:opacity-50"
                 disabled={isRunning ? false : !canSend}
                 onClick={isRunning ? () => onStop() : undefined}
                 title={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
@@ -563,7 +566,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
               </button>
             </div>
           )}
-      {error && <p aria-live="polite" className="chat-composer-error" role="status">{error}</p>}
+      {error && <p aria-live="polite" className="chat-composer-error m-0 whitespace-pre-wrap px-3 pb-2.5 text-xs text-destructive" role="status">{error}</p>}
       {linkPopover && createPortal(
         <div
           aria-label="链接选项"
@@ -643,7 +646,7 @@ function ModelPicker({ models, onSelect, selectedModel, showGroups }: { models: 
 
   return (
     <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger render={<button aria-label={`选择模型，当前 ${selectedModel.name}`} className="chat-composer-model-trigger" type="button" />}>
+      <PopoverTrigger render={<button aria-label={`选择模型，当前 ${selectedModel.name}`} className="chat-composer-model-trigger inline-flex h-7 max-w-[180px] items-center gap-[5px] rounded-full border border-border-subtle bg-transparent px-2 text-xs leading-4 text-text-secondary hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] hover:text-foreground focus-visible:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--focus)] aria-expanded:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] aria-expanded:text-foreground [&_svg]:shrink-0 [&_span]:truncate" type="button" />}>
         <Bot aria-hidden="true" size={14} />
         <span>{selectedModel.name}</span>
         <ChevronDown aria-hidden="true" size={13} />
@@ -651,18 +654,18 @@ function ModelPicker({ models, onSelect, selectedModel, showGroups }: { models: 
       <PopoverContent
         align="end"
         aria-label="选择模型"
-        className="chat-composer-model-popover"
+        className="chat-composer-model-popover max-h-[min(360px,calc(100vh_-_16px))] w-[min(280px,calc(100vw_-_16px))] overflow-hidden rounded-xl border border-border-subtle bg-surface-elevated p-1.5 shadow-[0_8px_16px_-4px_color-mix(in_srgb,#000_12%,transparent)]"
         role="dialog"
         side="top"
         sideOffset={10}
       >
-        <Command className="chat-composer-model-command" label="搜索模型">
-          <div className="chat-composer-model-search">
+        <Command className="chat-composer-model-command grid gap-1" label="搜索模型">
+          <div className="chat-composer-model-search flex h-8 items-center gap-1.5 px-2 text-text-tertiary [&_input]:min-w-0 [&_input]:flex-1 [&_input]:border-0 [&_input]:bg-transparent [&_input]:font-[inherit] [&_input]:text-[13px] [&_input]:text-foreground [&_input]:outline-0 [&_input::placeholder]:text-text-tertiary">
             <Search aria-hidden="true" size={14} />
             <Command.Input aria-label="搜索模型" autoFocus placeholder="搜索模型" />
           </div>
-          <Command.List className="chat-composer-model-list">
-            <Command.Empty className="chat-composer-model-empty">未找到模型</Command.Empty>
+          <Command.List className="chat-composer-model-list max-h-[calc((1lh+22px)*6)] overflow-y-auto">
+            <Command.Empty className="chat-composer-model-empty p-2 text-[13px] text-text-tertiary">未找到模型</Command.Empty>
             {showGroups
               ? modelGroups.map(group => (
                   <Command.Group className="chat-composer-model-group" heading={<ProviderGroupHeading group={group} />} key={group.providerId}>
@@ -679,7 +682,7 @@ function ModelPicker({ models, onSelect, selectedModel, showGroups }: { models: 
 
 function ProviderGroupHeading({ group }: { group: { providerId: string; providerName: string } }) {
   return (
-    <span className="chat-composer-model-group-heading">
+    <span className="chat-composer-model-group-heading flex items-center gap-1.5 [&_svg]:shrink-0">
       {renderProviderGroupIcon(group.providerId)}
       <span>{group.providerName}</span>
     </span>
@@ -707,7 +710,7 @@ function ModelPickerItem({ model, onSelect, selectedModel, setOpen, showProvider
 }) {
   return (
     <Command.Item
-      className="chat-composer-model-item"
+      className="chat-composer-model-item flex min-h-[42px] cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-text-secondary data-[selected=true]:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] data-[selected=true]:text-foreground [&_small]:truncate [&_small]:text-[11px] [&_small]:text-text-tertiary [&_span]:grid [&_span]:min-w-0 [&_span]:gap-0.5 [&_strong]:truncate [&_strong]:font-medium [&_svg]:ml-auto [&_svg]:shrink-0"
       onSelect={() => {
         void onSelect(model).then(() => setOpen(false));
       }}
