@@ -279,6 +279,18 @@ export const messages = {
   },
 } as const;
 
+declare global {
+  // eslint-disable-next-line ts/no-namespace
+  namespace FormatjsIntl {
+    interface Message {
+      ids: keyof typeof messages['zh-CN'];
+    }
+    interface IntlConfig {
+      locale: AppLocale;
+    }
+  }
+}
+
 export function readLocale(value: string | null): AppLocale {
-  return LocaleEnum.has(value) ? value : DEFAULT_LOCALE;
+  return LocaleEnum.has(value) ? value as AppLocale : DEFAULT_LOCALE;
 }
