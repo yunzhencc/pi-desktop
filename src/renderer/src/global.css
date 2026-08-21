@@ -1319,14 +1319,12 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
 }
 
 .project-picker-popover {
-  position: fixed;
-  z-index: 10;
+  width: max-content;
   min-width: 260px;
   max-width: calc(100vw - 16px);
   max-height: min(350px, calc(100vh - 16px));
   padding: 4px;
   overflow-y: auto;
-  transform: translate(-50%, -100%);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
   background: var(--surface-elevated);

@@ -1,9 +1,12 @@
+import type { WorkspaceSnapshot } from '@shared/types';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@pi-desktop/shadcn-ui/components/popover';
 import { Command } from 'cmdk';
 import { Folder, Plus, Search, X } from 'lucide-react';
 import React from 'react';
-import { createPortal } from 'react-dom';
-
-type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 
 export function ProjectPicker({ children, className, onClearProject, onCreateProject, onSelectProject, triggerClassName, workspace }: {
   children: React.ReactNode;
@@ -15,68 +18,34 @@ export function ProjectPicker({ children, className, onClearProject, onCreatePro
   workspace?: WorkspaceSnapshot;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [position, setPosition] = React.useState<{ left: number; top: number }>();
-  const rootRef = React.useRef<HTMLSpanElement>(null);
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
-  const popoverRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (!open)
-      return;
-    const closeOnOutsidePointer = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node) && !popoverRef.current?.contains(event.target as Node))
-        setOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape')
-        setOpen(false);
-    };
-    document.addEventListener('pointerdown', closeOnOutsidePointer);
-    window.addEventListener('keydown', closeOnEscape);
-    return () => {
-      document.removeEventListener('pointerdown', closeOnOutsidePointer);
-      window.removeEventListener('keydown', closeOnEscape);
-    };
-  }, [open]);
 
   const selectProject = (path: string) => {
     onSelectProject?.(path);
     setOpen(false);
   };
 
-  const toggle = () => {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect)
-      setPosition({ left: rect.left + rect.width / 2, top: rect.top - 12 });
-    setOpen(true);
-  };
-
   return (
-    <span className={className ? `project-picker ${className}` : 'project-picker'} data-clear-project-available={onClearProject ? '' : undefined} ref={rootRef}>
-      {onClearProject && (
-        <button
-          aria-label="清理项目"
-          className="project-picker-clear"
-          data-clear-project-button
-          onClick={(event) => {
-            event.stopPropagation();
-            setOpen(false);
-            onClearProject();
-          }}
-          type="button"
-        >
-          <X aria-hidden="true" size={16} />
-        </button>
-      )}
-      <button aria-expanded={open} aria-haspopup="dialog" className={triggerClassName} onClick={toggle} ref={triggerRef} type="button">
-        {children}
-      </button>
-      {open && position && createPortal(
-        <div aria-label="选择项目" className="project-picker-popover" ref={popoverRef} role="dialog" style={position}>
+    <span className={className ? `project-picker ${className}` : 'project-picker'} data-clear-project-available={onClearProject ? '' : undefined}>
+      <Popover onOpenChange={setOpen} open={open}>
+        {onClearProject && (
+          <button
+            aria-label="清理项目"
+            className="project-picker-clear"
+            data-clear-project-button
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpen(false);
+              onClearProject();
+            }}
+            type="button"
+          >
+            <X aria-hidden="true" size={16} />
+          </button>
+        )}
+        <PopoverTrigger render={<button className={triggerClassName} type="button" />}>
+          {children}
+        </PopoverTrigger>
+        <PopoverContent align="center" aria-label="选择项目" className="project-picker-popover" role="dialog" side="top" sideOffset={12}>
           <Command className="project-picker-command" label="搜索项目">
             <div className="project-picker-search">
               <Search aria-hidden="true" size={14} />
@@ -107,9 +76,8 @@ export function ProjectPicker({ children, className, onClearProject, onCreatePro
               </Command.Group>
             </Command.List>
           </Command>
-        </div>,
-        document.body,
-      )}
+        </PopoverContent>
+      </Popover>
     </span>
   );
 }
