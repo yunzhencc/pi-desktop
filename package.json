@@ -52,6 +52,7 @@
     "electron-updater": "catalog:core",
     "es-toolkit": "catalog:core",
     "jotai": "catalog:core",
+    "js-yaml": "catalog:core",
     "lucide-react": "catalog:core",
     "mdast-util-from-markdown": "catalog:core",
     "mdast-util-gfm": "catalog:core",

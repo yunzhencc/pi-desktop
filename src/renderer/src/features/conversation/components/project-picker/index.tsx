@@ -1,13 +1,12 @@
-import type { ReactNode } from 'react';
 import { Command } from 'cmdk';
 import { Folder, Plus, Search, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
 
 export function ProjectPicker({ children, className, onClearProject, onCreateProject, onSelectProject, triggerClassName, workspace }: {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
   onClearProject?: () => void;
   onCreateProject?: () => void;
@@ -15,13 +14,13 @@ export function ProjectPicker({ children, className, onClearProject, onCreatePro
   triggerClassName?: string;
   workspace?: WorkspaceSnapshot;
 }) {
-  const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState<{ left: number; top: number }>();
-  const rootRef = useRef<HTMLSpanElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = React.useState(false);
+  const [position, setPosition] = React.useState<{ left: number; top: number }>();
+  const rootRef = React.useRef<HTMLSpanElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const popoverRef = React.useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!open)
       return;
     const closeOnOutsidePointer = (event: PointerEvent) => {

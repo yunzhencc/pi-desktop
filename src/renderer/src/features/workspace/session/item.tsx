@@ -1,18 +1,17 @@
 import type { GetProps } from '@pi-desktop/utils';
 import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@pi-desktop/shadcn-ui/components/hover-card';
+import {
   Item,
   ItemActions,
   ItemContent,
   ItemTitle,
 } from '@pi-desktop/shadcn-ui/components/item';
-import {
-  Popover,
-  // PopoverContent,
-  PopoverTrigger,
-} from '@pi-desktop/shadcn-ui/components/popover';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { LoaderCircle, Pin, PinOff, Trash2 } from 'lucide-react';
-import { useState } from 'react';
 
 interface SessionItemProps extends GetProps<typeof Item> {
   /** 是否选中 */
@@ -36,19 +35,11 @@ export function SessionItem(props: SessionItemProps) {
     onClick,
     ...rest
   } = props;
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   return (
-    <Popover
-      open={isPopoverOpen}
-      onOpenChange={(open, { reason }) => {
-        if (reason !== 'trigger-press')
-          setIsPopoverOpen(open);
-      }}
-    >
-      <PopoverTrigger
-        openOnHover
-        delay={0}
+    <HoverCard>
+      <HoverCardTrigger
+        closeDelay={0}
         className="flex w-full"
       >
         <Item
@@ -95,12 +86,12 @@ export function SessionItem(props: SessionItemProps) {
             </span>
           </ItemActions>
         </Item>
-      </PopoverTrigger>
+      </HoverCardTrigger>
       {/* 展示会话的详细信息 */}
-      {/* <PopoverContent align="start" side="right" className="w-70">
+      <HoverCardContent align="start" side="right" className="w-70">
         123
-      </PopoverContent> */}
-    </Popover>
+      </HoverCardContent>
+    </HoverCard>
 
   );
 }
