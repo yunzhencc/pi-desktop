@@ -1,4 +1,5 @@
 import type { AppearanceTheme } from '../../types';
+import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { useTheme } from 'next-themes';
 import { useIntl } from 'react-intl';
 import { readAppearanceTheme } from '../../utils';
@@ -12,12 +13,19 @@ export function ToggleTheme() {
   const appearanceTheme = readAppearanceTheme(theme ?? 'system');
 
   return (
-    <div aria-label={formatMessage({ id: 'settings.theme' })} className="settings-theme-options" role="radiogroup">
+    <div aria-label={formatMessage({ id: 'settings.theme' })} className="grid grid-cols-3 gap-3" role="radiogroup">
       {themeOptions.map(value => (
-        <label className="settings-theme-option" key={value}>
+        <label
+          className={cn(
+            'flex min-w-0 cursor-pointer flex-col items-center gap-1.5 text-center text-sm text-text-secondary',
+            appearanceTheme === value && 'text-foreground',
+          )}
+          key={value}
+        >
           <input
             aria-label={formatMessage({ id: `appearance.${value}` })}
             checked={appearanceTheme === value}
+            className="sr-only"
             name="appearance-theme"
             onChange={() => setTheme(value)}
             type="radio"
@@ -40,10 +48,13 @@ function ThemePreview({ mode, selected }: { mode: AppearanceTheme; selected: boo
   return (
     <span
       aria-hidden="true"
-      className="settings-theme-preview"
-      data-selected={selected}
+      className={cn(
+        'relative block aspect-[17/12] w-full overflow-hidden rounded-lg border border-border-subtle bg-[#f3f3f3]',
+        selected && 'border-2 border-foreground',
+        mode === 'dark' && 'bg-[#5d5d5d]',
+        mode === 'system' && 'bg-[linear-gradient(90deg,#9f9f9f_0_50%,#5d5d5d_50%_100%)]',
+      )}
       data-testid={`theme-preview-${mode}`}
-      data-theme={mode}
     >
       {preview}
     </span>
@@ -52,7 +63,7 @@ function ThemePreview({ mode, selected }: { mode: AppearanceTheme; selected: boo
 
 function LightThemePreview() {
   return (
-    <svg className="settings-theme-preview-art" viewBox="0 0 170 120" xmlns="http://www.w3.org/2000/svg">
+    <svg className="block size-full mix-blend-luminosity" viewBox="0 0 170 120" xmlns="http://www.w3.org/2000/svg">
       <path d="M49 26h72a3 3 0 1 0 0 6H49a3 3 0 0 0 0-6Z" fill="#cdcdcd" />
       <path d="M28 35h114a2 2 0 1 0 0 4H28a2 2 0 0 0 0-4Z" fill="#dfdfdf" />
       <path d="M15 52a8 8 0 0 1 8-8h124a8 8 0 0 1 8 8v68H15V52Z" fill="#fff" />
@@ -68,7 +79,7 @@ function LightThemePreview() {
 
 function DarkThemePreview() {
   return (
-    <svg className="settings-theme-preview-art" viewBox="0 0 170 120" xmlns="http://www.w3.org/2000/svg">
+    <svg className="block size-full mix-blend-luminosity" viewBox="0 0 170 120" xmlns="http://www.w3.org/2000/svg">
       <path d="M49 26h72a3 3 0 1 0 0 6H49a3 3 0 0 0 0-6Z" fill="#9f9f9f" />
       <path d="M28 35h114a2 2 0 1 0 0 4H28a2 2 0 0 0 0-4Z" fill="#8f8f8f" />
       <path d="M15 52a8 8 0 0 1 8-8h124a8 8 0 0 1 8 8v68H15V52Z" fill="#fff" />
@@ -84,7 +95,7 @@ function DarkThemePreview() {
 
 function SystemThemePreview() {
   return (
-    <svg className="settings-theme-preview-art" viewBox="0 0 170 120" xmlns="http://www.w3.org/2000/svg">
+    <svg className="block size-full mix-blend-luminosity" viewBox="0 0 170 120" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <clipPath id="system-preview-sheet">
           <path d="M7 42a8 8 0 0 1 8-8h140a8 8 0 0 1 8 8v78H7V42Z" />
