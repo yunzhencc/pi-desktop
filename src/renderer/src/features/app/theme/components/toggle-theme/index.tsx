@@ -2,9 +2,8 @@ import type { AppearanceTheme } from '../../types';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { useTheme } from 'next-themes';
 import { useIntl } from 'react-intl';
+import { ThemeEnum } from '../../types';
 import { readAppearanceTheme } from '../../utils';
-
-const themeOptions: AppearanceTheme[] = ['system', 'light', 'dark'];
 
 export function ToggleTheme() {
   const { formatMessage } = useIntl();
@@ -14,24 +13,24 @@ export function ToggleTheme() {
 
   return (
     <div aria-label={formatMessage({ id: 'settings.theme' })} className="grid grid-cols-3 gap-3" role="radiogroup">
-      {themeOptions.map(value => (
+      {ThemeEnum.items.map(theme => (
         <label
           className={cn(
             'flex min-w-0 cursor-pointer flex-col items-center gap-1.5 text-center text-sm text-text-secondary',
-            appearanceTheme === value && 'text-foreground',
+            appearanceTheme === theme.value && 'text-foreground',
           )}
-          key={value}
+          key={theme.value}
         >
           <input
-            aria-label={formatMessage({ id: `appearance.${value}` })}
-            checked={appearanceTheme === value}
+            aria-label={formatMessage({ id: theme.label })}
+            checked={appearanceTheme === theme.value}
             className="sr-only"
             name="appearance-theme"
-            onChange={() => setTheme(value)}
+            onChange={() => setTheme(theme.value)}
             type="radio"
           />
-          <ThemePreview mode={value} selected={appearanceTheme === value} />
-          <span>{formatMessage({ id: `appearance.${value}` })}</span>
+          <ThemePreview mode={theme.value} selected={appearanceTheme === theme.value} />
+          <span>{formatMessage({ id: theme.label })}</span>
         </label>
       ))}
     </div>
@@ -39,9 +38,9 @@ export function ToggleTheme() {
 }
 
 function ThemePreview({ mode, selected }: { mode: AppearanceTheme; selected: boolean }) {
-  const preview = mode === 'light'
+  const preview = mode === ThemeEnum.Light
     ? <LightThemePreview />
-    : mode === 'dark'
+    : mode === ThemeEnum.Dark
       ? <DarkThemePreview />
       : <SystemThemePreview />;
 
@@ -51,8 +50,8 @@ function ThemePreview({ mode, selected }: { mode: AppearanceTheme; selected: boo
       className={cn(
         'relative block aspect-[17/12] w-full overflow-hidden rounded-lg border border-border-subtle bg-[#f3f3f3]',
         selected && 'border-2 border-foreground',
-        mode === 'dark' && 'bg-[#5d5d5d]',
-        mode === 'system' && 'bg-[linear-gradient(90deg,#9f9f9f_0_50%,#5d5d5d_50%_100%)]',
+        mode === ThemeEnum.Dark && 'bg-[#5d5d5d]',
+        mode === ThemeEnum.System && 'bg-[linear-gradient(90deg,#9f9f9f_0_50%,#5d5d5d_50%_100%)]',
       )}
       data-testid={`theme-preview-${mode}`}
     >
