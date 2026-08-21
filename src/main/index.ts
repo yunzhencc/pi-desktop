@@ -234,6 +234,11 @@ app.whenReady().then(async () => {
       throw new TypeError('无效的工作区路径');
     return piRuntime.listWorkspaceSessions(workspacePath);
   });
+  ipcMain.handle('sessions:get-usage-stats', (_event, workspacePath: unknown) => {
+    if (typeof workspacePath !== 'string' || !workspacePath.trim())
+      throw new TypeError('无效的工作区路径');
+    return piRuntime.getWorkspaceUsageStats(workspacePath);
+  });
   ipcMain.handle('sessions:open', async (_event, workspacePath: unknown, sessionPath: unknown) => {
     if (typeof workspacePath !== 'string' || !workspacePath.trim() || typeof sessionPath !== 'string' || !sessionPath.trim())
       throw new TypeError('无效的会话');

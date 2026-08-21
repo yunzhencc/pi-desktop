@@ -57,6 +57,39 @@ describe('pi runtime', () => {
     ]);
   });
 
+  it('aggregates workspace token usage from persisted Pi sessions', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-desktop-usage-'));
+    directories.push(root);
+    const workspace = join(root, 'workspace');
+    const agentDir = join(root, 'agent');
+    await mkdir(workspace);
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const sessionDir = join(agentDir, 'sessions', `--${workspace.slice(1).replace(/[/:]/g, '-')}--`);
+    const session = SessionManager.create(workspace, sessionDir);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const userTimestamp = today.getTime() - 600_000;
+    const futureTimestamp = today.getTime() + 500 * 24 * 60 * 60 * 1000;
+    await writeFile(session.getSessionFile()!, [
+      JSON.stringify(session.getHeader()),
+      JSON.stringify({ id: 'message-1', message: { content: 'Earlier request', role: 'user', timestamp: yesterday.getTime() }, parentId: null, timestamp: yesterday.toISOString(), type: 'message' }),
+      JSON.stringify({ id: 'message-2', message: { content: [{ text: 'Earlier reply', type: 'text' }], isError: false, role: 'toolResult', timestamp: futureTimestamp, toolCallId: 'tool-1', toolName: 'read', usage: { cacheRead: 3, cacheWrite: 4, cost: { total: 0 }, input: 10, output: 20 } }, parentId: 'message-1', timestamp: yesterday.toISOString(), type: 'message' }),
+      JSON.stringify({ id: 'message-3', message: { content: 'Today request', role: 'user', timestamp: userTimestamp }, parentId: 'message-2', timestamp: today.toISOString(), type: 'message' }),
+      JSON.stringify({ id: 'message-4', message: { api: 'openai-responses', content: [{ text: 'Today reply', type: 'text' }], model: 'gpt-5', provider: 'openai', role: 'assistant', stopReason: 'end_turn', timestamp: today.getTime(), usage: { cacheRead: 0, cacheWrite: 0, cost: { total: 0 }, input: 100, output: 50 } }, parentId: 'message-3', timestamp: today.toISOString(), type: 'message' }),
+      JSON.stringify({ customType: 'pi-desktop-worked-for', data: { completedAtMs: today.getTime(), startedAtMs: userTimestamp, status: 'worked' }, id: 'work-1', parentId: 'message-4', timestamp: today.toISOString(), type: 'custom' }),
+    ].join('\n'));
+    const runtime = new PiRuntime(new AttachmentStore(), { agentDir });
+
+    const stats = await runtime.getWorkspaceUsageStats(workspace);
+
+    expect(stats.lifetimeTokens).toBe(180);
+    expect(stats.peakTokens).toBe(150);
+    expect(stats.currentStreakDays).toBe(2);
+    expect(stats.longestStreakDays).toBe(2);
+    expect(stats.longestChatMs).toBe(600_000);
+  });
+
   it('loads persisted user and assistant messages when opening a session', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pi-desktop-session-history-'));
     directories.push(root);

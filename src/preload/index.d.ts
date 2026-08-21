@@ -1,6 +1,6 @@
 import type { ElectronAPI } from '@electron-toolkit/preload';
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
-import type { PiSessionSnapshot, PiSessionSummary, TranscriptUpdate } from '../main/pi-runtime';
+import type { PiSessionSnapshot, PiSessionSummary, PiUsageStats, TranscriptUpdate } from '../main/pi-runtime';
 import type { ModelPickerScope, ProviderId, ProvidersSnapshot } from '../main/provider-settings';
 import type { WorkspaceSnapshot } from '../main/workspaces';
 
@@ -35,6 +35,7 @@ declare global {
         setPrimaryProvider: (providerId: ProviderId) => Promise<ProvidersSnapshot>;
       };
       sessions: {
+        getUsageStats: (workspacePath: string) => Promise<PiUsageStats>;
         list: (workspacePath: string) => Promise<PiSessionSummary[]>;
         open: (workspacePath: string, sessionPath: string) => Promise<{ session: PiSessionSnapshot; workspace: WorkspaceSnapshot }>;
         setPinned: (workspacePath: string, sessionPath: string, pinned: boolean, beforeSessionPath?: string) => Promise<WorkspaceSnapshot>;

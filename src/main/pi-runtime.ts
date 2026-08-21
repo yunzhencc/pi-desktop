@@ -18,6 +18,15 @@ export interface PiSessionSummary {
   path: string;
 }
 
+export interface PiUsageStats {
+  currentStreakDays: number;
+  days: Array<{ iso: string; tokens: number }>;
+  lifetimeTokens: number;
+  longestChatMs?: number;
+  longestStreakDays: number;
+  peakTokens: number;
+}
+
 export interface PiSessionSnapshot {
   messages: Array<
     | { entryId: string; role: 'assistant' | 'user'; text: string; timestamp: number }
@@ -114,6 +123,14 @@ export class PiRuntime {
     if (!path.trim())
       throw new TypeError('工作区路径不能为空');
     return this.listSessions(path, this.agentDir);
+  }
+
+  async getWorkspaceUsageStats(path: string): Promise<PiUsageStats> {
+    if (!path.trim())
+      throw new TypeError('工作区路径不能为空');
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const sessions = await this.listSessions(path, this.agentDir);
+    return buildUsageStats(sessions.map(session => SessionManager.open(session.path).getEntries()));
   }
 
   async openSession(path: string): Promise<PiSessionSnapshot> {
@@ -523,10 +540,134 @@ function toPiWorkDuration(entry: unknown): (Extract<PiSessionSnapshot['messages'
   };
 }
 
+function buildUsageStats(sessionEntries: unknown[][]): PiUsageStats {
+  const today = startOfDay(new Date());
+  const start = new Date(today);
+  start.setDate(today.getDate() - 370);
+  const tokensByDay = new Map<string, number>();
+  let lifetimeTokens = 0;
+  let longestChatMs: number | undefined;
+
+  for (const entries of sessionEntries) {
+    let latestUserTimestamp: number | undefined;
+    for (const entry of entries) {
+      const usage = entryUsage(entry);
+      if (usage != null) {
+        const timestamp = entryTimestamp(entry);
+        const iso = timestamp == null ? undefined : toIsoDate(new Date(timestamp));
+        lifetimeTokens += usage;
+        if (iso != null)
+          tokensByDay.set(iso, (tokensByDay.get(iso) ?? 0) + usage);
+      }
+
+      const work = toPiWorkDuration(entry);
+      if (work != null)
+        longestChatMs = Math.max(longestChatMs ?? 0, work.completedAtMs - work.startedAtMs);
+
+      const message = entryMessage(entry);
+      if (!message)
+        continue;
+      if (message.role === 'user') {
+        latestUserTimestamp = messageTimestamp(message);
+        continue;
+      }
+      if (message.role === 'assistant' && latestUserTimestamp != null) {
+        const assistantTimestamp = messageTimestamp(message);
+        if (assistantTimestamp != null)
+          longestChatMs = Math.max(longestChatMs ?? 0, assistantTimestamp - latestUserTimestamp);
+      }
+    }
+  }
+
+  const days = Array.from({ length: 371 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    const iso = toIsoDate(date);
+    return { iso, tokens: tokensByDay.get(iso) ?? 0 };
+  });
+  const activeDays = new Set(days.filter(day => day.tokens > 0).map(day => day.iso));
+  return {
+    currentStreakDays: countCurrentStreak(today, activeDays),
+    days,
+    lifetimeTokens,
+    ...(longestChatMs == null ? {} : { longestChatMs }),
+    longestStreakDays: countLongestStreak(days),
+    peakTokens: Math.max(0, ...days.map(day => day.tokens)),
+  };
+}
+
+function entryUsage(entry: unknown): number | undefined {
+  if (!isRecord(entry))
+    return undefined;
+  if ((entry.type === 'branch_summary' || entry.type === 'compaction') && isUsage(entry.usage))
+    return usageTokens(entry.usage);
+  const message = entryMessage(entry);
+  if (!message || !isUsage(message.usage))
+    return undefined;
+  return usageTokens(message.usage);
+}
+
+function usageTokens(usage: { input: number; output: number }): number {
+  return usage.input + usage.output;
+}
+
+function isUsage(value: unknown): value is { cacheRead: number; cacheWrite: number; input: number; output: number } {
+  return isRecord(value)
+    && Number.isFinite(value.input)
+    && Number.isFinite(value.output)
+    && Number.isFinite(value.cacheRead)
+    && Number.isFinite(value.cacheWrite);
+}
+
+function entryMessage(entry: unknown): Record<string, unknown> | undefined {
+  return isRecord(entry) && entry.type === 'message' && isRecord(entry.message) ? entry.message : undefined;
+}
+
+function entryTimestamp(entry: unknown): number | undefined {
+  if (isRecord(entry) && typeof entry.timestamp === 'string') {
+    const date = new Date(entry.timestamp);
+    if (!Number.isNaN(date.getTime()))
+      return date.getTime();
+  }
+  const message = entryMessage(entry);
+  return message ? messageTimestamp(message) : undefined;
+}
+
+function countCurrentStreak(today: Date, activeDays: ReadonlySet<string>): number {
+  let count = 0;
+  const date = new Date(today);
+  while (activeDays.has(toIsoDate(date))) {
+    count++;
+    date.setDate(date.getDate() - 1);
+  }
+  return count;
+}
+
+function countLongestStreak(days: Array<{ tokens: number }>): number {
+  let current = 0;
+  let longest = 0;
+  for (const day of days) {
+    current = day.tokens > 0 ? current + 1 : 0;
+    longest = Math.max(longest, current);
+  }
+  return longest;
+}
+
 function messageTimestamp(message: unknown): number | undefined {
   return isRecord(message) && typeof message.timestamp === 'number' ? message.timestamp : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function toIsoDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }

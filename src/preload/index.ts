@@ -1,5 +1,5 @@
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
-import type { PiSessionSnapshot, PiSessionSummary, TranscriptUpdate } from '../main/pi-runtime';
+import type { PiSessionSnapshot, PiSessionSummary, PiUsageStats, TranscriptUpdate } from '../main/pi-runtime';
 import type { ModelPickerScope, ProviderId, ProvidersSnapshot } from '../main/provider-settings';
 import type { WorkspaceSnapshot } from '../main/workspaces';
 import process from 'node:process';
@@ -48,6 +48,7 @@ const api = {
     setPrimaryProvider: (providerId: ProviderId): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:primary:set', providerId),
   },
   sessions: {
+    getUsageStats: (workspacePath: string): Promise<PiUsageStats> => ipcRenderer.invoke('sessions:get-usage-stats', workspacePath),
     list: (workspacePath: string): Promise<PiSessionSummary[]> => ipcRenderer.invoke('sessions:list', workspacePath),
     open: (workspacePath: string, sessionPath: string): Promise<{ session: PiSessionSnapshot; workspace: WorkspaceSnapshot }> => ipcRenderer.invoke('sessions:open', workspacePath, sessionPath),
     setPinned: (workspacePath: string, sessionPath: string, pinned: boolean, beforeSessionPath?: string): Promise<WorkspaceSnapshot> => ipcRenderer.invoke('sessions:set-pinned', workspacePath, sessionPath, pinned, beforeSessionPath),

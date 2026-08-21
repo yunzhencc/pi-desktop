@@ -68,11 +68,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 0;
-  gap: 4px;
+  min-width: 1px;
   overflow: hidden;
   padding: 10px 12px;
   text-align: center;
+  font-size: 16px;
+  font-weight: 400;
 }
 
 .settings-stat + .settings-stat {
@@ -94,19 +95,22 @@
 }
 
 .settings-stat span {
+  width: 100%;
   color: var(--text-tertiary);
-  font-size: 16px;
-  line-height: 1.25;
+  line-height: 20px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .settings-stat strong {
+  width: 100%;
   color: var(--foreground);
-  font-size: 16px;
   font-weight: 400;
-  line-height: 1.25;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .settings-profile-section {
@@ -132,12 +136,35 @@
 .settings-profile-tabs {
   display: flex;
   gap: 16px;
-  color: var(--text-tertiary);
-  font-size: 16px;
-  line-height: 1.25;
 }
 
-.settings-profile-tabs span:first-child {
+.settings-profile-tabs button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  outline: none;
+}
+
+.settings-profile-tabs button:not(:disabled) {
+  cursor: pointer;
+}
+
+.settings-profile-tabs button:not([aria-pressed="true"]):not(:disabled):hover,
+.settings-profile-tabs button:not([aria-pressed="true"]):not(:disabled):focus-visible {
+  color: var(--foreground);
+}
+
+.settings-profile-tabs button:focus-visible {
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.settings-profile-tabs button[aria-pressed="true"] {
   color: var(--foreground);
 }
 
@@ -150,13 +177,13 @@
 .settings-profile-heatmap {
   display: grid;
   grid-auto-flow: column;
-  grid-template-columns: repeat(53, minmax(1px, 1fr));
   grid-template-rows: repeat(7, minmax(1px, 1fr));
   gap: 3px;
   overflow: hidden;
 }
 
 .settings-profile-heatmap span {
+  width: 100%;
   aspect-ratio: 1;
   min-width: 0;
   border-radius: 4px;

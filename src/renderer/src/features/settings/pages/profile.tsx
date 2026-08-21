@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
-interface ProfileStats {
-  activeProjectSessions: number;
-  dailyCells: Array<{ count: number; iso: string; level: number }>;
+type ActivityView = 'cumulative' | 'daily' | 'weekly';
+
+interface UsageStats {
+  currentStreakDays: number;
+  days: Array<{ iso: string; tokens: number }>;
+  lifetimeTokens: number;
+  longestChatMs?: number;
+  longestStreakDays: number;
+  peakTokens: number;
+}
+
+interface ProfileActivity {
+  cells: Array<{ count: number; iso: string; level: number }>;
   monthLabels: string[];
-  pinnedProjects: number;
-  pinnedSessions: number;
-  projects: number;
-  sessions: number;
 }
 
 export function ProfilePage() {
   const { formatMessage, formatNumber } = useIntl();
   const stats = useProfileStats();
+  const [view, setView] = useState<ActivityView>('daily');
+  const activity = stats ? buildActivity(stats.days, view) : undefined;
 
   return (
     <div className="settings-view">
@@ -22,11 +30,11 @@ export function ProfilePage() {
           {stats
             ? (
                 <>
-                  <Stat label={formatMessage({ id: 'profileStats.projects' })} value={formatNumber(stats.projects)} />
-                  <Stat label={formatMessage({ id: 'profileStats.sessions' })} value={formatNumber(stats.sessions)} />
-                  <Stat label={formatMessage({ id: 'profileStats.activeProjectSessions' })} value={formatNumber(stats.activeProjectSessions)} />
-                  <Stat label={formatMessage({ id: 'profileStats.pinnedProjects' })} value={formatNumber(stats.pinnedProjects)} />
-                  <Stat label={formatMessage({ id: 'profileStats.pinnedSessions' })} value={formatNumber(stats.pinnedSessions)} />
+                  <Stat label={formatMessage({ id: 'profileStats.lifetimeTokens' })} value={formatCompactNumber(stats.lifetimeTokens, formatNumber)} />
+                  <Stat label={formatMessage({ id: 'profileStats.peakTokens' })} value={formatCompactNumber(stats.peakTokens, formatNumber)} />
+                  {stats.longestChatMs == null ? null : <Stat label={formatMessage({ id: 'profileStats.longestChat' })} value={formatDuration(stats.longestChatMs, formatMessage, formatNumber)} />}
+                  <Stat label={formatMessage({ id: 'profileStats.currentStreak' })} value={formatDays(stats.currentStreakDays, formatMessage, formatNumber)} />
+                  <Stat label={formatMessage({ id: 'profileStats.longestStreak' })} value={formatDays(stats.longestStreakDays, formatMessage, formatNumber)} />
                 </>
               )
             : <ProfileStatsLoading />}
@@ -34,13 +42,15 @@ export function ProfilePage() {
         <section className="settings-profile-section" aria-label={formatMessage({ id: 'profileStats.activityTitle' })}>
           <div className="settings-profile-section-header">
             <h2>{formatMessage({ id: 'profileStats.activityTitle' })}</h2>
-            <div className="settings-profile-tabs" aria-hidden="true">
-              <span>{formatMessage({ id: 'profileStats.daily' })}</span>
-              <span>{formatMessage({ id: 'profileStats.weekly' })}</span>
-              <span>{formatMessage({ id: 'profileStats.cumulative' })}</span>
+            <div className="settings-profile-tabs">
+              {(['daily', 'weekly', 'cumulative'] as const).map(tab => (
+                <button aria-pressed={view === tab} key={tab} onClick={() => setView(tab)} type="button">
+                  {formatMessage({ id: `profileStats.${tab}` })}
+                </button>
+              ))}
             </div>
           </div>
-          {stats ? <ActivityGrid cells={stats.dailyCells} monthLabels={stats.monthLabels} /> : <ActivityGridLoading />}
+          {activity ? <ActivityGrid cells={activity.cells} monthLabels={activity.monthLabels} /> : <ActivityGridLoading />}
         </section>
       </section>
     </div>
@@ -56,16 +66,17 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ActivityGrid({ cells, monthLabels }: { cells: ProfileStats['dailyCells']; monthLabels: string[] }) {
+function ActivityGrid({ cells, monthLabels }: ProfileActivity) {
+  const columnCount = Math.ceil(cells.length / 7);
   return (
     <div className="settings-profile-chart">
-      <div className="settings-profile-heatmap">
+      <div className="settings-profile-heatmap" style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(1px, 1fr))` }}>
         {cells.map(cell => (
           <span aria-label={`${cell.iso}: ${cell.count}`} data-level={cell.level} key={cell.iso} title={`${cell.iso}: ${cell.count}`} />
         ))}
       </div>
       <div className="settings-profile-months" aria-hidden="true">
-        {monthLabels.map((label, index) => <span key={`${label}-${index}`}>{label}</span>)}
+        {monthLabels.map(label => <span key={label}>{label}</span>)}
       </div>
     </div>
   );
@@ -80,9 +91,10 @@ function ProfileStatsLoading() {
 }
 
 function ActivityGridLoading() {
+  const columnCount = 53;
   return (
     <div className="settings-profile-chart" aria-hidden="true">
-      <div className="settings-profile-heatmap">
+      <div className="settings-profile-heatmap" style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(1px, 1fr))` }}>
         {Array.from({ length: 371 }, (_, index) => <span data-level="0" key={index} />)}
       </div>
       <div className="settings-profile-months">
@@ -92,8 +104,8 @@ function ActivityGridLoading() {
   );
 }
 
-function useProfileStats(): ProfileStats | undefined {
-  const [stats, setStats] = useState<ProfileStats>();
+function useProfileStats(): UsageStats | undefined {
+  const [stats, setStats] = useState<UsageStats>();
 
   useEffect(() => {
     const api = (window as Window & { api?: Window['api'] }).api;
@@ -104,25 +116,16 @@ function useProfileStats(): ProfileStats | undefined {
 
     async function load() {
       const workspace = await api.workspaces.get();
-      const sessionLists = await Promise.all(workspace.workspaces.map(project => api.sessions.list(project.path)));
       if (cancelled)
         return;
-
-      const activeProjectIndex = workspace.workspaces.findIndex(project => project.path === workspace.selectedWorkspacePath);
-      const allSessions = sessionLists.flat();
-      setStats({
-        activeProjectSessions: activeProjectIndex === -1 ? 0 : sessionLists[activeProjectIndex]?.length ?? 0,
-        ...buildActivity(allSessions.map(session => session.modifiedAt)),
-        pinnedProjects: workspace.pinnedWorkspacePaths.length,
-        pinnedSessions: workspace.pinnedSessionPaths.length,
-        projects: workspace.workspaces.length,
-        sessions: allSessions.length,
-      });
+      const results = await Promise.allSettled(workspace.workspaces.map(project => api.sessions.getUsageStats(project.path)));
+      if (!cancelled)
+        setStats(mergeUsageStats(results.flatMap(result => result.status === 'fulfilled' ? [result.value] : [])));
     }
 
     void load().catch(() => {
       if (!cancelled)
-        setStats({ activeProjectSessions: 0, ...buildActivity([]), pinnedProjects: 0, pinnedSessions: 0, projects: 0, sessions: 0 });
+        setStats(emptyUsageStats());
     });
     return () => {
       cancelled = true;
@@ -132,34 +135,58 @@ function useProfileStats(): ProfileStats | undefined {
   return stats;
 }
 
-function buildActivity(modifiedAtValues: string[]) {
-  const today = startOfDay(new Date());
-  const start = new Date(today);
-  start.setDate(today.getDate() - 370);
-  const counts = new Map<string, number>();
+function mergeUsageStats(stats: UsageStats[]): UsageStats {
+  if (stats.length === 0)
+    return emptyUsageStats();
 
-  for (const value of modifiedAtValues) {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime()) || date < start || date > today)
-      continue;
-    const iso = toIsoDate(date);
-    counts.set(iso, (counts.get(iso) ?? 0) + 1);
+  const base = emptyUsageStats();
+  const tokensByDay = new Map(base.days.map(day => [day.iso, 0]));
+  let longestChatMs: number | undefined;
+
+  for (const stat of stats) {
+    base.lifetimeTokens += stat.lifetimeTokens;
+    for (const day of stat.days)
+      tokensByDay.set(day.iso, (tokensByDay.get(day.iso) ?? 0) + day.tokens);
+    if (stat.longestChatMs != null)
+      longestChatMs = Math.max(longestChatMs ?? 0, stat.longestChatMs);
+  }
+
+  base.days = base.days.map(day => ({ ...day, tokens: tokensByDay.get(day.iso) ?? 0 }));
+  base.peakTokens = Math.max(0, ...base.days.map(day => day.tokens));
+  base.currentStreakDays = countCurrentStreak(base.days);
+  base.longestStreakDays = countLongestStreak(base.days);
+  return { ...base, ...(longestChatMs == null ? {} : { longestChatMs }) };
+}
+
+function buildActivity(days: UsageStats['days'], view: ActivityView): ProfileActivity {
+  const counts = new Map<string, number>(days.map(day => [day.iso, day.tokens]));
+  if (view === 'weekly') {
+    for (let index = 0; index < days.length; index += 7) {
+      const week = days.slice(index, index + 7);
+      const total = week.reduce((sum, day) => sum + day.tokens, 0);
+      for (const day of week)
+        counts.set(day.iso, total);
+    }
+  }
+  else if (view === 'cumulative') {
+    let total = 0;
+    for (const day of days) {
+      total += day.tokens;
+      counts.set(day.iso, total);
+    }
   }
 
   const max = Math.max(0, ...counts.values());
-  const dailyCells = Array.from({ length: 371 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    const iso = toIsoDate(date);
-    const count = counts.get(iso) ?? 0;
-    return { count, iso, level: activityLevel(count, max) };
+  const cells = days.map((day) => {
+    const count = counts.get(day.iso) ?? 0;
+    return { count, iso: day.iso, level: activityLevel(count, max) };
   });
   const monthLabels = Array.from({ length: 12 }, (_, index) => {
-    const date = new Date(start);
-    date.setMonth(start.getMonth() + index);
+    const date = new Date(`${days[0]?.iso ?? toIsoDate(new Date())}T00:00:00`);
+    date.setMonth(date.getMonth() + index);
     return date.toLocaleString(undefined, { month: 'short' });
   });
-  return { dailyCells, monthLabels };
+  return { cells, monthLabels };
 }
 
 function activityLevel(count: number, max: number) {
@@ -168,8 +195,55 @@ function activityLevel(count: number, max: number) {
   return Math.max(1, Math.ceil((count / max) * 4));
 }
 
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+function emptyUsageStats(): UsageStats {
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  start.setDate(start.getDate() - 370);
+  return {
+    currentStreakDays: 0,
+    days: Array.from({ length: 371 }, (_, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+      return { iso: toIsoDate(date), tokens: 0 };
+    }),
+    lifetimeTokens: 0,
+    longestStreakDays: 0,
+    peakTokens: 0,
+  };
+}
+
+function countCurrentStreak(days: UsageStats['days']) {
+  let count = 0;
+  for (let index = days.length - 1; index >= 0 && days[index].tokens > 0; index--)
+    count++;
+  return count;
+}
+
+function countLongestStreak(days: UsageStats['days']) {
+  let current = 0;
+  let longest = 0;
+  for (const day of days) {
+    current = day.tokens > 0 ? current + 1 : 0;
+    longest = Math.max(longest, current);
+  }
+  return longest;
+}
+
+function formatCompactNumber(value: number, formatNumber: ReturnType<typeof useIntl>['formatNumber']) {
+  return formatNumber(value, { maximumFractionDigits: 1, notation: 'compact' });
+}
+
+function formatDays(value: number, formatMessage: ReturnType<typeof useIntl>['formatMessage'], formatNumber: ReturnType<typeof useIntl>['formatNumber']) {
+  return formatMessage({ id: 'profileStats.daysValue' }, { value: formatNumber(value) });
+}
+
+function formatDuration(value: number, formatMessage: ReturnType<typeof useIntl>['formatMessage'], formatNumber: ReturnType<typeof useIntl>['formatNumber']) {
+  const totalMinutes = Math.floor(value / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0)
+    return formatMessage({ id: 'profileStats.durationHoursMinutes' }, { hours: formatNumber(hours), minutes: formatNumber(minutes) });
+  return formatMessage({ id: 'profileStats.durationMinutes' }, { minutes: formatNumber(minutes) });
 }
 
 function toIsoDate(date: Date) {
