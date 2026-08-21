@@ -1,0 +1,38 @@
+.sidebar-trigger-tooltip {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  padding: 6px 8px;
+  color: var(--foreground);
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  box-shadow:
+    0 0 0 0.5px color-mix(in oklab, var(--foreground) 12%, transparent),
+    0 3px 7.5px #0000000a,
+    0 0 20px #0000000d;
+  font-size: 12px;
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.sidebar-trigger:hover .sidebar-trigger-tooltip,
+.sidebar-trigger:focus-visible .sidebar-trigger-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sidebar-trigger-tooltip kbd {
+  margin-left: 8px;
+  color: var(--text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-trigger-tooltip {
+    transition: none;
+  }
+}

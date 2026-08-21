@@ -1,0 +1,93 @@
+.settings-view {
+  height: 100%;
+  padding-top: 46px;
+}
+
+.settings-content {
+  width: 100%;
+  max-width: 48rem;
+  min-width: 0;
+  margin-inline: auto;
+  padding: 22px 32px 48px;
+}
+
+.settings-content h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.settings-section h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.settings-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--foreground);
+  font-size: 14px;
+}
+
+.settings-provider-description,
+.settings-provider-status {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+.settings-provider-status {
+  color: var(--foreground);
+}
+
+.settings-provider-form,
+.settings-provider-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-provider-form {
+  align-items: flex-start;
+}
+
+.settings-provider-field {
+  width: min(100%, 28rem);
+  font-size: 14px;
+}
+
+.settings-provider-field input {
+  border: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+  padding: 8px 10px;
+}
+
+.settings-provider-form button {
+  border-radius: 6px;
+  background: var(--foreground);
+  color: var(--background);
+  padding: 7px 12px;
+}
+
+.settings-language-select {
+  min-width: 8rem;
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: inherit;
+  font: inherit;
+}

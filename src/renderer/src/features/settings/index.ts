@@ -1,3 +1,5 @@
+import './style.css';
+
 export * from './components';
 export * from './pages/appearance';
 export * from './pages/general';

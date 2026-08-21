@@ -1,4 +1,5 @@
 import { useIntl } from 'react-intl';
+import './style.css';
 
 interface SidebarToggleProps {
   isSidebarVisible: boolean;
