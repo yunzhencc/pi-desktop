@@ -34,7 +34,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
+import { useOverlayScrollbarsTheme } from '@renderer/features/app/theme';
 import { Bot } from 'lucide-react';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -78,7 +80,7 @@ export function ProvidersSettingsView({
   }
 
   return (
-    <div className="settings-view">
+    <div className="settings-view settings-provider-view">
       <section className="settings-content settings-provider-content" aria-labelledby="providers-settings-title">
         <div className="settings-provider-titlebar">
           <div>
@@ -148,27 +150,33 @@ function ProviderNavList({
   selection?: ProviderId;
 }) {
   const { formatMessage } = useIntl();
+  const overlayScrollbarsTheme = useOverlayScrollbarsTheme();
 
   return (
-    <div className="settings-provider-nav-list">
-      {providers.length === 0
-        ? <p className="settings-provider-description">{empty}</p>
-        : providers.map(provider => (
-            <button
-              aria-current={selection === provider.id ? 'page' : undefined}
-              className="settings-provider-nav-item"
-              key={provider.id}
-              onClick={() => onSelect(provider.id)}
-              type="button"
-            >
-              <ProviderMark provider={provider} />
-              <span>
-                <strong>{provider.name}</strong>
-                <small>{provider.configured ? formatMessage({ id: 'providers.connected' }) : formatMessage({ id: 'providers.notConnected' })}</small>
-              </span>
-            </button>
-          ))}
-    </div>
+    <OverlayScrollbarsComponent
+      className="settings-provider-nav-scroll"
+      options={{ scrollbars: { autoHide: 'leave', theme: overlayScrollbarsTheme } }}
+    >
+      <div className="settings-provider-nav-list">
+        {providers.length === 0
+          ? <p className="settings-provider-description">{empty}</p>
+          : providers.map(provider => (
+              <button
+                aria-current={selection === provider.id ? 'page' : undefined}
+                className="settings-provider-nav-item"
+                key={provider.id}
+                onClick={() => onSelect(provider.id)}
+                type="button"
+              >
+                <ProviderMark provider={provider} />
+                <span>
+                  <strong>{provider.name}</strong>
+                  <small>{provider.configured ? formatMessage({ id: 'providers.connected' }) : formatMessage({ id: 'providers.notConnected' })}</small>
+                </span>
+              </button>
+            ))}
+      </div>
+    </OverlayScrollbarsComponent>
   );
 }
 
