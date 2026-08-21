@@ -1,5 +1,6 @@
 import type { WorkspaceSnapshot, WorkspaceSummary } from '@shared/types';
 import type { SVGProps } from 'react';
+import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { Fragment, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { CreateProjectDialog } from '../project/create';
@@ -196,17 +197,23 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
   const hasPinnedItems = pinnedWorkspaces.length > 0 || pinnedSessions.length > 0;
 
   return (
-    <nav aria-label={formatMessage({ id: 'projects.title' })} className="workspace-sidebar">
+    <nav aria-label={formatMessage({ id: 'projects.title' })} className="workspace-sidebar mx-2 my-4 min-h-0 flex-1 overflow-auto">
       {hasPinnedItems && (
         <>
-          <div className="workspace-sidebar-heading">
-            <button aria-expanded={!isPinnedCollapsed} className="workspace-sidebar-toggle" onClick={() => setIsPinnedCollapsed(collapsed => !collapsed)} type="button">
-              <span>置顶</span>
-              <CodexChevron aria-hidden="true" className={isPinnedCollapsed ? 'is-collapsed' : undefined} />
+          <div className="workspace-sidebar-heading group/sidebar-heading flex h-7 items-center gap-1 px-2 text-[13px] text-text-tertiary">
+            <button aria-expanded={!isPinnedCollapsed} className="group/sidebar-toggle flex min-w-0 flex-1 items-center gap-1 rounded-md py-0.5 text-left" onClick={() => setIsPinnedCollapsed(collapsed => !collapsed)} type="button">
+              <span className="min-w-0 truncate">置顶</span>
+              <CodexChevron
+                aria-hidden="true"
+                className={cn(
+                  'size-3 shrink-0 opacity-0 transition-[transform,opacity] duration-150 group-hover/sidebar-toggle:opacity-100 group-focus-visible/sidebar-toggle:opacity-100',
+                  isPinnedCollapsed && '-rotate-90 opacity-100',
+                )}
+              />
             </button>
           </div>
           {!isPinnedCollapsed && (
-            <div className="workspace-sidebar-pinned-list">
+            <div className="workspace-sidebar-pinned-list mb-2">
               {pinnedWorkspaces.map(item => renderProject(item, true))}
               {pinnedSessions.filter(entry => !pinnedWorkspacePathSet.has(entry.workspacePath)).map(({ session, workspacePath }) => (
                 <SessionRow
@@ -224,12 +231,26 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
           )}
         </>
       )}
-      <div className="workspace-sidebar-heading">
-        <button aria-expanded={!isCollapsed} className="workspace-sidebar-toggle" onClick={() => setIsCollapsed(collapsed => !collapsed)} type="button">
-          <span>{formatMessage({ id: 'projects.title' })}</span>
-          <CodexChevron aria-hidden="true" className={isCollapsed ? 'is-collapsed' : undefined} />
+      <div className="workspace-sidebar-heading group/sidebar-heading flex h-7 items-center gap-1 px-2 text-[13px] text-text-tertiary">
+        <button aria-expanded={!isCollapsed} className="group/sidebar-toggle flex min-w-0 flex-1 items-center gap-1 rounded-md py-0.5 text-left" onClick={() => setIsCollapsed(collapsed => !collapsed)} type="button">
+          <span className="min-w-0 truncate">{formatMessage({ id: 'projects.title' })}</span>
+          <CodexChevron
+            aria-hidden="true"
+            className={cn(
+              'size-3 shrink-0 opacity-0 transition-[transform,opacity] duration-150 group-hover/sidebar-toggle:opacity-100 group-focus-visible/sidebar-toggle:opacity-100',
+              isCollapsed && '-rotate-90 opacity-100',
+            )}
+          />
         </button>
-        <button aria-label={formatMessage({ id: 'projects.add' })} className="workspace-sidebar-create" onClick={() => setIsCreating(true)} title={formatMessage({ id: 'projects.add' })} type="button"><CodexPlus aria-hidden="true" /></button>
+        <button
+          aria-label={formatMessage({ id: 'projects.add' })}
+          className="workspace-sidebar-create pointer-events-none grid size-6 place-items-center rounded-md text-text-tertiary opacity-0 transition-opacity duration-150 group-hover/sidebar-heading:pointer-events-auto group-hover/sidebar-heading:opacity-100 group-focus-within/sidebar-heading:pointer-events-auto group-focus-within/sidebar-heading:opacity-100 hover:text-foreground focus-visible:text-foreground [&_svg]:size-3.5"
+          onClick={() => setIsCreating(true)}
+          title={formatMessage({ id: 'projects.add' })}
+          type="button"
+        >
+          <CodexPlus aria-hidden="true" />
+        </button>
       </div>
       {!isCollapsed && (
         <div className="workspace-sidebar-list">

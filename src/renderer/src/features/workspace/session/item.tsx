@@ -75,7 +75,7 @@ export function SessionItem(props: SessionItemProps) {
             {/* 运行中 */}
             {isRunning && (
               <LoaderCircle
-                className="w-3 h-3 chat-composer-send-loading group-hover/item:hidden"
+                className="size-3 animate-spin group-hover/item:hidden motion-reduce:animate-none"
               />
             )}
             {/* 操作项 */}

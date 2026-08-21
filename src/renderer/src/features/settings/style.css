@@ -1,43 +1,3 @@
-.settings-view {
-  height: 100%;
-  min-height: 0;
-  overflow-y: auto;
-  padding-top: 46px;
-}
-
-.settings-content {
-  width: 100%;
-  max-width: 48rem;
-  min-width: 0;
-  margin-inline: auto;
-  padding: 22px 32px 48px;
-}
-
-.settings-content h1 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 32px;
-}
-
-.settings-section h2 {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.settings-profile-content {
-  max-width: 45.75rem;
-  padding-top: 48px;
-}
-
 .settings-profile-stats {
   display: flex;
   min-height: 60px;
@@ -209,23 +169,4 @@
     border-top: 1px solid var(--border-subtle);
     border-left: 0;
   }
-}
-
-.settings-field {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 40px;
-  padding: 8px 10px 8px 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  color: var(--foreground);
-  font-size: 14px;
-}
-
-.settings-language-select {
-  min-width: 8rem;
-  background: color-mix(in srgb, var(--foreground) 6%, transparent);
-  color: inherit;
-  font: inherit;
 }

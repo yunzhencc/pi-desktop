@@ -42,10 +42,10 @@ export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, o
       || formatMessage({ id: description }).toLocaleLowerCase().includes(normalizedQuery));
 
   return (
-    <div className="settings-view">
-      <section className="settings-content" aria-labelledby="keyboard-shortcuts-title">
+    <div className="h-full min-h-0 overflow-y-auto pt-[46px]">
+      <section className="mx-auto w-full min-w-0 max-w-3xl px-8 pt-[22px] pb-12" aria-labelledby="keyboard-shortcuts-title">
         <div className="flex items-start justify-between gap-5">
-          <h1 id="keyboard-shortcuts-title">{formatMessage({ id: 'shortcuts.title' })}</h1>
+          <h1 className="text-xl font-semibold tracking-normal" id="keyboard-shortcuts-title">{formatMessage({ id: 'shortcuts.title' })}</h1>
           {onResetAll && hasCustomShortcutBindings(bindings) && (
             <button className={shortcutButtonClass} onClick={() => setIsConfirmingReset(true)} type="button">
               {formatMessage({ id: 'shortcuts.resetAll' })}

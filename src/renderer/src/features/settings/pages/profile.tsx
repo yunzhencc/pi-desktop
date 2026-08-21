@@ -24,8 +24,8 @@ export function ProfilePage() {
   const activity = stats ? buildActivity(stats.days, view) : undefined;
 
   return (
-    <div className="settings-view">
-      <section className="settings-content settings-profile-content" aria-label={formatMessage({ id: 'settings.profile' })}>
+    <div className="h-full min-h-0 overflow-y-auto pt-[46px]">
+      <section className="mx-auto w-full min-w-0 max-w-[45.75rem] px-8 pt-12 pb-12" aria-label={formatMessage({ id: 'settings.profile' })}>
         <section className="settings-profile-stats" aria-label={formatMessage({ id: 'profileStats.title' })}>
           {stats
             ? (

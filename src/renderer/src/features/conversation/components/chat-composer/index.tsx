@@ -535,7 +535,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
         ? (
             <div className="chat-message-user-editor-actions">
               <button aria-label="Cancel edit" disabled={isSending} onClick={inlineEdit.onCancel} type="button">取消</button>
-              <button aria-label="Send edited message" disabled={!canSend} type="submit">{isSending ? <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /> : '发送'}</button>
+              <button aria-label="Send edited message" disabled={!canSend} type="submit">{isSending ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} /> : '发送'}</button>
             </div>
           )
         : (
@@ -559,7 +559,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
                 title={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
                 type={isRunning ? 'button' : 'submit'}
               >
-                {isRunning ? <Square aria-hidden="true" fill="currentColor" size={12} /> : isSending ? <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} /> : <ArrowUp aria-hidden="true" size={16} />}
+                {isRunning ? <Square aria-hidden="true" fill="currentColor" size={12} /> : isSending ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} /> : <ArrowUp aria-hidden="true" size={16} />}
               </button>
             </div>
           )}

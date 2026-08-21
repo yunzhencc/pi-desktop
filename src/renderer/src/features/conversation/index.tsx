@@ -190,12 +190,12 @@ export function ConversationPage() {
   const lastUserMessageId = messages.findLast(message => message.role === 'user')?.id;
 
   return (
-    <section className="chat-page" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
+    <section className="chat-page relative flex min-h-0 flex-1 flex-col pt-[46px]" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
       {messages.length === 0
         ? (
-            <div className="chat-empty-state">
-              <img alt="PI" className="chat-empty-state-logo" src={logo} />
-              <h1>
+            <div className="chat-empty-state m-auto flex w-[min(100%_-_32px,1000px)] -translate-y-[42px] flex-col items-center gap-6 text-center">
+              <img alt="PI" className="size-16" src={logo} />
+              <h1 className="text-[28px] leading-[1.2] font-normal text-foreground tracking-normal">
                 {selectedWorkspace
                   ? (
                       <>
@@ -212,11 +212,11 @@ export function ConversationPage() {
           )
         : (
             <ThreadScrollLayout
-              footer={<div className="chat-composer-wrap" ref={composerFooterRef}>{composer}</div>}
+              footer={<div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]" ref={composerFooterRef}>{composer}</div>}
               turns={messages.map(message => ({ key: String(message.id), message }))}
             >
               {({ message }) => (
-                <div className="chat-turn">
+                <div className="chat-turn flex w-full flex-col">
                   {message.role === 'work'
                     ? <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} status={message.workStatus} />
                     : (
@@ -249,8 +249,8 @@ export function ConversationPage() {
             </ThreadScrollLayout>
           )}
       {messages.length === 0 && (
-        <div className="chat-composer-footer" ref={composerFooterRef}>
-          <div className="chat-composer-wrap">
+        <div className="chat-composer-footer absolute right-0 bottom-0 left-0 z-[1] bg-surface pb-4" ref={composerFooterRef}>
+          <div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]">
             {newConversationToolbar}
             {composer}
           </div>

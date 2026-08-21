@@ -44,7 +44,7 @@ export function ToolActivity({ args, name, output, status }: ToolActivityProps) 
   return (
     <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-tool-activity" role={status === 'running' ? 'status' : undefined}>
       <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="chat-tool-activity-header" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
-        {status === 'running' && <LoaderCircle aria-hidden="true" className="chat-composer-send-loading" size={16} />}
+        {status === 'running' && <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} />}
         <span>
           {label}
           {status === 'running' ? '…' : ''}

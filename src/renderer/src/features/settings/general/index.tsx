@@ -18,12 +18,12 @@ export function GeneralSettings({ locale, onLocaleChange }: GeneralSettingsProps
   const { formatMessage } = useIntl();
 
   return (
-    <div className="settings-view">
-      <section className="settings-content" aria-labelledby="general-settings-title">
-        <h1 id="general-settings-title">{formatMessage({ id: 'settings.general' })}</h1>
-        <div className="settings-section">
-          <h2>{formatMessage({ id: 'settings.language' })}</h2>
-          <label className="settings-field">
+    <div className="h-full min-h-0 overflow-y-auto pt-[46px]">
+      <section className="mx-auto w-full min-w-0 max-w-3xl px-8 pt-[22px] pb-12" aria-labelledby="general-settings-title">
+        <h1 className="text-xl font-semibold tracking-normal" id="general-settings-title">{formatMessage({ id: 'settings.general' })}</h1>
+        <div className="mt-8 flex flex-col gap-4">
+          <h2 className="text-sm font-semibold">{formatMessage({ id: 'settings.language' })}</h2>
+          <label className="flex min-h-10 items-center justify-between rounded-md border border-border-subtle py-2 pr-2.5 pl-3 text-sm text-foreground">
             <span>{formatMessage({ id: 'settings.language' })}</span>
             <Select
               items={[
@@ -33,7 +33,7 @@ export function GeneralSettings({ locale, onLocaleChange }: GeneralSettingsProps
               onValueChange={value => onLocaleChange(value as AppLocale)}
               value={locale}
             >
-              <SelectTrigger aria-label={formatMessage({ id: 'settings.language' })} className="settings-language-select">
+              <SelectTrigger aria-label={formatMessage({ id: 'settings.language' })} className="min-w-32 bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] font-[inherit] text-inherit">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="end" alignItemWithTrigger={false}>
