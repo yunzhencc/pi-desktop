@@ -5,6 +5,7 @@ import { useIntl } from 'react-intl';
 import { CreateProjectDialog } from '../project/create';
 import { ProjectItem } from '../project/item';
 import { SessionItem } from '../session/item';
+import './style.css';
 
 type PiSessionSummary = Awaited<ReturnType<Window['api']['sessions']['list']>>[number];
 
