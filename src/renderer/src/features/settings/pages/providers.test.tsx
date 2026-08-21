@@ -26,7 +26,7 @@ const messages: Record<string, string> = {
   'providers.primary': '主供应商',
   'providers.remove': '移除',
   'providers.scope': '模型选择范围',
-  'providers.scope.all': '所有已接入供应商',
+  'providers.scope.all': '已接入供应商',
   'providers.scope.primary': '主供应商',
   'providers.setPrimary': '设为主供应商',
   'providers.title': 'Providers',
@@ -36,7 +36,7 @@ const snapshot: ProvidersSnapshot = {
   availableProviders: [
     { authType: 'oauth', configured: false, id: 'openai-codex', models: [], name: 'ChatGPT', primary: true },
     { authType: 'api_key', configured: false, id: 'deepseek', models: [], name: 'DeepSeek', primary: false },
-    { authType: 'api_key', configured: false, id: 'opencode', models: [], name: 'OpenCode', primary: false },
+    { authType: 'api_key', configured: false, id: 'opencode-go', models: [], name: 'OpenCode Go', primary: false },
   ],
   connectedProviders: [],
   modelPickerScope: 'primary-provider',
@@ -64,13 +64,13 @@ describe('providers settings view', () => {
   afterEach(cleanup);
 
   it('shows connected and available provider columns when nothing is connected', () => {
-    renderView(snapshot);
+    const { container } = renderView(snapshot);
 
-    expect(screen.getByText('还没有接入模型供应商。')).toBeTruthy();
-    expect(screen.getByText('可接入')).toBeTruthy();
+    expect(screen.queryByText('还没有接入模型供应商。')).toBeNull();
+    expect(container.querySelector('.settings-provider-nav .settings-provider-nav-title')).toBeNull();
     expect(screen.getByRole('button', { name: '登录 ChatGPT' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /DeepSeek/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /OpenCode/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /OpenCode Go/ })).toBeTruthy();
   });
 
   it('renders only connected providers on the main page', () => {
@@ -88,6 +88,25 @@ describe('providers settings view', () => {
 
     expect(screen.getAllByText('主供应商').length).toBeGreaterThan(0);
     expect(screen.getByRole('combobox', { name: 'DeepSeek 默认模型' }).textContent).toContain('DeepSeek V4 Pro');
+  });
+
+  it('keeps connected providers before connectable providers without group headings', () => {
+    const { container } = renderView({
+      ...snapshot,
+      connectedProviders: [{
+        authType: 'api_key',
+        configured: true,
+        id: 'deepseek',
+        models: [],
+        name: 'DeepSeek',
+        primary: true,
+      }],
+    });
+
+    const providerButtons = screen.getAllByRole('button').filter(button => button.className.includes('settings-provider-nav-item'));
+
+    expect(providerButtons.map(button => button.querySelector('strong')?.textContent)).toEqual(['DeepSeek', 'ChatGPT', 'OpenCode Go']);
+    expect(container.querySelector('.settings-provider-nav .settings-provider-nav-title')).toBeNull();
   });
 
   it('submits API keys without keeping the key rendered', async () => {

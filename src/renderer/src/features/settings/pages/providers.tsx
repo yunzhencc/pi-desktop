@@ -1,8 +1,31 @@
 import type { FormEvent } from 'react';
 import type { ModelPickerScope, ProviderId, ProviderSnapshot, ProvidersSnapshot } from '../../../../../main/provider-settings';
+import AntGroupIcon from '@lobehub/icons/es/AntGroup/components/Color.js';
+import AnthropicIcon from '@lobehub/icons/es/Anthropic/components/Mono.js';
+import AwsIcon from '@lobehub/icons/es/Aws/components/Color.js';
+import AzureIcon from '@lobehub/icons/es/Azure/components/Color.js';
+import CerebrasIcon from '@lobehub/icons/es/Cerebras/components/Color.js';
+import CloudflareIcon from '@lobehub/icons/es/Cloudflare/components/Color.js';
 import DeepSeekIcon from '@lobehub/icons/es/DeepSeek/components/Color.js';
+import FireworksIcon from '@lobehub/icons/es/Fireworks/components/Color.js';
+import GithubCopilotIcon from '@lobehub/icons/es/GithubCopilot/components/Mono.js';
+import GoogleIcon from '@lobehub/icons/es/Google/components/Color.js';
+import GroqIcon from '@lobehub/icons/es/Groq/components/Mono.js';
+import HuggingFaceIcon from '@lobehub/icons/es/HuggingFace/components/Color.js';
+import KimiIcon from '@lobehub/icons/es/Kimi/components/Color.js';
+import MinimaxIcon from '@lobehub/icons/es/Minimax/components/Color.js';
+import MistralIcon from '@lobehub/icons/es/Mistral/components/Color.js';
+import MoonshotIcon from '@lobehub/icons/es/Moonshot/components/Mono.js';
+import NvidiaIcon from '@lobehub/icons/es/Nvidia/components/Color.js';
 import OpenAIIcon from '@lobehub/icons/es/OpenAI/components/Mono.js';
 import OpenCodeIcon from '@lobehub/icons/es/OpenCode/components/Mono.js';
+import OpenRouterIcon from '@lobehub/icons/es/OpenRouter/components/Mono.js';
+import QwenIcon from '@lobehub/icons/es/Qwen/components/Color.js';
+import VercelIcon from '@lobehub/icons/es/Vercel/components/Mono.js';
+import XAIIcon from '@lobehub/icons/es/XAI/components/Mono.js';
+import XiaomiMiMoIcon from '@lobehub/icons/es/XiaomiMiMo/components/Mono.js';
+import ZAIIcon from '@lobehub/icons/es/ZAI/components/Mono.js';
+import ZhipuIcon from '@lobehub/icons/es/Zhipu/components/Color.js';
 import {
   Select,
   SelectContent,
@@ -11,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
+import { Bot } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -36,7 +60,8 @@ export function ProvidersSettingsView({
   const { formatMessage } = useIntl();
   const [busy, setBusy] = useState<string>();
   const [selection, setSelection] = useState<ProviderId | undefined>(snapshot.connectedProviders[0]?.id ?? snapshot.availableProviders[0]?.id);
-  const connectableProviders = snapshot.availableProviders.filter(provider => !provider.configured);
+  const connectedProviderIds = new Set(snapshot.connectedProviders.map(provider => provider.id));
+  const connectableProviders = snapshot.availableProviders.filter(provider => !provider.configured && !connectedProviderIds.has(provider.id));
   const selectedProvider = snapshot.connectedProviders.find(provider => provider.id === selection)
     ?? connectableProviders.find(provider => provider.id === selection)
     ?? snapshot.connectedProviders[0]
@@ -85,17 +110,10 @@ export function ProvidersSettingsView({
 
         <div className="settings-provider-config">
           <aside className="settings-provider-nav" aria-label={formatMessage({ id: 'providers.title' })}>
-            <ProviderNavSection
+            <ProviderNavList
               empty={formatMessage({ id: 'providers.empty' })}
-              providers={snapshot.connectedProviders}
+              providers={[...snapshot.connectedProviders, ...connectableProviders]}
               selection={selectedProvider?.id}
-              title={formatMessage({ id: 'providers.connectedList' })}
-              onSelect={setSelection}
-            />
-            <ProviderNavSection
-              providers={connectableProviders}
-              selection={selectedProvider?.id}
-              title={formatMessage({ id: 'providers.availableList' })}
               onSelect={setSelection}
             />
           </aside>
@@ -118,24 +136,21 @@ export function ProvidersSettingsView({
   );
 }
 
-function ProviderNavSection({
+function ProviderNavList({
   empty,
   onSelect,
   providers,
   selection,
-  title,
 }: {
   empty?: string;
   onSelect: (providerId: ProviderId) => void;
   providers: ProviderSnapshot[];
   selection?: ProviderId;
-  title: string;
 }) {
   const { formatMessage } = useIntl();
 
   return (
-    <div className="settings-provider-nav-section">
-      <div className="settings-provider-nav-title">{title}</div>
+    <div className="settings-provider-nav-list">
       {providers.length === 0
         ? <p className="settings-provider-description">{empty}</p>
         : providers.map(provider => (
@@ -236,17 +251,102 @@ function ProviderDetail({
 }
 
 function ProviderMark({ provider }: { provider: ProviderSnapshot }) {
-  const Icon = {
-    'deepseek': DeepSeekIcon,
-    'openai-codex': OpenAIIcon,
-    'opencode': OpenCodeIcon,
-  }[provider.id];
-
   return (
-    <span className="settings-provider-mark" data-provider={provider.id}>
-      <Icon size={16} title={provider.name} />
+    <span className="settings-provider-mark" data-color-icon={providerIconHasColor(provider.id) ? 'true' : undefined} data-provider={provider.id}>
+      {renderProviderIcon(provider.id, provider.name)}
     </span>
   );
+}
+
+function providerIconHasColor(providerId: ProviderId): boolean {
+  return [
+    'amazon-bedrock',
+    'ant-ling',
+    'azure-openai-responses',
+    'cerebras',
+    'cloudflare-ai-gateway',
+    'cloudflare-workers-ai',
+    'deepseek',
+    'fireworks',
+    'google',
+    'google-vertex',
+    'huggingface',
+    'kimi-coding',
+    'minimax',
+    'minimax-cn',
+    'mistral',
+    'nvidia',
+    'qwen',
+    'zhipu',
+  ].includes(providerId);
+}
+
+function renderProviderIcon(providerId: ProviderId, title: string) {
+  switch (providerId) {
+    case 'amazon-bedrock':
+      return <AwsIcon size={16} title={title} />;
+    case 'ant-ling':
+      return <AntGroupIcon size={16} title={title} />;
+    case 'anthropic':
+      return <AnthropicIcon size={16} title={title} />;
+    case 'azure-openai-responses':
+      return <AzureIcon size={16} title={title} />;
+    case 'cerebras':
+      return <CerebrasIcon size={16} title={title} />;
+    case 'cloudflare-ai-gateway':
+    case 'cloudflare-workers-ai':
+      return <CloudflareIcon size={16} title={title} />;
+    case 'deepseek':
+      return <DeepSeekIcon size={16} title={title} />;
+    case 'fireworks':
+      return <FireworksIcon size={16} title={title} />;
+    case 'github-copilot':
+      return <GithubCopilotIcon size={16} title={title} />;
+    case 'google':
+    case 'google-vertex':
+      return <GoogleIcon size={16} title={title} />;
+    case 'groq':
+      return <GroqIcon size={16} title={title} />;
+    case 'huggingface':
+      return <HuggingFaceIcon size={16} title={title} />;
+    case 'kimi-coding':
+      return <KimiIcon size={16} title={title} />;
+    case 'minimax':
+    case 'minimax-cn':
+      return <MinimaxIcon size={16} title={title} />;
+    case 'mistral':
+      return <MistralIcon size={16} title={title} />;
+    case 'moonshot':
+    case 'moonshotai':
+    case 'moonshotai-cn':
+      return <MoonshotIcon size={16} title={title} />;
+    case 'nvidia':
+      return <NvidiaIcon size={16} title={title} />;
+    case 'openai-codex':
+      return <OpenAIIcon size={16} title={title} />;
+    case 'openrouter':
+      return <OpenRouterIcon size={16} title={title} />;
+    case 'qwen':
+      return <QwenIcon size={16} title={title} />;
+    case 'vercel-ai-gateway':
+      return <VercelIcon size={16} title={title} />;
+    case 'xai':
+      return <XAIIcon size={16} title={title} />;
+    case 'xiaomi':
+    case 'xiaomi-token-plan-ams':
+    case 'xiaomi-token-plan-cn':
+    case 'xiaomi-token-plan-sgp':
+      return <XiaomiMiMoIcon size={16} title={title} />;
+    case 'zai':
+    case 'zai-coding-cn':
+      return <ZAIIcon size={16} title={title} />;
+    case 'zhipu':
+      return <ZhipuIcon size={16} title={title} />;
+    default:
+      if (providerId === 'opencode' || providerId.startsWith('opencode-'))
+        return <OpenCodeIcon size={16} title={title} />;
+      return <Bot aria-label={title} size={16} strokeWidth={1.75} />;
+  }
 }
 
 function ApiKeyForm({ buttonLabel, disabled, onSubmit }: { buttonLabel: string; disabled: boolean; onSubmit: (apiKey: string) => void }) {

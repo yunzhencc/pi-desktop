@@ -2,8 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
-export const PROVIDER_IDS = ['openai-codex', 'deepseek', 'opencode'] as const;
-export type ProviderId = typeof PROVIDER_IDS[number];
+export type ProviderId = string;
 export type ModelPickerScope = 'primary-provider' | 'all-providers';
 
 export interface ProviderModelSnapshot {
@@ -42,16 +41,12 @@ interface ProviderSettingsOptions {
   openExternal?: (url: string) => Promise<void>;
 }
 
-const providerNames: Record<ProviderId, string> = {
-  'deepseek': 'DeepSeek',
-  'openai-codex': 'ChatGPT',
-  'opencode': 'OpenCode',
-};
-
 const defaultPreferences: ProviderPreferences = {
   modelPickerScope: 'primary-provider',
   primaryProvider: 'openai-codex',
 };
+
+const oauthProviderIds = new Set(['anthropic', 'github-copilot', 'openai-codex']);
 
 export class ProviderSettings {
   private readonly preferencesPath: string;
@@ -66,22 +61,23 @@ export class ProviderSettings {
   async snapshot(): Promise<ProvidersSnapshot> {
     const [preferences, services] = await Promise.all([this.readPreferences(), this.createServices()]);
     const { modelRuntime, settingsManager } = services;
-    const availableModels = await modelRuntime.getAvailable();
-    const enabledModels = settingsManager.getEnabledModels();
-    const enabledAvailableModels = this.enabledModels(availableModels, enabledModels);
-    const providers = await Promise.all(PROVIDER_IDS.map(async (id) => {
-      const provider = modelRuntime.getProvider(id);
+    const enabledAvailableModels = await this.enabledModels(modelRuntime, settingsManager.getEnabledModels());
+    const providers: ProviderSnapshot[] = [];
+    for (const provider of modelRuntime.getProviders() as RuntimeProviderLike[]) {
+      const id = provider.id;
       const status = await modelRuntime.getProviderAuthStatus(id);
+      if (!isVisibleProvider(provider, status))
+        continue;
       const models = enabledAvailableModels.filter(model => model.provider === id).map(toModelSnapshot);
-      return {
+      providers.push({
         authType: provider?.auth?.oauth ? 'oauth' as const : 'api_key' as const,
         configured: Boolean(status.configured) || models.length > 0,
         id,
         models,
-        name: providerNames[id],
+        name: providerDisplayName(provider),
         primary: preferences.primaryProvider === id,
-      };
-    }));
+      });
+    }
     const provider = settingsManager.getDefaultProvider();
     const model = settingsManager.getDefaultModel();
 
@@ -97,6 +93,7 @@ export class ProviderSettings {
   async saveApiKey(providerId: ProviderId, apiKey: string): Promise<ProvidersSnapshot> {
     if (!apiKey.trim())
       throw new TypeError('API Key 不能为空');
+    await this.assertApiKeyProvider(providerId);
     await this.writeApiKey(providerId, apiKey.trim());
     if ((await this.readPreferences()).primaryProvider === providerId)
       await this.setDefaultToFirstProviderModel(providerId);
@@ -104,6 +101,7 @@ export class ProviderSettings {
   }
 
   async removeProvider(providerId: ProviderId): Promise<ProvidersSnapshot> {
+    await this.assertApiKeyProvider(providerId);
     const auth = await this.readAuth();
     delete auth[providerId];
     await this.writeAuth(auth);
@@ -125,6 +123,7 @@ export class ProviderSettings {
   }
 
   async setPrimaryProvider(providerId: ProviderId): Promise<ProvidersSnapshot> {
+    await this.assertProvider(providerId);
     await this.writePreferences({ ...(await this.readPreferences()), primaryProvider: providerId });
     await this.setDefaultToFirstProviderModel(providerId);
     return this.snapshot();
@@ -141,6 +140,22 @@ export class ProviderSettings {
       throw new TypeError('默认模型不可用');
     settingsManager.setDefaultModelAndProvider(providerId, modelId);
     return this.snapshot();
+  }
+
+  private async assertApiKeyProvider(providerId: ProviderId): Promise<void> {
+    const { modelRuntime } = await this.createServices();
+    const provider = (modelRuntime.getProviders() as RuntimeProviderLike[]).find(provider => provider.id === providerId);
+    const status = provider ? await modelRuntime.getProviderAuthStatus(provider.id) : undefined;
+    if (!provider?.auth?.apiKey || !status || !isVisibleProvider(provider, status))
+      throw new TypeError('无效的模型供应商');
+  }
+
+  private async assertProvider(providerId: ProviderId): Promise<void> {
+    const { modelRuntime } = await this.createServices();
+    const provider = (modelRuntime.getProviders() as RuntimeProviderLike[]).find(provider => provider.id === providerId);
+    const status = provider ? await modelRuntime.getProviderAuthStatus(provider.id) : undefined;
+    if (!provider || !status || !isVisibleProvider(provider, status))
+      throw new TypeError('无效的模型供应商');
   }
 
   private async createServices() {
@@ -187,14 +202,14 @@ export class ProviderSettings {
       settingsManager.setDefaultModelAndProvider(providerId, model.id);
   }
 
-  private enabledModels(models: ModelLike[], enabledModels: unknown): ModelLike[] {
-    const enabled = Array.isArray(enabledModels) ? new Set(enabledModels.filter((value): value is string => typeof value === 'string')) : undefined;
-    const scoped = models.filter((model) => {
-      if (!isProviderId(model.provider))
-        return false;
-      return !enabled?.size || enabled.has(`${model.provider}/${model.id}`) || enabled.has(model.id);
-    });
-    return scoped.length ? scoped : models.filter(model => isProviderId(model.provider));
+  private async enabledModels(modelRuntime: ModelRuntimeLike, enabledModels: unknown): Promise<ModelLike[]> {
+    const available = await modelRuntime.getAvailable();
+    const enabled = Array.isArray(enabledModels) ? enabledModels.filter((value): value is string => typeof value === 'string' && value.trim().length > 0) : [];
+    if (!enabled.length)
+      return available;
+    const { resolveModelScopeWithDiagnostics } = await import('@earendil-works/pi-coding-agent');
+    const { scopedModels } = await resolveModelScopeWithDiagnostics(enabled, { getAvailable: async () => available });
+    return scopedModels.length ? scopedModels.map((scoped: { model: ModelLike }) => scoped.model) : available;
   }
 
   private async readPreferences(): Promise<ProviderPreferences> {
@@ -224,8 +239,12 @@ interface ModelLike {
   reasoning?: unknown;
 }
 
+interface ModelRuntimeLike {
+  getAvailable: () => Promise<ModelLike[]>;
+}
+
 export function isProviderId(value: unknown): value is ProviderId {
-  return typeof value === 'string' && PROVIDER_IDS.includes(value as ProviderId);
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 export function isModelPickerScope(value: unknown): value is ModelPickerScope {
@@ -240,6 +259,36 @@ function toModelSnapshot(model: ModelLike): ProviderModelSnapshot {
     reasoning: model.reasoning === true,
     supportsImages: Array.isArray(model.input) && model.input.includes('image'),
   };
+}
+
+interface RuntimeProviderLike {
+  auth?: {
+    apiKey?: unknown;
+    oauth?: unknown;
+  };
+  id: string;
+  name?: string;
+}
+
+interface ProviderAuthStatusLike {
+  configured?: unknown;
+  source?: unknown;
+}
+
+function isVisibleProvider(provider: RuntimeProviderLike, status: ProviderAuthStatusLike): boolean {
+  if (provider.id === 'openai-codex')
+    return true;
+  if (oauthProviderIds.has(provider.id) || !provider.auth?.apiKey)
+    return false;
+  return status.source !== 'models_json_key';
+}
+
+function providerDisplayName(provider: RuntimeProviderLike): string {
+  if (provider.id === 'openai-codex')
+    return 'ChatGPT';
+  if (provider.id === 'deepseek')
+    return 'DeepSeek';
+  return provider.name ?? provider.id;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

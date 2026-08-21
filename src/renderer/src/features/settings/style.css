@@ -33,6 +33,10 @@
   font-weight: 600;
 }
 
+.settings-provider-content {
+  max-width: 58rem;
+}
+
 .settings-profile-content {
   max-width: 45.75rem;
   padding-top: 48px;
@@ -226,6 +230,7 @@
 .settings-provider-scope {
   display: flex;
   min-width: 13rem;
+  align-items: flex-end;
   flex-direction: column;
   gap: 8px;
   color: var(--text-tertiary);
@@ -248,12 +253,11 @@
   background: color-mix(in srgb, var(--foreground) 2%, transparent);
 }
 
-.settings-provider-nav-section {
+.settings-provider-nav-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  border-bottom: 1px solid var(--border-subtle);
 }
 
 .settings-provider-nav-title {
@@ -328,7 +332,12 @@
   color: var(--foreground);
 }
 
-.settings-provider-mark[data-provider='opencode'] {
+.settings-provider-mark[data-color-icon='true'] {
+  background: transparent;
+}
+
+.settings-provider-mark[data-provider='opencode'],
+.settings-provider-mark[data-provider^='opencode-'] {
   color: #2563eb;
 }
 

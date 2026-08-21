@@ -72,7 +72,7 @@ export const messages = {
     'providers.primary': '主供应商',
     'providers.remove': '移除',
     'providers.scope': '模型选择范围',
-    'providers.scope.all': '所有已接入供应商',
+    'providers.scope.all': '已接入供应商',
     'providers.scope.primary': '主供应商',
     'providers.setPrimary': '设为主供应商',
     'providers.title': '模型提供商',
