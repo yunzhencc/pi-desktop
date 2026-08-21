@@ -2,6 +2,7 @@ import type { ModelPickerScope, ProviderId, ProviderModelSnapshot, ProviderSnaps
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
+import { PrimaryScopeEnum } from '@shared/config';
 import { PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION } from '../shared/provider-errors';
 
 interface ProviderPreferences {
@@ -17,7 +18,7 @@ interface ProviderSettingsOptions {
 }
 
 const defaultPreferences: ProviderPreferences = {
-  modelPickerScope: 'primary-provider',
+  modelPickerScope: PrimaryScopeEnum.Primary,
   primaryProvider: 'openai-codex',
 };
 
@@ -199,7 +200,7 @@ export class ProviderSettings {
     try {
       const parsed = JSON.parse(await readFile(this.preferencesPath, 'utf8')) as Partial<ProviderPreferences>;
       return {
-        modelPickerScope: parsed.modelPickerScope === 'all-providers' ? 'all-providers' : defaultPreferences.modelPickerScope,
+        modelPickerScope: parsed.modelPickerScope === PrimaryScopeEnum.All ? PrimaryScopeEnum.All : defaultPreferences.modelPickerScope,
         primaryProvider: isProviderId(parsed.primaryProvider) ? parsed.primaryProvider : defaultPreferences.primaryProvider,
       };
     }
@@ -261,7 +262,7 @@ export function isProviderId(value: unknown): value is ProviderId {
 }
 
 export function isModelPickerScope(value: unknown): value is ModelPickerScope {
-  return value === 'primary-provider' || value === 'all-providers';
+  return PrimaryScopeEnum.has(value);
 }
 
 function toModelSnapshot(model: ModelLike): ProviderModelSnapshot {

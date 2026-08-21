@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { I18nProvider } from '@renderer/features/app/i18n';
+import { PrimaryScopeEnum } from '@shared/config';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -77,7 +78,7 @@ beforeEach(() => {
       },
     ],
     defaultModel: { modelId: 'deepseek-chat', providerId: 'deepseek' },
-    modelPickerScope: 'all-providers',
+    modelPickerScope: PrimaryScopeEnum.All,
     primaryProvider: 'deepseek',
   });
   providers.setDefaultModel.mockResolvedValue({
@@ -96,7 +97,7 @@ beforeEach(() => {
       },
     ],
     defaultModel: { modelId: 'deepseek-reasoner', providerId: 'deepseek' },
-    modelPickerScope: 'all-providers',
+    modelPickerScope: PrimaryScopeEnum.All,
     primaryProvider: 'deepseek',
   });
   workspaces.create.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, notes] });
@@ -395,7 +396,7 @@ describe('chat composer', () => {
         },
       ],
       defaultModel: { modelId: 'deepseek-chat', providerId: 'deepseek' },
-      modelPickerScope: 'all-providers',
+      modelPickerScope: PrimaryScopeEnum.All,
       primaryProvider: 'deepseek',
     });
     renderComposer();
@@ -421,7 +422,7 @@ describe('chat composer', () => {
         },
       ],
       defaultModel: { modelId: 'deepseek-chat', providerId: 'deepseek' },
-      modelPickerScope: 'all-providers',
+      modelPickerScope: PrimaryScopeEnum.All,
       primaryProvider: 'deepseek',
     });
     renderComposer();
@@ -448,7 +449,7 @@ describe('chat composer', () => {
         },
       ],
       defaultModel: { modelId: 'qwen/qwen3-coder', providerId: 'openrouter' },
-      modelPickerScope: 'all-providers',
+      modelPickerScope: PrimaryScopeEnum.All,
       primaryProvider: 'deepseek',
     });
     await user.click(await screen.findByRole('button', { name: '选择模型，当前 Qwen3 Coder' }));
@@ -479,7 +480,7 @@ describe('chat composer', () => {
         },
       ],
       defaultModel: { modelId: 'deepseek-chat', providerId: 'deepseek' },
-      modelPickerScope: 'all-providers',
+      modelPickerScope: PrimaryScopeEnum.All,
       primaryProvider: 'deepseek',
     });
     renderComposer();

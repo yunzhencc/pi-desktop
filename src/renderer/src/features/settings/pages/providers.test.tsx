@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import type { ProvidersSnapshot } from '@shared/types';
+import { PrimaryScopeEnum } from '@shared/config';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -47,7 +48,7 @@ const snapshot: ProvidersSnapshot = {
     { authType: 'api_key', configured: false, id: 'opencode-go', models: [], name: 'OpenCode Go', primary: false },
   ],
   connectedProviders: [],
-  modelPickerScope: 'primary-provider',
+  modelPickerScope: PrimaryScopeEnum.Primary,
   primaryProvider: 'openai-codex',
 };
 

@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { PrimaryScopeEnum } from '@shared/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION } from '../shared/provider-errors';
 import { ProviderSettings } from './provider-settings';
@@ -23,7 +24,7 @@ describe('provider settings', () => {
     const settings = new ProviderSettings(join(root, 'userData'), { agentDir: join(root, 'agent'), cwd: root });
 
     await expect(settings.snapshot()).resolves.toMatchObject({
-      modelPickerScope: 'primary-provider',
+      modelPickerScope: PrimaryScopeEnum.Primary,
       primaryProvider: 'openai-codex',
     });
   });

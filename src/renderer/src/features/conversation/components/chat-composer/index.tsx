@@ -9,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@pi-desktop/shadcn-ui/components/popover';
+import { PrimaryScopeEnum } from '@shared/config';
 import { Command } from 'cmdk';
 import { ArrowUp, Bot, Check, ChevronDown, ExternalLink, FileText, Folder, GitBranch, Laptop, Link, LoaderCircle, Pencil, Search, Square, X } from 'lucide-react';
 import { baseKeymap, splitBlock } from 'prosemirror-commands';
@@ -64,7 +65,7 @@ const toolbarItemClass = 'new-conversation-toolbar-item inline-flex h-7 items-ce
 function availableModelOptions(snapshot?: ProvidersSnapshot) {
   if (!snapshot)
     return [];
-  const providers = snapshot.modelPickerScope === 'all-providers'
+  const providers = snapshot.modelPickerScope === PrimaryScopeEnum.All
     ? snapshot.connectedProviders
     : snapshot.connectedProviders.filter(provider => provider.id === snapshot.primaryProvider);
   return providers.flatMap(provider => provider.models.map(model => ({ ...model, providerName: provider.name })));
@@ -254,7 +255,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   const editorLabel = inlineEdit ? 'Edit message' : 'Message Pi';
   const modelOptions = availableModelOptions(providersSnapshot);
   const selectedModel = selectedModelOption(modelOptions, providersSnapshot);
-  const groupModelOptions = providersSnapshot?.modelPickerScope === 'all-providers' && providersSnapshot.connectedProviders.length > 1;
+  const groupModelOptions = providersSnapshot?.modelPickerScope === PrimaryScopeEnum.All && providersSnapshot.connectedProviders.length > 1;
   const closeLinkPopover = useCallback(() => {
     if (linkPopover?.element.isConnected)
       linkPopover.element.focus();

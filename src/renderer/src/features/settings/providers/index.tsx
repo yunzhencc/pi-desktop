@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
+import { PrimaryScopeEnum } from '@shared/config';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
 import { PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION } from '../../../../../shared/provider-errors';
@@ -57,8 +58,8 @@ export function ProvidersSettingsView({
   }
 
   return (
-    <div className="settings-provider-view h-full min-h-0 overflow-hidden pt-[46px]">
-      <section className="mx-auto box-border flex h-full w-full max-w-[58rem] min-w-0 flex-col px-8 pt-[22px] pb-6" aria-labelledby="providers-settings-title">
+    <div className="settings-provider-view h-full min-h-0 overflow-hidden pt-11.5">
+      <section className="mx-auto box-border flex h-full w-full max-w-[58rem] min-w-0 flex-col px-8 pt-5.5 pb-6" aria-labelledby="providers-settings-title">
         <div className="flex items-start justify-between gap-4 max-[760px]:flex-col">
           <div>
             <h1 id="providers-settings-title" className="m-0 text-xl font-semibold">{formatMessage({ id: 'providers.title' })}</h1>
@@ -68,10 +69,7 @@ export function ProvidersSettingsView({
             <span>{formatMessage({ id: 'providers.scope' })}</span>
 
             <Select
-              items={[
-                { label: formatMessage({ id: 'providers.scope.primary' }), value: 'primary-provider' },
-                { label: formatMessage({ id: 'providers.scope.all' }), value: 'all-providers' },
-              ]}
+              items={PrimaryScopeEnum.items.map(scope => ({ label: formatMessage({ id: scope.label }), value: scope.value }))}
               onValueChange={scope => void run('scope', async () => onSetScope(scope as ModelPickerScope).then(() => undefined))}
               value={snapshot.modelPickerScope}
             >
@@ -83,12 +81,11 @@ export function ProvidersSettingsView({
               </SelectTrigger>
               <SelectContent align="start" alignItemWithTrigger={false}>
                 <SelectGroup>
-                  <SelectItem value="primary-provider">
-                    {formatMessage({ id: 'providers.scope.primary' })}
-                  </SelectItem>
-                  <SelectItem value="all-providers">
-                    {formatMessage({ id: 'providers.scope.all' })}
-                  </SelectItem>
+                  {PrimaryScopeEnum.items.map(scope => (
+                    <SelectItem key={scope.value} value={scope.value}>
+                      {formatMessage({ id: scope.label })}
+                    </SelectItem>
+                  ))}
                 </SelectGroup>
               </SelectContent>
             </Select>
