@@ -87,7 +87,7 @@ export function ProvidersSettingsView({
           </label>
         </div>
 
-        <div className="mt-7 flex min-h-0 flex-1 items-stretch gap-4 overflow-hidden rounded-md border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] max-[760px]:flex-col">
+        <div className="mt-7 flex min-h-0 flex-1 items-stretch overflow-hidden rounded-md border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] max-[760px]:flex-col">
           <aside className="settings-provider-nav flex min-h-0 w-60 basis-60 flex-col border-e border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_2%,transparent)] max-[760px]:min-h-48 max-[760px]:w-auto max-[760px]:basis-auto max-[760px]:border-e-0 max-[760px]:border-b" aria-label={formatMessage({ id: 'providers.title' })}>
             <ProviderNavList
               empty={formatMessage({ id: 'providers.empty' })}
