@@ -6,11 +6,18 @@ import { codeInspectorPlugin } from 'code-inspector-plugin';
 import { defineConfig } from 'electron-vite';
 
 export default defineConfig({
-  main: {},
+  main: {
+    resolve: {
+      alias: {
+        '@shared': resolve('src/shared'),
+      },
+    },
+  },
   preload: {},
   renderer: {
     resolve: {
       alias: {
+        '@shared': resolve('src/shared'),
         '@renderer': resolve('src/renderer/src'),
       },
     },

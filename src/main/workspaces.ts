@@ -1,22 +1,10 @@
+import type { WorkspaceSnapshot } from '@shared/types';
 import { execFile } from 'node:child_process';
 import { readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
-
-export interface WorkspaceSummary {
-  displayName: string;
-  lastOpenedAt: string;
-  path: string;
-}
-
-export interface WorkspaceSnapshot {
-  pinnedSessionPaths: string[];
-  pinnedWorkspacePaths: string[];
-  selectedWorkspacePath?: string;
-  workspaces: WorkspaceSummary[];
-}
 
 export async function getWorkspaceGitBranch(path: string): Promise<string | undefined> {
   try {

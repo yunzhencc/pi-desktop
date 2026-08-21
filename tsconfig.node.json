@@ -9,6 +9,11 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
 
+    "paths": {
+      "@shared/*": [
+        "./src/shared/*"
+      ]
+    },
     "types": ["node", "electron-vite/node"],
     "allowImportingTsExtensions": true,
 

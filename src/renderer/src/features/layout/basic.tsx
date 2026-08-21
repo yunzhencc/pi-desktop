@@ -1,4 +1,4 @@
-import type { WorkspaceSnapshot } from '../../../../main/workspaces';
+import type { WorkspaceSnapshot } from '@shared/types';
 import type { AppHistory, AppLocation } from './utils';
 import { useShortcutSettings } from '@renderer/features/app/hotkeys';
 import { SettingsSidebar } from '@renderer/features/settings';
