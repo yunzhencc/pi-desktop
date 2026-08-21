@@ -3,7 +3,7 @@
 import { I18nProvider } from '@renderer/features/app/i18n';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WorkspaceSidebar } from './workspace-sidebar';
+import { WorkspaceSidebar } from '.';
 
 const weather = { displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' };
 const research = { displayName: 'research', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/research' };
@@ -77,11 +77,13 @@ describe('workspace sidebar', () => {
 
     await screen.findByRole('button', { name: 'research' });
     expect(screen.getByText('置顶').compareDocumentPosition(screen.getByRole('button', { name: 'weather' }))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    fireEvent.click(screen.getByRole('button', { name: '项目操作 research' }));
-    expect(screen.getByRole('menuitem', { name: '取消置顶项目' })).not.toBeNull();
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'research' }));
+    expect(screen.getByRole('menuitem', { name: '取消置顶' })).not.toBeNull();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('menuitem', { name: '取消置顶' })).toBeNull());
 
-    fireEvent.click(screen.getByRole('button', { name: '项目操作 weather' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: '置顶项目' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'weather' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '置顶' }));
 
     await waitFor(() => expect(window.api.workspaces.setPinned).toHaveBeenCalledWith(weather.path, true));
   });
@@ -98,12 +100,27 @@ describe('workspace sidebar', () => {
     );
 
     await screen.findByRole('button', { name: 'weather' });
-    fireEvent.click(screen.getByRole('button', { name: '项目操作 research' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'research' }));
     fireEvent.click(screen.getByRole('menuitem', { name: '新建聊天' }));
 
     await waitFor(() => expect(window.api.workspaces.select).toHaveBeenCalledWith(research.path));
     expect(onNewConversation).toHaveBeenCalledOnce();
     window.removeEventListener('new-conversation', onNewConversation);
+  });
+
+  it('opens a project source folder from its action menu', async () => {
+    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'weather' });
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'research' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '在 Finder 中显示' }));
+
+    await waitFor(() => expect(window.api.workspaces.openDirectory).toHaveBeenCalledWith(research.path));
   });
 
   it('pins a project from its action menu', async () => {
@@ -115,10 +132,40 @@ describe('workspace sidebar', () => {
     );
 
     await screen.findByRole('button', { name: 'weather' });
-    fireEvent.click(screen.getByRole('button', { name: '项目操作 research' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: '置顶项目' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'research' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '置顶' }));
 
     await waitFor(() => expect(window.api.workspaces.setPinned).toHaveBeenCalledWith(research.path, true));
+  });
+
+  it('opens the project action menu from the ellipsis icon', async () => {
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'weather' });
+    const ellipsis = document.querySelector('.lucide-ellipsis')!;
+    fireEvent.click(ellipsis);
+
+    expect(screen.getByRole('menuitem', { name: '置顶' })).not.toBeNull();
+    expect(ellipsis.parentElement?.className).toContain('inline-flex');
+  });
+
+  it('unpins a project from its action menu', async () => {
+    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], pinnedWorkspacePaths: [research.path], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await screen.findByRole('button', { name: 'research' });
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'research' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '取消置顶' }));
+
+    await waitFor(() => expect(window.api.workspaces.setPinned).toHaveBeenCalledWith(research.path, false));
   });
 
   it('edits a project name and source folder from its action menu', async () => {
@@ -132,8 +179,8 @@ describe('workspace sidebar', () => {
     );
 
     await screen.findByRole('button', { name: 'weather' });
-    fireEvent.click(screen.getByRole('button', { name: '项目操作 weather' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: '编辑项目' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'weather' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '编辑' }));
     fireEvent.change(screen.getByRole('textbox', { name: '项目名称' }), { target: { value: edited.displayName } });
     fireEvent.click(screen.getByRole('button', { name: weather.path }));
     await waitFor(() => expect(screen.getByRole('button', { name: edited.path })).not.toBeNull());
@@ -151,26 +198,9 @@ describe('workspace sidebar', () => {
       </I18nProvider>,
     );
 
-    const project = (await screen.findByRole('button', { name: 'weather' })).closest('.workspace-sidebar-project')!;
-    fireEvent.mouseEnter(project);
+    fireEvent.mouseEnter(await screen.findByRole('button', { name: 'weather' }));
 
     expect(screen.queryByRole('dialog', { name: 'weather 项目信息' })).toBeNull();
-  });
-
-  it('reorders pinned projects by dragging them within the global section', async () => {
-    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], pinnedWorkspacePaths: [weather.path, research.path], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
-    render(
-      <I18nProvider>
-        <WorkspaceSidebar />
-      </I18nProvider>,
-    );
-
-    const weatherProject = (await screen.findByRole('button', { name: 'weather' })).closest('.workspace-sidebar-project')!;
-    const researchProject = screen.getByRole('button', { name: 'research' }).closest('.workspace-sidebar-project')!;
-    fireEvent.dragStart(researchProject);
-    fireEvent.drop(weatherProject);
-
-    await waitFor(() => expect(window.api.workspaces.setPinned).toHaveBeenCalledWith(research.path, true, weather.path));
   });
 
   it('renders the pinned section before projects and collapses it independently', async () => {
@@ -212,10 +242,10 @@ describe('workspace sidebar', () => {
     const onUpdate = window.api.composer.onUpdate as ReturnType<typeof vi.fn>;
     act(() => onUpdate.mock.calls[0]![0]({ sessionPath: session.path, type: 'session' }));
 
-    await expect(screen.findByRole('button', { name: 'Summarize the forecast' })).resolves.not.toBeNull();
+    await expect(screen.findByText('Summarize the forecast')).resolves.not.toBeNull();
     resolveInitial([]);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Summarize the forecast' })).not.toBeNull());
+    await waitFor(() => expect(screen.getByText('Summarize the forecast')).not.toBeNull());
   });
 
   it('collapses and expands a project session history from its project row', async () => {
@@ -226,18 +256,18 @@ describe('workspace sidebar', () => {
       </I18nProvider>,
     );
 
-    await screen.findByRole('button', { name: 'Summarize the forecast' });
+    await screen.findByText('Summarize the forecast');
     const toggle = screen.getByRole('button', { name: 'weather' });
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
 
     fireEvent.click(toggle);
 
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('button', { name: 'Summarize the forecast' })).toBeNull();
+    expect(screen.queryByText('Summarize the forecast')).toBeNull();
 
     fireEvent.click(toggle);
 
-    expect(screen.getByRole('button', { name: 'Summarize the forecast' })).not.toBeNull();
+    expect(screen.getByText('Summarize the forecast')).not.toBeNull();
   });
 
   it('opens the create-project step and persists only after confirmation', async () => {

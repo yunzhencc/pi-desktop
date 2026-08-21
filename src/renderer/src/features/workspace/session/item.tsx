@@ -129,6 +129,5 @@ export function SessionItem(props: SessionItemProps) {
         </div>
       </HoverCardContent>
     </HoverCard>
-
   );
 }
