@@ -1,4 +1,5 @@
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
+import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { useShortcutSettings } from '@renderer/features/app/hotkeys';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { ArrowLeft, Bot, Keyboard, Search, Settings, Sun, X } from 'lucide-react';
@@ -44,6 +45,8 @@ const settingsSearchTargets: SettingsSearchTarget[] = [
   },
 ];
 
+const navigationButtonClass = 'flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-sm font-medium text-text-secondary hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] hover:text-foreground aria-[current=page]:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] aria-[current=page]:text-foreground';
+
 interface SettingsSidebarProps {
   activePath: string;
   onClose: () => void;
@@ -65,16 +68,16 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
   useHotkeys(bindings.focusSettingsSearch.map(hotkey => ({ callback: focusSearch, hotkey })), { ignoreInputs: true, preventDefault: true });
 
   return (
-    <nav className="settings-navigation" aria-label={formatMessage({ id: 'settings.navigation' })}>
-      <button className="settings-back-button" onClick={onClose} type="button">
+    <nav className="flex h-full flex-col px-3 pt-12 pb-[18px]" aria-label={formatMessage({ id: 'settings.navigation' })}>
+      <button className="flex h-8 w-full items-center gap-2 rounded-md bg-transparent px-2 text-left text-sm font-normal text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] hover:text-foreground" onClick={onClose} type="button">
         <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
         {formatMessage({ id: 'settings.backToApp' })}
       </button>
-      <div className="settings-search">
-        <Search aria-hidden="true" className="settings-search-icon" size={16} strokeWidth={1.75} />
+      <div className="relative mt-3 flex items-center">
+        <Search aria-hidden="true" className="pointer-events-none absolute left-[9px] z-[1] text-text-tertiary" size={16} strokeWidth={1.75} />
         <Input
           aria-label={formatMessage({ id: 'settings.search.label' })}
-          className="settings-search-input"
+          className="[&::-webkit-search-cancel-button]:hidden h-[30px] border-transparent bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] ps-[30px] pe-7 text-[13px] text-foreground shadow-none focus-visible:border-border-subtle focus-visible:shadow-none"
           onChange={(event) => {
             setQuery(event.target.value);
             setHighlightedIndex(-1);
@@ -104,7 +107,7 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
         {query && (
           <button
             aria-label={formatMessage({ id: 'settings.search.clear' })}
-            className="settings-search-clear"
+            className="absolute right-[7px] z-[1] grid size-5 place-items-center rounded-sm p-0 text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-foreground"
             onClick={() => {
               setQuery('');
               setHighlightedIndex(-1);
@@ -119,10 +122,10 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
         ? <SettingsSearchResults highlightedIndex={highlightedIndex} onHighlight={setHighlightedIndex} onNavigate={onNavigate} results={results} />
         : (
             <>
-              <div className="settings-navigation-title">{formatMessage({ id: 'settings.settings' })}</div>
+              <div className="px-2 pt-4 pb-2 text-sm font-normal text-text-tertiary">{formatMessage({ id: 'settings.settings' })}</div>
               <button
                 aria-current={activePath === '/settings/general' ? 'page' : undefined}
-                className="settings-navigation-item"
+                className={navigationButtonClass}
                 onClick={() => onNavigate('/settings/general')}
                 type="button"
               >
@@ -131,7 +134,7 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
               </button>
               <button
                 aria-current={activePath === '/settings/appearance' ? 'page' : undefined}
-                className="settings-navigation-item"
+                className={cn(navigationButtonClass, 'mt-px')}
                 onClick={() => onNavigate('/settings/appearance')}
                 type="button"
               >
@@ -140,7 +143,7 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
               </button>
               <button
                 aria-current={activePath === '/settings/keyboard-shortcuts' ? 'page' : undefined}
-                className="settings-navigation-item"
+                className={cn(navigationButtonClass, 'mt-px')}
                 onClick={() => onNavigate('/settings/keyboard-shortcuts')}
                 type="button"
               >
@@ -149,7 +152,7 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
               </button>
               <button
                 aria-current={activePath === '/settings/providers' ? 'page' : undefined}
-                className="settings-navigation-item"
+                className={cn(navigationButtonClass, 'mt-px')}
                 onClick={() => onNavigate('/settings/providers')}
                 type="button"
               >
@@ -171,15 +174,15 @@ function SettingsSearchResults({ highlightedIndex, onHighlight, onNavigate, resu
   const { formatMessage } = useIntl();
 
   if (results.length === 0) {
-    return <div className="settings-search-empty">{formatMessage({ id: 'settings.search.empty' })}</div>;
+    return <div className="px-2 py-3 text-xs text-text-tertiary">{formatMessage({ id: 'settings.search.empty' })}</div>;
   }
 
   return (
-    <div className="settings-search-results">
+    <div className="mt-3 flex flex-col gap-0.5">
       {results.map((result, index) => (
         <button
           aria-label={formatMessage({ id: 'settings.search.result' }, { label: result.label, panel: result.panel })}
-          className="settings-search-result"
+          className="flex min-h-[34px] w-full flex-col items-start rounded-md px-2 py-[5px] text-left text-[13px] text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:outline-none data-[highlighted=true]:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)]"
           data-highlighted={highlightedIndex === index || undefined}
           key={result.path}
           onClick={() => onNavigate(result.path)}
@@ -188,7 +191,7 @@ function SettingsSearchResults({ highlightedIndex, onHighlight, onNavigate, resu
           type="button"
         >
           <span>{result.label}</span>
-          {result.label !== result.panel && <span className="settings-search-result-panel">{result.panel}</span>}
+          {result.label !== result.panel && <span className="text-xs text-text-tertiary">{result.panel}</span>}
         </button>
       ))}
     </div>

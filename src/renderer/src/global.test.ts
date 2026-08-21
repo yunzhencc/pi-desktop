@@ -29,33 +29,6 @@ describe('app shell surfaces', () => {
     expect(rightPanelRule).toContain('border-inline-end: 1px solid var(--border-subtle);');
   });
 
-  it('highlights only the active settings navigation item', () => {
-    const navigationRule = styles.match(/\.settings-back-button,\s*\.settings-navigation-item\s*\{([\s\S]*?)\}/)?.[1];
-    const activeNavigationRule = styles.match(/\.settings-navigation-item\[aria-current='page'\]\s*\{([\s\S]*?)\}/)?.[1];
-
-    expect(navigationRule).not.toContain('background:');
-    expect(activeNavigationRule).toContain('background: color-mix(in srgb, var(--foreground) 8%, transparent);');
-  });
-
-  it('leaves a one-pixel gap between adjacent settings navigation items', () => {
-    expect(styles).toMatch(/\.settings-navigation-item \+ \.settings-navigation-item\s*\{\s*margin-top: 1px;/);
-  });
-
-  it('uses Codex settings typography and semantic colors', () => {
-    const titleRule = styles.match(/\.settings-navigation-title\s*\{([\s\S]*?)\}/)?.[1];
-    const backRule = styles.match(/\.settings-back-button\s*\{([\s\S]*?)\}/)?.[1];
-    const itemRule = styles.match(/\.settings-back-button,\s*\.settings-navigation-item\s*\{([\s\S]*?)\}/)?.[1];
-
-    expect(titleRule).toContain('font-size: 14px;');
-    expect(titleRule).toContain('font-weight: 400;');
-    expect(titleRule).toContain('color: var(--text-tertiary);');
-    expect(backRule).toContain('font-size: 14px;');
-    expect(backRule).toContain('font-weight: 400;');
-    expect(backRule).toContain('color: var(--text-tertiary);');
-    expect(itemRule).toContain('height: 28px;');
-    expect(itemRule).toContain('font-size: 14px;');
-  });
-
   it('uses Codex’s compact composer toolbar density and ghost hover surface', () => {
     const toolbarRule = styles.match(/\.new-conversation-toolbar\s*\{([\s\S]*?)\}/)?.[1];
     const triggerRule = styles.match(/\.new-conversation-toolbar-project-trigger\s*\{([\s\S]*?)\}/)?.[1];
