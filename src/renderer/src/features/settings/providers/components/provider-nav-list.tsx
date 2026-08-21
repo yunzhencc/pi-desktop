@@ -1,4 +1,4 @@
-import type { ProviderId, ProviderSnapshot } from '../../../../../../main/provider-settings';
+import type { ProviderId, ProviderSnapshot } from '@shared/types';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
 import { useOverlayScrollbarsTheme } from '@renderer/features/app/theme';
 import { Search } from 'lucide-react';

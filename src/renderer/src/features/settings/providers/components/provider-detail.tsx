@@ -1,4 +1,4 @@
-import type { ProviderSnapshot, ProvidersSnapshot } from '../../../../../../main/provider-settings';
+import type { ProviderSnapshot, ProvidersSnapshot } from '@shared/types';
 import {
   Select,
   SelectContent,
@@ -36,7 +36,7 @@ export function ProviderDetail({
   const selectedModel = defaultModel?.providerId === provider.id ? defaultModel.modelId : provider.models[0]?.id;
 
   return (
-    <article className="flex min-h-0 min-w-0 flex-1 flex-col gap-[18px] p-[18px]">
+    <article className="flex min-h-0 min-w-0 flex-1 flex-col gap-4.5 p-4.5">
       <header className="flex items-center gap-4">
         <ProviderMark provider={provider} />
         <div>

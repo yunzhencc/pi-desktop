@@ -1,35 +1,8 @@
+import type { ModelPickerScope, ProviderId, ProviderModelSnapshot, ProviderSnapshot, ProvidersSnapshot } from '@shared/types';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION } from '../shared/provider-errors';
-
-export type ProviderId = string;
-export type ModelPickerScope = 'primary-provider' | 'all-providers';
-
-export interface ProviderModelSnapshot {
-  id: string;
-  name: string;
-  providerId: ProviderId;
-  reasoning: boolean;
-  supportsImages: boolean;
-}
-
-export interface ProviderSnapshot {
-  authType: 'api_key' | 'oauth';
-  configured: boolean;
-  id: ProviderId;
-  models: ProviderModelSnapshot[];
-  name: string;
-  primary: boolean;
-}
-
-export interface ProvidersSnapshot {
-  availableProviders: ProviderSnapshot[];
-  connectedProviders: ProviderSnapshot[];
-  defaultModel?: { modelId: string; providerId: ProviderId };
-  modelPickerScope: ModelPickerScope;
-  primaryProvider: ProviderId;
-}
 
 interface ProviderPreferences {
   modelPickerScope: ModelPickerScope;

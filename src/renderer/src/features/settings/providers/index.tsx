@@ -1,4 +1,4 @@
-import type { ModelPickerScope, ProviderId, ProvidersSnapshot } from '../../../../../main/provider-settings';
+import type { ModelPickerScope, ProviderId, ProvidersSnapshot } from '@shared/types';
 import {
   Select,
   SelectContent,

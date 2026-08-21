@@ -1,8 +1,7 @@
 import type { ElectronAPI } from '@electron-toolkit/preload';
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
 import type { PiSessionSnapshot, PiSessionSummary, PiUsageStats, TranscriptUpdate } from '../main/pi-runtime';
-import type { ModelPickerScope, ProviderId, ProvidersSnapshot } from '../main/provider-settings';
-import type { WorkspaceSnapshot } from '../main/workspaces';
+import type { ModelPickerScope, ProviderId, ProvidersSnapshot, WorkspaceSnapshot } from '../shared/types';
 
 declare global {
   interface Window {

@@ -1,4 +1,4 @@
-import type { ProviderId, ProviderSnapshot } from '../../../../../../main/provider-settings';
+import type { ProviderId, ProviderSnapshot } from '@shared/types';
 import AntGroupIcon from '@lobehub/icons/es/AntGroup/components/Color.js';
 import AnthropicIcon from '@lobehub/icons/es/Anthropic/components/Mono.js';
 import AwsIcon from '@lobehub/icons/es/Aws/components/Color.js';

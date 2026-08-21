@@ -1,7 +1,6 @@
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
 import type { PiSessionSnapshot, PiSessionSummary, PiUsageStats, TranscriptUpdate } from '../main/pi-runtime';
-import type { ModelPickerScope, ProviderId, ProvidersSnapshot } from '../main/provider-settings';
-import type { WorkspaceSnapshot } from '../main/workspaces';
+import type { ModelPickerScope, ProviderId, ProvidersSnapshot, WorkspaceSnapshot } from '../shared/types';
 import process from 'node:process';
 import { electronAPI } from '@electron-toolkit/preload';
 import { contextBridge, ipcRenderer } from 'electron';

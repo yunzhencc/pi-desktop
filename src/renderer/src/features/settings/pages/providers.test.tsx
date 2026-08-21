@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { ProvidersSnapshot } from '../../../../../main/provider-settings';
+import type { ProvidersSnapshot } from '@shared/types';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';

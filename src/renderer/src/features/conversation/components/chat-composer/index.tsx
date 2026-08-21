@@ -1,5 +1,5 @@
+import type { ProviderModelSnapshot, ProvidersSnapshot } from '@shared/types';
 import type { CSSProperties } from 'react';
-import type { ProviderModelSnapshot, ProvidersSnapshot } from '../../../../../main/provider-settings';
 import DeepSeekIcon from '@lobehub/icons/es/DeepSeek/components/Color.js';
 import OpenAIIcon from '@lobehub/icons/es/OpenAI/components/Mono.js';
 import OpenCodeIcon from '@lobehub/icons/es/OpenCode/components/Mono.js';

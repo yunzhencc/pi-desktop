@@ -1,4 +1,4 @@
-import type { ProvidersSnapshot } from '../../../../../main/provider-settings';
+import type { ProvidersSnapshot } from '@shared/types';
 import { useEffect, useState } from 'react';
 import { ProvidersSettingsView } from '../providers';
 
