@@ -1,5 +1,6 @@
 import type { ShortcutBindings, ShortcutId } from '@renderer/features/app/hotkeys';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
+import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import {
   findShortcutConflict,
   hasCustomShortcutBindings,
@@ -20,6 +21,8 @@ interface KeyboardShortcutsViewProps {
   onUpdate: (commandId: ShortcutId, index: number, hotkey: string) => void;
 }
 
+const shortcutButtonClass = 'min-h-7 rounded-md border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] px-2 py-1 text-xs text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)]';
+
 export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, onResetAll, onUpdate }: KeyboardShortcutsViewProps) {
   const { formatMessage } = useIntl();
   const [query, setQuery] = useState('');
@@ -36,19 +39,19 @@ export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, o
   return (
     <div className="settings-view">
       <section className="settings-content" aria-labelledby="keyboard-shortcuts-title">
-        <div className="shortcut-settings-heading">
+        <div className="flex items-start justify-between gap-5">
           <h1 id="keyboard-shortcuts-title">{formatMessage({ id: 'shortcuts.title' })}</h1>
           {onResetAll && hasCustomShortcutBindings(bindings) && (
-            <button className="shortcut-reset-button" onClick={() => setIsConfirmingReset(true)} type="button">
+            <button className={shortcutButtonClass} onClick={() => setIsConfirmingReset(true)} type="button">
               {formatMessage({ id: 'shortcuts.resetAll' })}
             </button>
           )}
         </div>
-        <div className="shortcut-search">
-          <Search aria-hidden="true" className="shortcut-search-icon" size={16} strokeWidth={1.75} />
+        <div className="relative mt-6 flex items-center">
+          <Search aria-hidden="true" className="pointer-events-none absolute left-[9px] z-[1] text-text-tertiary" size={16} strokeWidth={1.75} />
           <Input
             aria-label={formatMessage({ id: 'shortcuts.search' })}
-            className="shortcut-search-input"
+            className="h-8 border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] pl-[30px] shadow-none"
             onChange={event => setQuery(event.target.value)}
             onKeyDown={(event) => {
               if (!isSearchingByKeystrokes)
@@ -72,7 +75,7 @@ export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, o
           <button
             aria-label={formatMessage({ id: 'shortcuts.searchByKeystrokes' })}
             aria-pressed={isSearchingByKeystrokes}
-            className="shortcut-search-mode"
+            className="absolute right-1 grid size-6 place-items-center rounded-sm text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)] hover:text-foreground aria-pressed:bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)] aria-pressed:text-foreground"
             onClick={() => {
               setIsSearchingByKeystrokes(searching => !searching);
               setKeystrokeQuery('');
@@ -82,14 +85,14 @@ export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, o
             <Keyboard aria-hidden="true" size={15} />
           </button>
         </div>
-        <div className="shortcut-command-list">
+        <div className="mt-6 flex flex-col border-t border-border-subtle">
           {definitions.map(definition => (
-            <article className="shortcut-command" key={definition.id}>
-              <div className="shortcut-command-copy">
-                <h2>{formatMessage({ id: definition.title })}</h2>
-                <p>{formatMessage({ id: definition.description })}</p>
+            <article className="flex min-h-[72px] items-start justify-between gap-5 border-b border-border-subtle py-4" key={definition.id}>
+              <div>
+                <h2 className="m-0 text-sm font-medium">{formatMessage({ id: definition.title })}</h2>
+                <p className="m-0 mt-1 text-[13px] text-text-tertiary">{formatMessage({ id: definition.description })}</p>
               </div>
-              <div className="shortcut-command-controls">
+              <div className="flex flex-[0_1_24rem] flex-wrap justify-end gap-1.5">
                 {bindings[definition.id].map((binding, index) => (
                   <ShortcutBindingButton
                     bindings={bindings}
@@ -111,21 +114,21 @@ export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, o
                     onRecord={hotkey => onAppend(definition.id, hotkey)}
                   />
                 )}
-                {onReset && <button className="shortcut-reset-button" onClick={() => onReset(definition.id)} type="button">{formatMessage({ id: 'shortcuts.reset' })}</button>}
+                {onReset && <button className={shortcutButtonClass} onClick={() => onReset(definition.id)} type="button">{formatMessage({ id: 'shortcuts.reset' })}</button>}
               </div>
             </article>
           ))}
         </div>
       </section>
       {isConfirmingReset && (
-        <div aria-modal="true" className="shortcut-reset-dialog-backdrop" role="dialog">
-          <div className="shortcut-reset-dialog">
-            <h2>{formatMessage({ id: 'shortcuts.resetAll.title' })}</h2>
-            <p>{formatMessage({ id: 'shortcuts.resetAll.description' })}</p>
-            <div>
-              <button className="shortcut-reset-button" onClick={() => setIsConfirmingReset(false)} type="button">{formatMessage({ id: 'shortcuts.cancel' })}</button>
+        <div aria-modal="true" className="fixed inset-0 z-50 grid place-items-center bg-[color-mix(in_srgb,#000_28%,transparent)]" role="dialog">
+          <div className="w-[min(24rem,calc(100vw-32px))] rounded-lg border border-border-subtle bg-surface p-5 shadow-[0_18px_50px_color-mix(in_srgb,#000_26%,transparent)]">
+            <h2 className="m-0 text-sm font-medium">{formatMessage({ id: 'shortcuts.resetAll.title' })}</h2>
+            <p className="m-0 mt-1 text-[13px] text-text-tertiary">{formatMessage({ id: 'shortcuts.resetAll.description' })}</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button className={shortcutButtonClass} onClick={() => setIsConfirmingReset(false)} type="button">{formatMessage({ id: 'shortcuts.cancel' })}</button>
               <button
-                className="shortcut-reset-button shortcut-reset-button-primary"
+                className={cn(shortcutButtonClass, 'bg-foreground text-background hover:bg-foreground')}
                 onClick={() => {
                   onResetAll?.();
                   setIsConfirmingReset(false);
@@ -175,20 +178,20 @@ function ShortcutBindingButton({ bindings, commandId, index, isAddButton = false
   const command = formatMessage({ id: shortcutDefinitions.find(definition => definition.id === commandId)!.title });
 
   if (recorder.isRecording) {
-    return <span className="shortcut-recording">{formatMessage({ id: 'shortcuts.recording' })}</span>;
+    return <span className={cn(shortcutButtonClass, 'text-text-secondary hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]')}>{formatMessage({ id: 'shortcuts.recording' })}</span>;
   }
 
   return (
-    <span className="shortcut-binding-control">
+    <span className="relative">
       <button
         aria-label={isAddButton ? formatMessage({ id: 'shortcuts.add' }) : formatMessage({ id: 'shortcuts.edit' }, { command, index: index + 1 })}
-        className="shortcut-binding"
+        className={shortcutButtonClass}
         onClick={() => recorder.startRecording()}
         type="button"
       >
         {isAddButton ? formatMessage({ id: 'shortcuts.add' }) : formatForDisplay(value!)}
       </button>
-      {error && <span className="shortcut-error">{error}</span>}
+      {error && <span className="absolute right-0 top-[calc(100%+4px)] z-[1] w-max max-w-[220px] text-xs text-destructive">{error}</span>}
     </span>
   );
 }
