@@ -375,7 +375,7 @@
 }
 
 .chat-composer-model-popover {
-  width: min(320px, calc(100vw - 16px));
+  width: min(280px, calc(100vw - 16px));
   max-height: min(360px, calc(100vh - 16px));
   overflow: hidden;
   padding: 6px;
@@ -423,6 +423,23 @@
   padding: 8px;
   color: var(--text-tertiary);
   font-size: 13px;
+}
+
+.chat-composer-model-group [cmdk-group-heading] {
+  padding: 6px 8px 4px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.chat-composer-model-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-composer-model-group-heading svg {
+  flex: 0 0 auto;
 }
 
 .chat-composer-model-item {

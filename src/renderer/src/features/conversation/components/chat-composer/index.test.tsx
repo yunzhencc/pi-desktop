@@ -360,11 +360,78 @@ describe('chat composer', () => {
     renderComposer();
 
     await user.click(await screen.findByRole('button', { name: '选择模型，当前 DeepSeek Chat' }));
+    const headings = [...document.querySelectorAll('[cmdk-group-heading]')];
+    expect(headings.map(heading => heading.querySelector('.chat-composer-model-group-heading > span')?.textContent)).toEqual(['DeepSeek', 'OpenRouter']);
+    expect(headings.every(heading => heading.querySelector('svg'))).toBe(true);
     await user.type(screen.getByRole('combobox', { name: '搜索模型' }), 'reason');
     await waitFor(() => expect(screen.queryByRole('option', { name: /Qwen3 Coder/ })).toBeNull());
     await user.click(screen.getByRole('option', { name: /DeepSeek Reasoner/ }));
 
     expect(providers.setDefaultModel).toHaveBeenCalledWith('deepseek', 'deepseek-reasoner');
+  });
+
+  it('keeps the model picker ungrouped when only one provider is available', async () => {
+    const user = userEvent.setup();
+    providers.get.mockResolvedValueOnce({
+      availableProviders: [],
+      connectedProviders: [
+        {
+          authType: 'api_key',
+          configured: true,
+          id: 'deepseek',
+          models: [
+            { id: 'deepseek-chat', name: 'DeepSeek Chat', providerId: 'deepseek', reasoning: false, supportsImages: false },
+            { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', providerId: 'deepseek', reasoning: true, supportsImages: false },
+          ],
+          name: 'DeepSeek',
+          primary: true,
+        },
+      ],
+      defaultModel: { modelId: 'deepseek-chat', providerId: 'deepseek' },
+      modelPickerScope: 'all-providers',
+      primaryProvider: 'deepseek',
+    });
+    renderComposer();
+
+    await user.click(await screen.findByRole('button', { name: '选择模型，当前 DeepSeek Chat' }));
+
+    expect(document.querySelector('[cmdk-group-heading]')).toBeNull();
+    expect(screen.getByRole('option', { name: /DeepSeek Reasoner/ })).not.toBeNull();
+  });
+
+  it('groups models when all connected providers are in scope even if only one has selectable models', async () => {
+    const user = userEvent.setup();
+    providers.get.mockResolvedValueOnce({
+      availableProviders: [],
+      connectedProviders: [
+        {
+          authType: 'api_key',
+          configured: true,
+          id: 'deepseek',
+          models: [{ id: 'deepseek-chat', name: 'DeepSeek Chat', providerId: 'deepseek', reasoning: false, supportsImages: false }],
+          name: 'DeepSeek',
+          primary: true,
+        },
+        {
+          authType: 'api_key',
+          configured: true,
+          id: 'opencode-go',
+          models: [],
+          name: 'OpenCode Go',
+          primary: false,
+        },
+      ],
+      defaultModel: { modelId: 'deepseek-chat', providerId: 'deepseek' },
+      modelPickerScope: 'all-providers',
+      primaryProvider: 'deepseek',
+    });
+    renderComposer();
+
+    await user.click(await screen.findByRole('button', { name: '选择模型，当前 DeepSeek Chat' }));
+
+    const headings = [...document.querySelectorAll('[cmdk-group-heading]')];
+    expect(headings.map(heading => heading.querySelector('.chat-composer-model-group-heading > span')?.textContent)).toEqual(['DeepSeek']);
+    expect(headings[0]?.querySelector('svg')).not.toBeNull();
   });
 
   it('uses the localized Codex default placeholder', () => {

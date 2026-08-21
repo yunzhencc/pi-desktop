@@ -1,5 +1,9 @@
 import type { CSSProperties } from 'react';
 import type { ProviderModelSnapshot, ProvidersSnapshot } from '../../../../../main/provider-settings';
+import DeepSeekIcon from '@lobehub/icons/es/DeepSeek/components/Color.js';
+import OpenAIIcon from '@lobehub/icons/es/OpenAI/components/Mono.js';
+import OpenCodeIcon from '@lobehub/icons/es/OpenCode/components/Mono.js';
+import OpenRouterIcon from '@lobehub/icons/es/OpenRouter/components/Mono.js';
 import {
   Popover,
   PopoverContent,
@@ -65,6 +69,17 @@ function availableModelOptions(snapshot?: ProvidersSnapshot) {
 
 function selectedModelOption(models: ModelOption[], snapshot?: ProvidersSnapshot) {
   return models.find(model => model.providerId === snapshot?.defaultModel?.providerId && model.id === snapshot.defaultModel.modelId) ?? models[0];
+}
+
+function groupedModelOptions(models: ModelOption[]) {
+  return models.reduce<Array<{ providerId: string; providerName: string; models: ModelOption[] }>>((groups, model) => {
+    const group = groups.find(group => group.providerId === model.providerId);
+    if (group)
+      group.models.push(model);
+    else
+      groups.push({ models: [model], providerId: model.providerId, providerName: model.providerName });
+    return groups;
+  }, []);
 }
 
 function validUrl(value: string) {
@@ -236,6 +251,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   const editorLabel = inlineEdit ? 'Edit message' : 'Message Pi';
   const modelOptions = availableModelOptions(providersSnapshot);
   const selectedModel = selectedModelOption(modelOptions, providersSnapshot);
+  const groupModelOptions = providersSnapshot?.modelPickerScope === 'all-providers' && providersSnapshot.connectedProviders.length > 1;
   const closeLinkPopover = useCallback(() => {
     if (linkPopover?.element.isConnected)
       linkPopover.element.focus();
@@ -528,6 +544,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
                     const next = await window.api.providers.setDefaultModel(model.providerId, model.id);
                     setProvidersSnapshot(next);
                   }}
+                  showGroups={groupModelOptions}
                   selectedModel={selectedModel}
                 />
               )}
@@ -617,8 +634,9 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   );
 }
 
-function ModelPicker({ models, onSelect, selectedModel }: { models: ModelOption[]; onSelect: (model: ModelOption) => Promise<void>; selectedModel: ModelOption }) {
+function ModelPicker({ models, onSelect, selectedModel, showGroups }: { models: ModelOption[]; onSelect: (model: ModelOption) => Promise<void>; selectedModel: ModelOption; showGroups: boolean }) {
   const [open, setOpen] = useState(false);
+  const modelGroups = groupedModelOptions(models);
 
   return (
     <Popover onOpenChange={setOpen} open={open}>
@@ -642,25 +660,61 @@ function ModelPicker({ models, onSelect, selectedModel }: { models: ModelOption[
           </div>
           <Command.List className="chat-composer-model-list">
             <Command.Empty className="chat-composer-model-empty">未找到模型</Command.Empty>
-            {models.map(model => (
-              <Command.Item
-                className="chat-composer-model-item"
-                key={`${model.providerId}:${model.id}`}
-                onSelect={() => {
-                  void onSelect(model).then(() => setOpen(false));
-                }}
-                value={`${model.providerName} ${model.name} ${model.id}`}
-              >
-                <span>
-                  <strong>{model.name}</strong>
-                  <small>{model.providerName}</small>
-                </span>
-                {model.providerId === selectedModel.providerId && model.id === selectedModel.id && <Check aria-hidden="true" size={14} />}
-              </Command.Item>
-            ))}
+            {showGroups
+              ? modelGroups.map(group => (
+                  <Command.Group className="chat-composer-model-group" heading={<ProviderGroupHeading group={group} />} key={group.providerId}>
+                    {group.models.map(model => <ModelPickerItem key={`${model.providerId}:${model.id}`} model={model} onSelect={onSelect} selectedModel={selectedModel} setOpen={setOpen} showProvider={false} />)}
+                  </Command.Group>
+                ))
+              : models.map(model => <ModelPickerItem key={`${model.providerId}:${model.id}`} model={model} onSelect={onSelect} selectedModel={selectedModel} setOpen={setOpen} showProvider />)}
           </Command.List>
         </Command>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function ProviderGroupHeading({ group }: { group: { providerId: string; providerName: string } }) {
+  return (
+    <span className="chat-composer-model-group-heading">
+      {renderProviderGroupIcon(group.providerId)}
+      <span>{group.providerName}</span>
+    </span>
+  );
+}
+
+function renderProviderGroupIcon(providerId: string) {
+  if (providerId === 'deepseek')
+    return <DeepSeekIcon aria-hidden="true" size={14} />;
+  if (providerId === 'openai-codex')
+    return <OpenAIIcon aria-hidden="true" size={14} />;
+  if (providerId === 'openrouter')
+    return <OpenRouterIcon aria-hidden="true" size={14} />;
+  if (providerId === 'opencode' || providerId.startsWith('opencode-'))
+    return <OpenCodeIcon aria-hidden="true" size={14} />;
+  return <Bot aria-hidden="true" size={14} strokeWidth={1.75} />;
+}
+
+function ModelPickerItem({ model, onSelect, selectedModel, setOpen, showProvider }: {
+  model: ModelOption;
+  onSelect: (model: ModelOption) => Promise<void>;
+  selectedModel: ModelOption;
+  setOpen: (open: boolean) => void;
+  showProvider: boolean;
+}) {
+  return (
+    <Command.Item
+      className="chat-composer-model-item"
+      onSelect={() => {
+        void onSelect(model).then(() => setOpen(false));
+      }}
+      value={`${model.providerName} ${model.name} ${model.id}`}
+    >
+      <span>
+        <strong>{model.name}</strong>
+        {showProvider && <small>{model.providerName}</small>}
+      </span>
+      {model.providerId === selectedModel.providerId && model.id === selectedModel.id && <Check aria-hidden="true" size={14} />}
+    </Command.Item>
   );
 }
