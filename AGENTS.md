@@ -50,6 +50,14 @@ pnpm build:linux  # Linux 打包
 - 样式先沿用同 feature 的 CSS 和设计变量；不要为局部改动重写整体视觉体系。
 - 注释只写非显而易见的约束、原因或失败语义；不要复述代码。
 
+## 前端 UI 规则
+
+- UI 改动优先使用 Tailwind CSS utilities 和 `@pi-desktop/shadcn-ui` 组件。
+- 使用组件前先检查 `packages/shadcn-ui/src/components`；缺少组件时，优先用 shadcn 官方 CLI 添加。
+- 不手写已有 shadcn 能覆盖的组件，不新增 UI 依赖替代 shadcn/Tailwind。
+- 默认不新增普通 CSS class；仅在复用旧样式、复杂选择器/媒体查询、第三方组件内部样式或 Tailwind 表达不清时使用。
+- 若偏离以上规则，在回复中说明原因。
+
 ## 测试和验证
 
 - 非平凡逻辑改动要留下一个能失败的检查：优先补同目录 Vitest，或运行已有目标测试。
