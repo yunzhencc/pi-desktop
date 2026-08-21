@@ -333,6 +333,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
                   onDropBefore={sessionIsPinned ? () => pinDraggedSession(session.path) : undefined}
                   onOpen={() => void openSession(item.path, session.path)}
                   onTogglePin={() => void setSessionPinned(item.path, session.path, !sessionIsPinned)}
+                  projectName={item.displayName}
                   session={session}
                 />
               );
@@ -387,6 +388,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
                   onDropBefore={() => pinDraggedSession(session.path)}
                   onOpen={() => void openSession(workspacePath, session.path)}
                   onTogglePin={() => void setSessionPinned(workspacePath, session.path, false)}
+                  projectName={workspaceByPath.get(workspacePath)?.displayName}
                   session={session}
                 />
               ))}
@@ -454,7 +456,7 @@ function ProjectHoverCard({ isCurrent, isLoading, isPinned, item, onEdit, onMous
   );
 }
 
-function SessionRow({ isPinned, isRunning, isSelected, onDragEnd, onDragStart, onDropBefore, onOpen, onTogglePin, session }: {
+function SessionRow({ isPinned, isRunning, isSelected, onDragEnd, onDragStart, onDropBefore, onOpen, onTogglePin, projectName, session }: {
   isPinned: boolean;
   isRunning: boolean;
   isSelected: boolean;
@@ -463,6 +465,7 @@ function SessionRow({ isPinned, isRunning, isSelected, onDragEnd, onDragStart, o
   onDropBefore?: () => void;
   onOpen: () => void;
   onTogglePin: () => void;
+  projectName?: string;
   session: PiSessionSummary;
 }) {
   const title = session.firstMessage || '新对话';
@@ -496,6 +499,8 @@ function SessionRow({ isPinned, isRunning, isSelected, onDragEnd, onDragStart, o
         onDragStart={handleDragStart}
         onDrop={handleDrop}
         onTogglePin={onTogglePin}
+        modifiedAt={session.modifiedAt}
+        projectName={projectName}
       >
         {title}
       </SessionItem>

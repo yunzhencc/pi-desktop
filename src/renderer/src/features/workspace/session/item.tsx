@@ -11,7 +11,9 @@ import {
   ItemTitle,
 } from '@pi-desktop/shadcn-ui/components/item';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
-import { LoaderCircle, Pin, PinOff, Trash2 } from 'lucide-react';
+import { Folder, LoaderCircle, Monitor, Pin, PinOff, Trash2 } from 'lucide-react';
+import { useIntl } from 'react-intl';
+import { formatSessionAge } from './relative-age';
 
 interface SessionItemProps extends GetProps<typeof Item> {
   /** 是否选中 */
@@ -20,16 +22,23 @@ interface SessionItemProps extends GetProps<typeof Item> {
   isPinned?: boolean;
   /** 是否在执行中 */
   isRunning?: boolean;
+  /** 所属项目名称 */
+  projectName?: string;
+  /** 最近更新时间 */
+  modifiedAt?: string;
   /** 切换置顶 */
   onTogglePin?: () => void;
 }
 
 export function SessionItem(props: SessionItemProps) {
+  const { formatMessage } = useIntl();
   const {
     className,
     isSelected,
     isPinned,
     isRunning,
+    projectName,
+    modifiedAt,
     children,
     onTogglePin,
     onClick,
@@ -88,8 +97,36 @@ export function SessionItem(props: SessionItemProps) {
         </Item>
       </HoverCardTrigger>
       {/* 展示会话的详细信息 */}
-      <HoverCardContent align="start" side="right" className="w-70">
-        123
+      <HoverCardContent align="start" side="right" className="w-[min(20rem,calc(100vw-16px))] min-w-56 p-0">
+        <div className="flex min-w-0 flex-col gap-1 px-3 py-1.5 text-foreground">
+          <div className="flex min-w-0 flex-col gap-1 pb-0.5">
+            <div className="flex w-full min-w-0 items-baseline gap-3">
+              <div className="flex min-w-0 flex-1 items-start gap-1">
+                <div className="-ms-0.5 min-w-0 flex-1 break-words px-1.5 text-base leading-5 font-medium">
+                  {children}
+                </div>
+                <span className="flex h-5 shrink-0 items-center text-muted-foreground">
+                  <Monitor aria-hidden="true" className="size-3.5" />
+                </span>
+              </div>
+              {modifiedAt && (
+                <div className="flex shrink-0 items-center gap-1 text-xs leading-5 text-muted-foreground" title={new Date(modifiedAt).toLocaleString()}>
+                  {formatSessionAge(modifiedAt, formatMessage)}
+                </div>
+              )}
+            </div>
+          </div>
+          {projectName && (
+            <div className="flex h-5 min-w-0 items-center gap-1.5 text-sm leading-5">
+              <span className="flex h-5 w-4 shrink-0 items-center justify-center text-muted-foreground">
+                <Folder aria-hidden="true" className="size-3.5" />
+              </span>
+              <span className="block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap leading-5">
+                {projectName}
+              </span>
+            </div>
+          )}
+        </div>
       </HoverCardContent>
     </HoverCard>
 
