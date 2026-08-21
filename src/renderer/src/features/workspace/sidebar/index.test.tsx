@@ -332,7 +332,7 @@ describe('workspace sidebar', () => {
     expect(screen.queryByRole('dialog', { name: '创建项目' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: '添加项目' }));
-    fireEvent.mouseDown(screen.getByRole('dialog', { name: '创建项目' }).parentElement!);
+    fireEvent.click(document.querySelector('[data-slot="dialog-overlay"]')!);
     expect(screen.queryByRole('dialog', { name: '创建项目' })).toBeNull();
   });
 

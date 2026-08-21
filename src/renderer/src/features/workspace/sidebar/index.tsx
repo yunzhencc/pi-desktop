@@ -1,12 +1,11 @@
-import type { FormEvent, SVGProps } from 'react';
-import { Folder, FolderPlus, X } from 'lucide-react';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import type { WorkspaceSnapshot, WorkspaceSummary } from '@shared/types';
+import type { SVGProps } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { CreateProjectDialog } from '../project/create';
 import { ProjectItem } from '../project/item';
 import { SessionItem } from '../session/item';
 
-type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
-type WorkspaceSummary = WorkspaceSnapshot['workspaces'][number];
 type PiSessionSummary = Awaited<ReturnType<Window['api']['sessions']['list']>>[number];
 
 interface SessionEntry {
@@ -283,105 +282,5 @@ function CodexPlus(props: SVGProps<SVGSVGElement>) {
     <svg fill="none" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg" {...props}>
       <path d="M9.33496 16.5V10.665H3.5C3.13273 10.665 2.83496 10.3673 2.83496 10C2.83496 9.63273 3.13273 9.33496 3.5 9.33496H9.33496V3.5C9.33496 3.13273 9.63273 2.83496 10 2.83496C10.3673 2.83496 10.665 3.13273 10.665 3.5V9.33496H16.5L16.6338 9.34863C16.9369 9.41057 17.165 9.67857 17.165 10C17.165 10.3214 16.9369 10.5894 16.6338 10.6514L16.5 10.665H10.665V16.5C10.665 16.8673 10.3673 17.165 10 17.165C9.63273 17.165 9.33496 16.8673 9.33496 16.5Z" fill="currentColor" />
     </svg>
-  );
-}
-
-export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: () => void; onCreated: (workspace: WorkspaceSnapshot) => void; project?: WorkspaceSummary }) {
-  const isEditing = project !== undefined;
-  const [name, setName] = useState(project?.displayName ?? '');
-  const [sourcePath, setSourcePath] = useState<string | undefined>(project?.path);
-  const [error, setError] = useState<string>();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const isSubmittingRef = useRef(false);
-  const onCloseRef = useRef(onClose);
-
-  isSubmittingRef.current = isSubmitting;
-  onCloseRef.current = onClose;
-
-  useEffect(() => {
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
-    const dismiss = () => {
-      if (!isSubmittingRef.current)
-        onCloseRef.current();
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        dismiss();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, []);
-
-  const pickDirectory = async () => {
-    if (isSubmitting)
-      return;
-    const path = await window.api.workspaces.pickDirectory();
-    if (path) {
-      setSourcePath(path);
-      setError(undefined);
-    }
-  };
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (isSubmitting)
-      return;
-    if (!sourcePath) {
-      setError('请添加源文件夹');
-      return;
-    }
-    setIsSubmitting(true);
-    setError(undefined);
-    try {
-      onCreated(isEditing
-        ? await window.api.workspaces.update(project.path, name.trim(), sourcePath)
-        : await window.api.workspaces.create(name.trim(), sourcePath));
-      onClose();
-    }
-    catch (reason) {
-      setError(reason instanceof Error ? reason.message : isEditing ? '保存项目失败' : '创建项目失败');
-    }
-    finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="project-dialog-backdrop" onMouseDown={event => event.target === event.currentTarget && !isSubmitting && onClose()} role="presentation">
-      <form aria-labelledby="create-project-title" aria-modal="true" className="project-dialog" onSubmit={event => void submit(event)} role="dialog">
-        <div className="project-dialog-header">
-          <h2 id="create-project-title">{isEditing ? '编辑项目' : '创建项目'}</h2>
-          <button aria-label="关闭" disabled={isSubmitting} onClick={onClose} type="button"><X aria-hidden="true" size={22} /></button>
-        </div>
-        <label className="project-dialog-name">
-          <Folder aria-hidden="true" size={24} />
-          <input
-            aria-label="项目名称"
-            autoFocus
-            onChange={(event) => {
-              setName(event.target.value);
-              setError(undefined);
-            }}
-            placeholder="项目名称"
-            value={name}
-          />
-        </label>
-        <span className="project-dialog-label">源文件夹</span>
-        <button className={`project-dialog-source${sourcePath ? ' has-source' : ''}`} disabled={isSubmitting} onClick={() => void pickDirectory()} type="button">
-          {sourcePath ? <Folder aria-hidden="true" size={20} /> : <FolderPlus aria-hidden="true" size={28} />}
-          <span>{sourcePath ?? '添加 PI 可读取和编辑的文件夹'}</span>
-        </button>
-        {error && <p className="project-dialog-error" role="alert">{error}</p>}
-        <div className="project-dialog-actions">
-          <button disabled={isSubmitting} onClick={onClose} type="button">取消</button>
-          <button disabled={isSubmitting} type="submit">{isSubmitting ? isEditing ? '保存中…' : '创建中…' : isEditing ? '保存项目' : '创建项目'}</button>
-        </div>
-      </form>
-    </div>
   );
 }

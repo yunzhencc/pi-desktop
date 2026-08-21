@@ -68,20 +68,6 @@ describe('app shell surfaces', () => {
     expect(itemRule).toContain('font-size: 13px;');
   });
 
-  it('uses Codex’s compact local-project dialog and source-folder states', () => {
-    const dialogRule = styles.match(/\.project-dialog\s*\{([\s\S]*?)\}/)?.[1];
-    const sourceRule = styles.match(/\.project-dialog-source\s*\{([\s\S]*?)\}/)?.[1];
-    const selectedSourceRule = styles.match(/\.project-dialog-source\.has-source\s*\{([\s\S]*?)\}/)?.[1];
-
-    expect(dialogRule).toContain('width: min(448px, calc(100vw - 32px));');
-    expect(dialogRule).toContain('border-radius: 16px;');
-    expect(dialogRule).toContain('max-height: calc(100dvh - 32px);');
-    expect(sourceRule).toContain('min-height: 96px;');
-    expect(sourceRule).toContain('border-radius: 8px;');
-    expect(selectedSourceRule).toContain('min-height: 48px;');
-    expect(selectedSourceRule).toContain('flex-direction: row;');
-  });
-
   it('uses Codex’s compact composer toolbar density and ghost hover surface', () => {
     const toolbarRule = styles.match(/\.new-conversation-toolbar\s*\{([\s\S]*?)\}/)?.[1];
     const triggerRule = styles.match(/\.new-conversation-toolbar-project-trigger\s*\{([\s\S]*?)\}/)?.[1];
