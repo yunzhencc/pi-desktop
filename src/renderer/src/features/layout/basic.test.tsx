@@ -129,7 +129,7 @@ describe('app window surface', () => {
 
     renderApp('en');
 
-    await screen.findByRole('button', { name: 'First' });
+    await screen.findByText('First');
     fireEvent.click(getSessionItem('First'));
     fireEvent.click(getSessionItem('Second'));
     await act(async () => second.resolve({ session: { messages: [], path: '/sessions/second.jsonl' }, workspace: { pinnedSessionPaths: [], workspaces: [] } }));
@@ -176,7 +176,7 @@ describe('app window surface', () => {
     window.api.sessions.setPinned = vi.fn(() => Promise.resolve({ pinnedSessionPaths: [session.path], workspaces: [] }));
     renderApp('en');
 
-    await screen.findByRole('button', { name: 'Forecast' });
+    await screen.findByText('Forecast');
     fireEvent.click(getSessionItem('Forecast'));
     await waitFor(() => expect(open).toHaveBeenCalled());
     hotkeys.get('Mod+Shift+P')?.();
