@@ -1,6 +1,6 @@
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
-import type { DeepSeekModel, DeepSeekSettingsSnapshot } from '../main/deepseek-settings';
 import type { PiSessionSnapshot, PiSessionSummary, TranscriptUpdate } from '../main/pi-runtime';
+import type { ModelPickerScope, ProviderId, ProvidersSnapshot } from '../main/provider-settings';
 import type { WorkspaceSnapshot } from '../main/workspaces';
 import process from 'node:process';
 import { electronAPI } from '@electron-toolkit/preload';
@@ -39,8 +39,13 @@ const api = {
     },
   },
   providers: {
-    getDeepSeek: (): Promise<DeepSeekSettingsSnapshot> => ipcRenderer.invoke('providers:deepseek:get'),
-    saveDeepSeek: (apiKey: string, model: DeepSeekModel): Promise<DeepSeekSettingsSnapshot> => ipcRenderer.invoke('providers:deepseek:save', apiKey, model),
+    get: (): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:get'),
+    loginChatGPT: (): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:chatgpt:login'),
+    remove: (providerId: ProviderId): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:remove', providerId),
+    saveApiKey: (providerId: ProviderId, apiKey: string): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:api-key:save', providerId, apiKey),
+    setDefaultModel: (providerId: ProviderId, modelId: string): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:default-model:set', providerId, modelId),
+    setModelPickerScope: (scope: ModelPickerScope): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:scope:set', scope),
+    setPrimaryProvider: (providerId: ProviderId): Promise<ProvidersSnapshot> => ipcRenderer.invoke('providers:primary:set', providerId),
   },
   sessions: {
     list: (workspacePath: string): Promise<PiSessionSummary[]> => ipcRenderer.invoke('sessions:list', workspacePath),

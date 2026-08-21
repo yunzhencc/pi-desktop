@@ -1,13 +1,12 @@
-import type { DeepSeekModel } from './deepseek-settings';
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, safeStorage, screen, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
 import { AttachmentStore } from './attachments';
 import { createComposerHandlers } from './composer-ipc';
-import { DeepSeekSettings } from './deepseek-settings';
 import { PiRuntime } from './pi-runtime';
+import { isModelPickerScope, isProviderId, ProviderSettings } from './provider-settings';
 import {
   getPrimaryWindowBounds,
   PRIMARY_WINDOW_MINIMUM_SIZE,
@@ -19,16 +18,12 @@ import { getWorkspaceGitBranch, WorkspaceRegistry } from './workspaces';
 let isPrimaryWindowOpaque = false;
 let syncPrimaryWindowBackdrop: (() => void) | undefined;
 const attachmentStore = new AttachmentStore();
-const piRuntime = new PiRuntime(attachmentStore, { agentDir: join(app.getPath('userData'), 'pi-agent') });
-let deepseekSettings: DeepSeekSettings;
+const piRuntime = new PiRuntime(attachmentStore);
+let providerSettings: ProviderSettings;
 let workspaceRegistry: WorkspaceRegistry;
 
 function getPrimaryWindowStatePath(): string {
   return join(app.getPath('userData'), 'window-state.json');
-}
-
-function getDeepSeekSettingsPath(): string {
-  return join(app.getPath('userData'), 'providers', 'deepseek.json');
 }
 
 function getWorkspacesPath(): string {
@@ -146,11 +141,7 @@ function createWindow(): void {
 app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron');
-  deepseekSettings = new DeepSeekSettings(getDeepSeekSettingsPath(), safeStorage);
-  const loadDeepSeek = async () => {
-    if (!deepseekSettings.configuration())
-      piRuntime.configureDeepSeek(await deepseekSettings.load());
-  };
+  providerSettings = new ProviderSettings(app.getPath('userData'), { openExternal: url => shell.openExternal(url).then(() => undefined) });
   workspaceRegistry = new WorkspaceRegistry(getWorkspacesPath());
   const workspaceSnapshot = await workspaceRegistry.load();
   if (workspaceSnapshot.selectedWorkspacePath)
@@ -175,18 +166,41 @@ app.whenReady().then(async () => {
     nativeTheme.themeSource = themeSource;
     syncPrimaryWindowBackdrop?.();
   });
-  ipcMain.handle('providers:deepseek:get', async () => {
-    await loadDeepSeek();
-    return deepseekSettings.snapshot();
+  ipcMain.handle('providers:get', () => providerSettings.snapshot());
+  ipcMain.handle('providers:api-key:save', async (_event, providerId: unknown, apiKey: unknown) => {
+    if (!isProviderId(providerId) || providerId === 'openai-codex' || typeof apiKey !== 'string')
+      throw new TypeError('无效的模型供应商配置');
+    const snapshot = await providerSettings.saveApiKey(providerId, apiKey);
+    piRuntime.refreshModelSettings();
+    return snapshot;
   });
-  ipcMain.handle('providers:deepseek:save', async (_event, apiKey: unknown, model: unknown) => {
-    if (!safeStorage.isEncryptionAvailable())
-      throw new Error('系统密钥存储不可用，无法保存 DeepSeek API Key');
-    if (typeof apiKey !== 'string' || (model !== 'deepseek-v4-flash' && model !== 'deepseek-v4-pro'))
-      throw new TypeError('无效的 DeepSeek 配置');
-
-    const snapshot = await deepseekSettings.save(apiKey, model as DeepSeekModel);
-    piRuntime.configureDeepSeek(deepseekSettings.configuration());
+  ipcMain.handle('providers:remove', async (_event, providerId: unknown) => {
+    if (!isProviderId(providerId) || providerId === 'openai-codex')
+      throw new TypeError('无效的模型供应商');
+    const snapshot = await providerSettings.removeProvider(providerId);
+    piRuntime.refreshModelSettings();
+    return snapshot;
+  });
+  ipcMain.handle('providers:chatgpt:login', async () => {
+    const snapshot = await providerSettings.loginChatGPT();
+    piRuntime.refreshModelSettings();
+    return snapshot;
+  });
+  ipcMain.handle('providers:primary:set', async (_event, providerId: unknown) => {
+    if (!isProviderId(providerId))
+      throw new TypeError('无效的主模型供应商');
+    return providerSettings.setPrimaryProvider(providerId);
+  });
+  ipcMain.handle('providers:scope:set', async (_event, scope: unknown) => {
+    if (!isModelPickerScope(scope))
+      throw new TypeError('无效的模型选择范围');
+    return providerSettings.setModelPickerScope(scope);
+  });
+  ipcMain.handle('providers:default-model:set', async (_event, providerId: unknown, modelId: unknown) => {
+    if (!isProviderId(providerId) || typeof modelId !== 'string' || !modelId.trim())
+      throw new TypeError('无效的默认模型');
+    const snapshot = await providerSettings.setDefaultModel(providerId, modelId);
+    piRuntime.refreshModelSettings();
     return snapshot;
   });
   const selectWorkspace = async (path: string) => {
@@ -275,10 +289,7 @@ app.whenReady().then(async () => {
 
   const composer = createComposerHandlers(
     attachmentStore,
-    async (prompt, attachmentIds) => {
-      await loadDeepSeek();
-      return piRuntime.send(prompt, attachmentIds);
-    },
+    (prompt, attachmentIds) => piRuntime.send(prompt, attachmentIds),
     () => piRuntime.startNewConversation(),
   );
   ipcMain.handle('composer:add-attachments', (_event, paths: unknown) => {

@@ -1,7 +1,7 @@
 import type { ElectronAPI } from '@electron-toolkit/preload';
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
-import type { DeepSeekModel, DeepSeekSettingsSnapshot } from '../main/deepseek-settings';
 import type { PiSessionSnapshot, PiSessionSummary, TranscriptUpdate } from '../main/pi-runtime';
+import type { ModelPickerScope, ProviderId, ProvidersSnapshot } from '../main/provider-settings';
 import type { WorkspaceSnapshot } from '../main/workspaces';
 
 declare global {
@@ -26,8 +26,13 @@ declare global {
         onUpdate: (callback: (update: TranscriptUpdate) => void) => () => void;
       };
       providers: {
-        getDeepSeek: () => Promise<DeepSeekSettingsSnapshot>;
-        saveDeepSeek: (apiKey: string, model: DeepSeekModel) => Promise<DeepSeekSettingsSnapshot>;
+        get: () => Promise<ProvidersSnapshot>;
+        loginChatGPT: () => Promise<ProvidersSnapshot>;
+        remove: (providerId: ProviderId) => Promise<ProvidersSnapshot>;
+        saveApiKey: (providerId: ProviderId, apiKey: string) => Promise<ProvidersSnapshot>;
+        setDefaultModel: (providerId: ProviderId, modelId: string) => Promise<ProvidersSnapshot>;
+        setModelPickerScope: (scope: ModelPickerScope) => Promise<ProvidersSnapshot>;
+        setPrimaryProvider: (providerId: ProviderId) => Promise<ProvidersSnapshot>;
       };
       sessions: {
         list: (workspacePath: string) => Promise<PiSessionSummary[]>;

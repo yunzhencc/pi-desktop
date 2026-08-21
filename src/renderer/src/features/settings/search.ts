@@ -31,7 +31,7 @@ const settingsSearchTargets: SettingsSearchTarget[] = [
     path: '/settings/keyboard-shortcuts',
   },
   {
-    messages: ['providers.title', 'providers.deepseek.title'],
+    messages: ['providers.title', 'providers.chatgpt.login', 'providers.scope', 'DeepSeek', 'OpenCode'],
     panel: 'providers.title',
     path: '/settings/providers',
   },
