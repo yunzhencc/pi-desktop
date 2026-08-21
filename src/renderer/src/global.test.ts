@@ -56,18 +56,6 @@ describe('app shell surfaces', () => {
     expect(itemRule).toContain('font-size: 14px;');
   });
 
-  it('uses Codex’s compact workspace-picker dimensions', () => {
-    const popoverRule = styles.match(/\.project-picker-popover\s*\{([\s\S]*?)\}/)?.[1];
-    const listRule = styles.match(/\.project-picker-command \[cmdk-list\]\s*\{([\s\S]*?)\}/)?.[1];
-    const itemRule = styles.match(/\.project-picker-command \[cmdk-item\]\s*\{([\s\S]*?)\}/)?.[1];
-
-    expect(popoverRule).toContain('min-width: 260px;');
-    expect(popoverRule).toContain('border-radius: 12px;');
-    expect(popoverRule).toContain('max-height: min(350px, calc(100vh - 16px));');
-    expect(listRule).toContain('max-height: calc((1lh + 10px) * 5);');
-    expect(itemRule).toContain('font-size: 13px;');
-  });
-
   it('uses Codex’s compact composer toolbar density and ghost hover surface', () => {
     const toolbarRule = styles.match(/\.new-conversation-toolbar\s*\{([\s\S]*?)\}/)?.[1];
     const triggerRule = styles.match(/\.new-conversation-toolbar-project-trigger\s*\{([\s\S]*?)\}/)?.[1];
@@ -87,12 +75,6 @@ describe('app shell surfaces', () => {
     expect(itemRule).toContain('height: 28px;');
     expect(itemRule).toContain('padding: 0 12px;');
     expect(styles).toMatch(/\.new-conversation-toolbar-item:hover\s*\{\s*background: color-mix\(in srgb, var\(--foreground\) 5%, transparent\);/);
-  });
-
-  it('keeps the project clear icon centered over the default project icon', () => {
-    const clearRule = styles.match(/\.project-picker-clear\s*\{([\s\S]*?)\}/)?.[1];
-
-    expect(clearRule).toContain('inset-inline-start: 6px;');
   });
 
   it('reveals user message metadata only on hover or keyboard focus', () => {

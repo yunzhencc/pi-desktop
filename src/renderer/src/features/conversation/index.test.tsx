@@ -228,7 +228,6 @@ describe('conversation page', () => {
 
     expect(screen.getByRole('dialog', { name: '选择项目' })).not.toBeNull();
     expect(screen.getByRole('combobox', { name: '搜索项目' })).not.toBeNull();
-    expect(screen.getByRole('heading', { name: '你想让我们在 weather 中构建什么？' })).not.toBeNull();
     expect(screen.getByRole('img', { name: 'PI' })).not.toBeNull();
   });
 
