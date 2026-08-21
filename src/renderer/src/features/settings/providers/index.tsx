@@ -66,6 +66,7 @@ export function ProvidersSettingsView({
           </div>
           <label className="flex min-w-52 flex-col items-end gap-2 text-xs text-text-tertiary">
             <span>{formatMessage({ id: 'providers.scope' })}</span>
+
             <Select
               items={[
                 { label: formatMessage({ id: 'providers.scope.primary' }), value: 'primary-provider' },
@@ -74,13 +75,20 @@ export function ProvidersSettingsView({
               onValueChange={scope => void run('scope', async () => onSetScope(scope as ModelPickerScope).then(() => undefined))}
               value={snapshot.modelPickerScope}
             >
-              <SelectTrigger aria-label={formatMessage({ id: 'providers.scope' })} className="min-w-32 bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] font-inherit text-inherit">
+              <SelectTrigger
+                aria-label={formatMessage({ id: 'providers.scope' })}
+                className="min-w-32 bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] font-inherit text-inherit"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="start" alignItemWithTrigger={false}>
                 <SelectGroup>
-                  <SelectItem value="primary-provider">{formatMessage({ id: 'providers.scope.primary' })}</SelectItem>
-                  <SelectItem value="all-providers">{formatMessage({ id: 'providers.scope.all' })}</SelectItem>
+                  <SelectItem value="primary-provider">
+                    {formatMessage({ id: 'providers.scope.primary' })}
+                  </SelectItem>
+                  <SelectItem value="all-providers">
+                    {formatMessage({ id: 'providers.scope.all' })}
+                  </SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>

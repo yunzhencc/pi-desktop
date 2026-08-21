@@ -48,7 +48,7 @@ export function ProviderNavList({
               : filteredProviders.map(provider => (
                   <button
                     aria-current={selection === provider.id ? 'page' : undefined}
-                    className="settings-provider-nav-item flex w-full min-w-0 items-center gap-[9px] rounded-md p-[7px] text-start text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] aria-[current=page]:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)]"
+                    className="settings-provider-nav-item flex w-full min-w-0 items-center gap-2 rounded-md p-1.5 text-start text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)] aria-[current=page]:bg-[color-mix(in_srgb,var(--foreground)_7%,transparent)]"
                     key={provider.id}
                     onClick={() => onSelect(provider.id)}
                     type="button"

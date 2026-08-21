@@ -7,4 +7,7 @@ export default defineConfig({
       '@renderer': resolve('src/renderer/src'),
     },
   },
+  test: {
+    setupFiles: ['./vitest.setup.ts'],
+  },
 });
