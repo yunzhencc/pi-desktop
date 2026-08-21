@@ -26,6 +26,8 @@ import XAIIcon from '@lobehub/icons/es/XAI/components/Mono.js';
 import XiaomiMiMoIcon from '@lobehub/icons/es/XiaomiMiMo/components/Mono.js';
 import ZAIIcon from '@lobehub/icons/es/ZAI/components/Mono.js';
 import ZhipuIcon from '@lobehub/icons/es/Zhipu/components/Color.js';
+import { Button } from '@pi-desktop/shadcn-ui/components/button';
+import { Field, FieldLabel } from '@pi-desktop/shadcn-ui/components/field';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
 import {
   Select,
@@ -36,10 +38,11 @@ import {
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
 import { useOverlayScrollbarsTheme } from '@renderer/features/app/theme';
-import { Bot, Search } from 'lucide-react';
+import { Bot, Eye, EyeOff, Search } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useIntl } from 'react-intl';
+import { PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION } from '../../../../../shared/provider-errors';
 
 interface ProvidersSettingsViewProps {
   onLoginChatGPT: () => Promise<ProvidersSnapshot>;
@@ -62,6 +65,7 @@ export function ProvidersSettingsView({
 }: ProvidersSettingsViewProps) {
   const { formatMessage } = useIntl();
   const [busy, setBusy] = useState<string>();
+  const [error, setError] = useState<string>();
   const [selection, setSelection] = useState<ProviderId | undefined>(snapshot.connectedProviders[0]?.id ?? snapshot.availableProviders[0]?.id);
   const connectedProviderIds = new Set(snapshot.connectedProviders.map(provider => provider.id));
   const connectableProviders = snapshot.availableProviders.filter(provider => !provider.configured && !connectedProviderIds.has(provider.id));
@@ -72,8 +76,12 @@ export function ProvidersSettingsView({
 
   async function run(key: string, action: () => Promise<void>) {
     setBusy(key);
+    setError(undefined);
     try {
       await action();
+    }
+    catch (error) {
+      setError(providerErrorMessage(error, formatMessage));
     }
     finally {
       setBusy(undefined);
@@ -125,6 +133,7 @@ export function ProvidersSettingsView({
             <ProviderDetail
               busy={busy}
               defaultModel={snapshot.defaultModel}
+              error={error}
               onLoginChatGPT={() => run('login-openai-codex', async () => onLoginChatGPT().then(next => setSelection(next.connectedProviders.find(provider => provider.id === 'openai-codex')?.id ?? selectedProvider.id)))}
               onRemove={selectedProvider.authType === 'api_key' ? () => run(`remove-${selectedProvider.id}`, async () => onRemove(selectedProvider.id).then(() => undefined)) : undefined}
               onSaveApiKey={selectedProvider.authType === 'api_key' ? apiKey => run(`save-${selectedProvider.id}`, async () => onSaveApiKey(selectedProvider.id, apiKey).then(next => setSelection(next.connectedProviders.find(provider => provider.id === selectedProvider.id)?.id ?? selectedProvider.id))) : undefined}
@@ -137,6 +146,17 @@ export function ProvidersSettingsView({
       </section>
     </div>
   );
+}
+
+function providerErrorMessage(error: unknown, formatMessage: ReturnType<typeof useIntl>['formatMessage']) {
+  const message = error instanceof Error ? error.message : '';
+  if (message.includes(PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION))
+    return formatMessage({ id: PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION });
+  return stripIpcErrorMessage(message) || formatMessage({ id: 'providers.error.generic' });
+}
+
+function stripIpcErrorMessage(message: string) {
+  return message.replace(/^Error invoking remote method '[^']+': Error: /, '').trim();
 }
 
 function ProviderNavList({
@@ -220,6 +240,7 @@ function fuzzyIncludes(value: string, query: string) {
 function ProviderDetail({
   busy,
   defaultModel,
+  error,
   onLoginChatGPT,
   onRemove,
   onSaveApiKey,
@@ -229,6 +250,7 @@ function ProviderDetail({
 }: {
   busy?: string;
   defaultModel?: ProvidersSnapshot['defaultModel'];
+  error?: string;
   onLoginChatGPT: () => void;
   onRemove?: () => void;
   onSaveApiKey?: (apiKey: string) => void;
@@ -256,7 +278,8 @@ function ProviderDetail({
         <div className="settings-provider-nav-title">{formatMessage({ id: 'providers.auth' })}</div>
         {provider.authType === 'oauth'
           ? <button disabled={busy === 'login-openai-codex'} onClick={onLoginChatGPT} type="button">{formatMessage({ id: 'providers.chatgpt.login' })}</button>
-          : onSaveApiKey && <ApiKeyForm buttonLabel={formatMessage({ id: provider.configured ? 'providers.apiKey.update' : 'providers.connect' })} disabled={busy === `save-${provider.id}`} onSubmit={onSaveApiKey} />}
+          : onSaveApiKey && <ApiKeyForm disabled={busy === `save-${provider.id}`} onSubmit={onSaveApiKey} />}
+        {error && <p className="settings-provider-error" role="alert">{error}</p>}
         {provider.authType === 'api_key' && provider.configured && onRemove && (
           <button className="settings-provider-danger" disabled={busy === `remove-${provider.id}`} onClick={onRemove} type="button">
             {formatMessage({ id: 'providers.remove' })}
@@ -394,9 +417,11 @@ function renderProviderIcon(providerId: ProviderId, title: string) {
   }
 }
 
-function ApiKeyForm({ buttonLabel, disabled, onSubmit }: { buttonLabel: string; disabled: boolean; onSubmit: (apiKey: string) => void }) {
+function ApiKeyForm({ disabled, onSubmit }: { disabled: boolean; onSubmit: (apiKey: string) => void }) {
   const { formatMessage } = useIntl();
+  const apiKeyId = useId();
   const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
 
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -406,11 +431,25 @@ function ApiKeyForm({ buttonLabel, disabled, onSubmit }: { buttonLabel: string; 
 
   return (
     <form className="settings-provider-form" onSubmit={submit}>
-      <label className="settings-provider-field">
-        <span>{formatMessage({ id: 'providers.apiKey' })}</span>
-        <input aria-label={formatMessage({ id: 'providers.apiKey' })} onChange={event => setApiKey(event.target.value)} required type="password" value={apiKey} />
-      </label>
-      <button disabled={disabled} type="submit">{buttonLabel}</button>
+      <Field className="w-full gap-3">
+        <FieldLabel className="text-base font-semibold text-muted-foreground" htmlFor={apiKeyId}>{formatMessage({ id: 'providers.apiKey' })}</FieldLabel>
+        <div className="flex w-full gap-3">
+          <div className="relative min-w-0 flex-1">
+            <Input id={apiKeyId} onChange={event => setApiKey(event.target.value)} placeholder="sk-..." required type={showApiKey ? 'text' : 'password'} value={apiKey} />
+            <Button
+              aria-label={formatMessage({ id: showApiKey ? 'providers.apiKey.hide' : 'providers.apiKey.show' })}
+              className="absolute right-3.5 top-1/2 !size-8 -translate-y-1/2 !bg-transparent !p-0 !text-muted-foreground"
+              onClick={() => setShowApiKey(current => !current)}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              {showApiKey ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+            </Button>
+          </div>
+          <Button disabled={disabled} type="submit">{formatMessage({ id: 'providers.apiKey.save' })}</Button>
+        </div>
+      </Field>
     </form>
   );
 }

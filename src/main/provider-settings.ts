@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
+import { PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION } from '../shared/provider-errors';
 
 export type ProviderId = string;
 export type ModelPickerScope = 'primary-provider' | 'all-providers';
@@ -111,13 +112,21 @@ export class ProviderSettings {
 
   async loginChatGPT(): Promise<ProvidersSnapshot> {
     const { modelRuntime } = await this.createServices();
-    await modelRuntime.login('openai-codex', 'oauth', {
-      notify: async (event: unknown) => {
-        if (isRecord(event) && event.type === 'auth_url' && typeof event.url === 'string')
-          await this.options.openExternal?.(event.url);
-      },
-      prompt: promptForChatGPTLogin,
-    });
+    try {
+      await modelRuntime.login('openai-codex', 'oauth', {
+        notify: async (event: unknown) => {
+          if (isRecord(event) && event.type === 'auth_url' && typeof event.url === 'string')
+            await this.options.openExternal?.(event.url);
+        },
+        prompt: promptForChatGPTLogin,
+      });
+    }
+    catch (error) {
+      if (isUnsupportedOpenAIRegionError(error)) {
+        throw new Error(PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION);
+      }
+      throw error;
+    }
     return this.snapshot();
   }
 
@@ -340,6 +349,10 @@ function waitForPromptAbort(signal?: AbortSignal): Promise<string> {
     else
       signal.addEventListener('abort', abort, { once: true });
   });
+}
+
+function isUnsupportedOpenAIRegionError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('unsupported_country_region_territory');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

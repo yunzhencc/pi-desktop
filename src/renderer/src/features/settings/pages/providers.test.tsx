@@ -10,6 +10,9 @@ const messages: Record<string, string> = {
   'providers.add.close': '收起清单',
   'providers.add.open': '添加模型供应商',
   'providers.apiKey': 'API Key',
+  'providers.apiKey.hide': '隐藏 API Key',
+  'providers.apiKey.save': '保存',
+  'providers.apiKey.show': '显示 API Key',
   'providers.apiKey.update': '更新 API Key',
   'providers.auth': '认证',
   'providers.availableList': '可接入',
@@ -20,6 +23,8 @@ const messages: Record<string, string> = {
   'providers.defaultModel': '默认模型',
   'providers.description': '管理 Pi 原生模型供应商、认证和默认模型。',
   'providers.empty': '还没有接入模型供应商。',
+  'providers.error.chatgptUnsupportedRegion': 'ChatGPT 登录失败：当前国家或地区暂不支持 OpenAI Codex OAuth。',
+  'providers.error.generic': '操作失败。',
   'providers.modelSettings': '模型',
   'providers.noModels': '接入后会显示可用模型。',
   'providers.notConnected': '未接入',
@@ -127,9 +132,31 @@ describe('providers settings view', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /DeepSeek/ }));
     fireEvent.change(screen.getAllByLabelText('API Key')[0], { target: { value: 'sk-secret' } });
-    fireEvent.click(screen.getAllByRole('button', { name: '接入' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: '保存' })[0]);
 
     await waitFor(() => expect(onSaveApiKey).toHaveBeenCalledWith('deepseek', 'sk-secret'));
     await waitFor(() => expect(screen.queryByDisplayValue('sk-secret')).toBeNull());
+  });
+
+  it('toggles API key visibility', () => {
+    renderView(snapshot);
+
+    fireEvent.click(screen.getByRole('button', { name: /DeepSeek/ }));
+    const input = screen.getAllByLabelText('API Key')[0];
+    expect(input.getAttribute('type')).toBe('password');
+    fireEvent.click(screen.getByRole('button', { name: '显示 API Key' }));
+
+    expect(input.getAttribute('type')).toBe('text');
+    expect(screen.getByRole('button', { name: '隐藏 API Key' })).toBeTruthy();
+  });
+
+  it('shows provider action errors inline', async () => {
+    renderView(snapshot, {
+      onLoginChatGPT: vi.fn().mockRejectedValue(new Error('Error invoking remote method \'providers:chatgpt:login\': Error: providers.error.chatgptUnsupportedRegion')),
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '登录 ChatGPT' }));
+
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('当前国家或地区暂不支持'));
   });
 });

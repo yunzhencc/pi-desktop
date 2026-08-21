@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION } from '../shared/provider-errors';
 import { ProviderSettings } from './provider-settings';
 
 const directories: string[] = [];
@@ -157,5 +158,29 @@ describe('provider settings', () => {
 
     expect(login).toHaveBeenCalledWith('openai-codex', 'oauth', expect.any(Object));
     expect(openExternal).toHaveBeenCalledWith('https://chatgpt.com/oauth');
+  });
+
+  it('reports unsupported OpenAI regions clearly', async () => {
+    const root = await tempDirectory();
+    const settings = new ProviderSettings(join(root, 'userData'), {
+      createServices: async () => ({
+        modelRuntime: {
+          getAvailable: async () => [],
+          getProviderAuthStatus: () => ({ configured: false }),
+          getProviders: () => [],
+          login: async () => {
+            throw new Error('OpenAI Codex token exchange failed (403): {"error":{"code":"unsupported_country_region_territory"}}');
+          },
+        },
+        settingsManager: {
+          getDefaultModel: () => undefined,
+          getDefaultProvider: () => undefined,
+          getEnabledModels: () => [],
+          setDefaultModelAndProvider: vi.fn(),
+        },
+      }),
+    });
+
+    await expect(settings.loginChatGPT()).rejects.toThrow(PROVIDER_ERROR_CHATGPT_UNSUPPORTED_REGION);
   });
 });

@@ -494,6 +494,12 @@
   opacity: 0.55;
 }
 
+.settings-provider-error {
+  margin: 0;
+  color: var(--destructive);
+  font-size: 13px;
+}
+
 .settings-provider-danger {
   align-self: flex-start;
   border: 1px solid color-mix(in srgb, #ef4444 35%, transparent);
