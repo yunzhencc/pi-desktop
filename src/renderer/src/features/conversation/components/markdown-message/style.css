@@ -1,11 +1,11 @@
 .markdown-message {
-  --markdown-font-size: 16px;
-  --markdown-line-height: 24px;
+  --markdown-font-size: var(--codex-chat-font-size, 16px);
+  --markdown-line-height: calc(var(--markdown-font-size) + 8px);
   --markdown-table-width: calc(100% + (var(--thread-content-margin, 24px) * 2));
   --markdown-table-margin: calc(var(--thread-content-margin, 24px) * -1);
   --thread-content-max-width: 48rem;
 
-  color: var(--foreground);
+  color: var(--codex-color-text, var(--foreground));
   font-size: var(--markdown-font-size);
   line-height: var(--markdown-line-height);
   overflow-wrap: anywhere;

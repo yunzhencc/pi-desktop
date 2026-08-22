@@ -241,7 +241,7 @@ export function ConversationPage() {
       {message.role === 'work'
         ? <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} status={message.workStatus} />
         : (
-            <article className={`chat-message chat-message-${message.role} w-fit max-w-[min(100%,44rem)] text-base leading-normal${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
+            <article className={`chat-message chat-message-${message.role} w-fit max-w-[min(100%,44rem)]${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
               {message.role === 'assistant'
                 ? (
                     <>
@@ -282,7 +282,7 @@ export function ConversationPage() {
     if (turn.type === 'activities') {
       return (
         <div className="chat-turn flex w-full flex-col">
-          <article className="chat-message chat-message-activity w-fit max-w-[min(100%,44rem)] text-base leading-normal">
+          <article className="chat-message chat-message-activity w-fit max-w-[min(100%,44rem)]">
             <div className="grid gap-2.5" data-activity-group>
               {turn.activities.map(message => (
                 <ToolActivity args={message.toolArgs} key={message.id} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />
@@ -395,7 +395,7 @@ function ActivityTurn({ activities, collapsed, onToggle, work }: Extract<Convers
         status={work.workStatus}
       />
       {isExpanded && (
-        <div className="chat-activity-turn-content grid gap-4">
+        <div className="chat-activity-turn-content grid">
           {activities.map(message => <ActivitySummary args={message.toolArgs} key={message.id} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />)}
         </div>
       )}

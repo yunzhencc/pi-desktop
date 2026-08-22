@@ -1,3 +1,10 @@
+.chat-page {
+  --codex-chat-font-size: 14px;
+  --codex-chat-code-font-size: 13px;
+  --conversation-item-gap: 16px;
+  --conversation-grouped-item-gap: 4px;
+}
+
 .chat-empty-state-project-trigger {
   padding: 0;
   border: 0;
@@ -23,6 +30,11 @@
 .chat-message-user.is-editing {
   width: 100%;
   max-width: none;
+}
+
+.chat-message {
+  font-size: var(--codex-chat-font-size, 14px);
+  line-height: calc(var(--codex-chat-font-size, 14px) + 8px);
 }
 
 .chat-message-user-stack {
@@ -65,7 +77,7 @@
 .chat-message-assistant {
   width: 100%;
   max-width: none;
-  padding: 24px 0 0;
+  padding: 0;
 }
 
 .chat-message-assistant-footer {
@@ -112,6 +124,11 @@
   color: var(--text-tertiary);
   font-size: 13px;
   line-height: 20px;
+}
+
+.chat-activity-turn-content {
+  gap: var(--conversation-grouped-item-gap, 4px);
+  margin-top: var(--conversation-grouped-item-gap, 4px);
 }
 
 .chat-worked-for-dot {

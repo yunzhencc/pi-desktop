@@ -5,6 +5,12 @@ import { describe, expect, it } from 'vitest';
 const styles = readFileSync(resolve(process.cwd(), 'src/renderer/src/features/conversation/components/markdown-message/style.css'), 'utf8');
 
 describe('markdown message styles', () => {
+  it('inherits Codex chat font variables instead of hard-coding message size', () => {
+    expect(styles).toContain('--markdown-font-size: var(--codex-chat-font-size, 16px);');
+    expect(styles).toContain('--markdown-line-height: calc(var(--markdown-font-size) + 8px);');
+    expect(styles).toContain('color: var(--codex-color-text, var(--foreground));');
+  });
+
   it('keeps tables aligned with Codex wide-block table styling', () => {
     expect(styles).toContain('width: var(--markdown-table-width);');
     expect(styles).toContain('margin-inline: var(--markdown-table-margin);');
