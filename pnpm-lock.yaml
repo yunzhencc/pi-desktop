@@ -66,6 +66,9 @@ catalogs:
     es-toolkit:
       specifier: 1.51.0
       version: 1.51.0
+    hosted-git-info:
+      specifier: ^10.1.1
+      version: 10.1.1
     jotai:
       specifier: 2.20.2
       version: 2.20.2
@@ -300,6 +303,9 @@ importers:
       '@lobehub/icons':
         specifier: catalog:core
         version: 5.16.0(@lobehub/ui@5.32.3)(@types/react@19.2.18)(antd@6.6.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@7.2.0)
+      '@pi-desktop/pi-sdk':
+        specifier: workspace:*
+        version: link:packages/pi-sdk
       '@pi-desktop/shadcn-ui':
         specifier: workspace:*
         version: link:packages/shadcn-ui
@@ -330,6 +336,9 @@ importers:
       es-toolkit:
         specifier: catalog:core
         version: 1.51.0
+      hosted-git-info:
+        specifier: catalog:core
+        version: 10.1.1
       jotai:
         specifier: catalog:core
         version: 2.20.2(@babel/core@7.29.7(supports-color@7.2.0))(@babel/template@7.29.7)(@types/react@19.2.18)(react@19.2.8)
@@ -551,6 +560,8 @@ importers:
       vite:
         specifier: catalog:vite
         version: 8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/pi-sdk: {}
 
   packages/shadcn-ui:
     dependencies:
@@ -6115,6 +6126,10 @@ packages:
   hono@4.13.2:
     resolution: {integrity: sha512-JydRilDRkYBQMt9qR9U92mXxmbGqsqSn/IKOrh4e7/gEbn+0zSr8igTu0obwJoNGN4sez28DIql7FBHWydoJpA==}
     engines: {node: '>=16.9.0'}
+
+  hosted-git-info@10.1.1:
+    resolution: {integrity: sha512-DeOnSPAvOndYKfw075gt8yZzQ7S2hNztw34zBTfhIzLhmBTswIBg5/y+pqu/VD5cYWm5goAFTusDmUEmKZ0PEQ==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
   hosted-git-info@4.1.0:
     resolution: {integrity: sha512-kyCuEOWjJqZuDbRHzL8V93NzQhwIB71oFWSyzVo+KPZI+pnQPPxucdkrOZvkLRnrf5URsQM+IJ09Dw29cRALIA==}
@@ -15474,6 +15489,10 @@ snapshots:
       react-is: 16.13.1
 
   hono@4.13.2: {}
+
+  hosted-git-info@10.1.1:
+    dependencies:
+      lru-cache: 11.5.2
 
   hosted-git-info@4.1.0:
     dependencies:
