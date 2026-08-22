@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { BookOpen, ChevronDown, CircleAlert, Copy, FilePenLine, GitFork, LoaderCircle, Pencil, Terminal, Wrench } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -12,6 +13,7 @@ interface ToolActivityProps {
 }
 
 interface WorkedForProps {
+  children?: ReactNode;
   completedAtMs?: number;
   done?: boolean;
   expanded?: boolean;
@@ -142,7 +144,7 @@ function toolText(value: unknown): string | undefined {
   }
 }
 
-export function WorkedFor({ completedAtMs, done, expanded, onToggle, startedAtMs, status }: WorkedForProps) {
+export function WorkedFor({ children, completedAtMs, done, expanded, onToggle, startedAtMs, status }: WorkedForProps) {
   const { formatMessage } = useIntl();
   const [now, setNow] = useState(() => Date.now());
 
@@ -183,10 +185,11 @@ export function WorkedFor({ completedAtMs, done, expanded, onToggle, startedAtMs
             <button aria-expanded={expanded} aria-label={`${expanded ? '收起' : '展开'}工具活动`} className="flex w-fit cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit" onClick={onToggle} type="button">
               {!done && completedAtMs == null && <span aria-hidden="true" className="chat-worked-for-dot" />}
               <span>{label}</span>
-              <ChevronDown aria-hidden="true" className={expanded ? 'rotate-180' : ''} size={15} />
+              <ChevronDown aria-hidden="true" className={`transition-transform ${expanded ? 'rotate-90' : ''}`} size={15} />
             </button>
           )}
       <div aria-hidden="true" className="chat-worked-for-rule w-full border-t border-border-subtle" />
+      {expanded && children}
     </div>
   );
 }
@@ -211,9 +214,9 @@ export function UserMessageFooter({ canEdit, onEdit, text, timestamp }: UserMess
 export function AssistantMessageFooter({ entryId, isLatest, isRunning, onFork, text, timestamp }: AssistantMessageFooterProps) {
   const time = formatMessageTime(timestamp);
   return (
-    <footer className={`chat-message-assistant-footer${isLatest ? ' is-latest' : ''}`}>
-      <button aria-label="Copy assistant message" className="chat-message-assistant-action grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button"><Copy aria-hidden="true" size={18} /></button>
-      {entryId != null && !isRunning && <button aria-label="Fork conversation from this message" className="chat-message-assistant-action grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void onFork(entryId)} title="Fork conversation" type="button"><GitFork aria-hidden="true" size={18} /></button>}
+    <footer aria-label="Assistant message actions" className={`chat-message-assistant-footer${isLatest ? ' is-latest' : ''}`} role="toolbar">
+      <button aria-label="Copy assistant message" className="chat-message-assistant-action grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button"><Copy aria-hidden="true" size={16} /></button>
+      {entryId != null && !isRunning && <button aria-label="Fork conversation from this message" className="chat-message-assistant-action grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void onFork(entryId)} title="Fork conversation" type="button"><GitFork aria-hidden="true" size={16} /></button>}
       {time != null && <time className="chat-message-assistant-timestamp" dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
     </footer>
   );

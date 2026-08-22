@@ -170,7 +170,7 @@ describe('conversation page', () => {
     expect(screen.queryByRole('button', { name: 'Copy message' })).toBeNull();
   });
 
-  it('keeps the latest assistant reply actions visible while its timestamp stays hover-only', () => {
+  it('keeps the latest assistant reply actions and timestamp visible', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 7, 19, 10, 1));
     const writeText = vi.fn(() => Promise.resolve());
@@ -184,6 +184,7 @@ describe('conversation page', () => {
     expect(screen.getByText(/10:01/)).not.toBeNull();
     expect(container.querySelector('.chat-message-assistant-footer.is-latest')).not.toBeNull();
     expect(container.querySelector('.chat-message-assistant-timestamp')).not.toBeNull();
+    expect(screen.getByRole('toolbar', { name: 'Assistant message actions' })).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Copy assistant message' }));
     expect(writeText).toHaveBeenCalledWith('Done');
   });
@@ -391,10 +392,12 @@ describe('conversation page', () => {
     expect(screen.getByRole('button', { name: '收起工具活动' })).not.toBeNull();
     expect(screen.getByText('运行了命令')).not.toBeNull();
     expect(screen.getByText('读取文件失败')).not.toBeNull();
+    expect(container.querySelector('.chat-activity-turn-content')?.parentElement?.classList.contains('chat-worked-for')).toBe(true);
     expect(container.querySelectorAll('.chat-tool-activity')).toHaveLength(0);
 
-    fireEvent.click(screen.getByRole('button', { name: '收起工具活动' }));
-    expect(screen.queryByText('运行了命令')).toBeNull();
+    const activityTurn = document.querySelector('[data-activity-turn]')!;
+    fireEvent.click(activityTurn.querySelector('button[aria-label="收起工具活动"]')!);
+    expect(activityTurn.textContent).not.toContain('运行了命令');
     expect(screen.getByText('Assistant text stays visible')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '展开工具活动' }));
     fireEvent.click(screen.getByRole('button', { name: '显示工具 bash 详情' }));
@@ -433,8 +436,9 @@ describe('conversation page', () => {
       },
     })));
 
-    fireEvent.click(screen.getByRole('button', { name: '收起工具活动' }));
-    expect(screen.queryByText('运行了命令')).toBeNull();
+    const activityTurn = document.querySelector('[data-activity-turn]')!;
+    fireEvent.click(activityTurn.querySelector('button[aria-label="收起工具活动"]')!);
+    expect(activityTurn.textContent).not.toContain('运行了命令');
 
     const transcript = screen.getByRole('log');
     Object.defineProperties(transcript, {
@@ -469,6 +473,7 @@ describe('conversation page', () => {
     expect(screen.getByText('运行了命令')).not.toBeNull();
     expect(screen.getByText('已读取文件')).not.toBeNull();
     expect(container.querySelectorAll('.chat-tool-activity')).toHaveLength(0);
+    expect(container.querySelector('[data-activity-turn]')?.contains(screen.getByText('The PDF has four pages.'))).toBe(true);
     expect(screen.getByText('The PDF has four pages.')).not.toBeNull();
   });
 

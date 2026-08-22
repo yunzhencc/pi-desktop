@@ -1,5 +1,5 @@
 import type { AttachmentMetadata } from '@shared/types';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { Message, PiSessionSnapshot } from './model/transcript';
 import logo from '@renderer/assets/icon.svg';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -18,7 +18,7 @@ type WorkspaceSnapshot = Awaited<ReturnType<Window['piApp']['workspaces']['get']
 type ConversationTurn
   = | { key: string; message: Message; type: 'message' }
     | { activities: Message[]; key: string; type: 'activities' }
-    | { activities: Message[]; key: string; type: 'activity-turn'; work: Message };
+    | { activities: Message[]; assistant?: Message; key: string; type: 'activity-turn'; work: Message };
 
 export function ConversationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -236,6 +236,17 @@ export function ConversationPage() {
           </div>
         );
   };
+  const renderAssistantMessageContent = (message: Message) => (
+    <>
+      <MarkdownMessage>{message.text}</MarkdownMessage>
+      {message.done && message.text.trim() && <AssistantMessageFooter entryId={message.entryId} isLatest={messages.at(-1) === message} isRunning={isRunning} onFork={forkAssistantMessage} text={message.text} timestamp={message.timestamp} />}
+    </>
+  );
+  const renderAssistantMessage = (message: Message) => (
+    <article className={`chat-message chat-message-assistant w-fit max-w-[min(100%,44rem)]${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
+      {renderAssistantMessageContent(message)}
+    </article>
+  );
   const renderMessage = (message: Message) => (
     <div className="chat-turn flex w-full flex-col">
       {message.role === 'work'
@@ -243,12 +254,7 @@ export function ConversationPage() {
         : (
             <article className={`chat-message chat-message-${message.role} w-fit max-w-[min(100%,44rem)]${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
               {message.role === 'assistant'
-                ? (
-                    <>
-                      <MarkdownMessage>{message.text}</MarkdownMessage>
-                      {message.done && message.text.trim() && <AssistantMessageFooter entryId={message.entryId} isLatest={messages.at(-1) === message} isRunning={isRunning} onFork={forkAssistantMessage} text={message.text} timestamp={message.timestamp} />}
-                    </>
-                  )
+                ? renderAssistantMessageContent(message)
                 : message.role === 'user'
                   ? (
                       renderUserMessage(message)
@@ -263,6 +269,7 @@ export function ConversationPage() {
       return (
         <ActivityTurn
           activities={turn.activities}
+          assistant={turn.assistant}
           collapsed={collapsedActivityTurns.has(turn.work.id)}
           onToggle={() => {
             setCollapsedActivityTurns((current) => {
@@ -275,6 +282,7 @@ export function ConversationPage() {
             });
           }}
           work={turn.work}
+          renderAssistant={renderAssistantMessage}
         />
       );
     }
@@ -344,7 +352,7 @@ function groupConversationTurns(messages: Message[]): ConversationTurn[] {
   const flushActivityTurn = () => {
     if (activityTurn == null)
       return;
-    if (activityTurn.activities.length === 0)
+    if (activityTurn.activities.length === 0 && activityTurn.assistant == null)
       turns.push({ key: activityTurn.key, message: activityTurn.work, type: 'message' });
     else
       turns.push(activityTurn);
@@ -371,6 +379,12 @@ function groupConversationTurns(messages: Message[]): ConversationTurn[] {
         activities.push(message);
       continue;
     }
+    if (message.role === 'assistant' && activityTurn != null) {
+      activityTurn.assistant = message;
+      activityTurn.key = `${activityTurn.key}:${message.id}`;
+      flushActivityTurn();
+      continue;
+    }
     flushActivities();
     flushActivityTurn();
     turns.push({ key: String(message.id), message, type: 'message' });
@@ -380,12 +394,12 @@ function groupConversationTurns(messages: Message[]): ConversationTurn[] {
   return turns;
 }
 
-function ActivityTurn({ activities, collapsed, onToggle, work }: Extract<ConversationTurn, { type: 'activity-turn' }> & { collapsed: boolean; onToggle: () => void }) {
+function ActivityTurn({ activities, assistant, collapsed, onToggle, renderAssistant, work }: Extract<ConversationTurn, { type: 'activity-turn' }> & { collapsed: boolean; onToggle: () => void; renderAssistant: (message: Message) => ReactNode }) {
   const isRunning = !work.done && work.completedAtMs == null;
   const isExpanded = isRunning || !collapsed;
 
   return (
-    <div className="chat-activity-turn flex w-full flex-col" data-activity-turn>
+    <div className="chat-activity-turn flex w-full flex-col gap-2" data-activity-turn>
       <WorkedFor
         completedAtMs={work.completedAtMs}
         done={work.done}
@@ -393,12 +407,12 @@ function ActivityTurn({ activities, collapsed, onToggle, work }: Extract<Convers
         onToggle={isRunning ? undefined : onToggle}
         startedAtMs={work.startedAtMs}
         status={work.workStatus}
-      />
-      {isExpanded && (
+      >
         <div className="chat-activity-turn-content grid">
           {activities.map(message => <ActivitySummary args={message.toolArgs} key={message.id} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />)}
         </div>
-      )}
+      </WorkedFor>
+      {assistant != null && renderAssistant(assistant)}
     </div>
   );
 }

@@ -23,6 +23,16 @@ describe('message interaction affordances', () => {
     expect(revealedRule).not.toContain('margin-top');
   });
 
+  it('keeps the latest assistant reply metadata visible with toolbar sizing', () => {
+    const footerRule = styles.match(/\.chat-message-assistant-footer\s*\{([\s\S]*?)\}/)?.[1];
+
+    expect(footerRule).toContain('min-height: 28px;');
+    expect(footerRule).toContain('gap: 4px;');
+    expect(footerRule).toContain('margin-top: 4px;');
+    expect(footerRule).not.toContain('transform');
+    expect(styles).toMatch(/\.chat-message-assistant-footer\.is-latest \.chat-message-assistant-timestamp,\s*\.chat-message-assistant:focus-within \.chat-message-assistant-timestamp\s*\{[\s\S]*?opacity: 1;/);
+  });
+
   it('animates the running work indicator with reduced-motion fallback', () => {
     const dotRule = styles.match(/\.chat-worked-for-dot\s*\{([\s\S]*?)\}/)?.[1];
 
@@ -44,6 +54,6 @@ describe('message interaction affordances', () => {
     expect(messageRule).toContain('line-height: calc(var(--codex-chat-font-size, 14px) + 8px);');
     expect(assistantRule).toContain('padding: 0;');
     expect(activityContentRule).toContain('gap: var(--conversation-grouped-item-gap, 4px);');
-    expect(activityContentRule).toContain('margin-top: var(--conversation-grouped-item-gap, 4px);');
+    expect(activityContentRule).not.toContain('margin-top');
   });
 });

@@ -82,16 +82,15 @@
 
 .chat-message-assistant-footer {
   display: flex;
-  height: 20px;
+  min-height: 28px;
   align-items: center;
-  gap: 2px;
-  margin-top: 6px;
+  gap: 4px;
+  margin-top: 4px;
   color: var(--text-tertiary);
   font-size: 12px;
-  line-height: 20px;
+  line-height: 16px;
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-4px);
   transition: opacity 150ms ease;
 }
 
@@ -109,6 +108,7 @@
 }
 
 .chat-message-assistant:hover .chat-message-assistant-timestamp,
+.chat-message-assistant-footer.is-latest .chat-message-assistant-timestamp,
 .chat-message-assistant:focus-within .chat-message-assistant-timestamp {
   opacity: 1;
 }
@@ -128,7 +128,6 @@
 
 .chat-activity-turn-content {
   gap: var(--conversation-grouped-item-gap, 4px);
-  margin-top: var(--conversation-grouped-item-gap, 4px);
 }
 
 .chat-worked-for-dot {
