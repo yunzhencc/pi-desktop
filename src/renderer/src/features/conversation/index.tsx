@@ -256,9 +256,13 @@ export function ConversationPage() {
                                     : (
                                         <div className="chat-message-user-stack">
                                           {message.attachments?.length ? <AttachmentList attachments={message.attachments} variant="message" /> : null}
-                                          <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>
-                                            {message.text}
-                                          </div>
+                                          {message.text.trim()
+                                            ? (
+                                                <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>
+                                                  {message.text}
+                                                </div>
+                                              )
+                                            : null}
                                           <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={message.text} timestamp={message.timestamp} />
                                         </div>
                                       )

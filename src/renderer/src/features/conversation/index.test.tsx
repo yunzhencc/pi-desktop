@@ -33,6 +33,9 @@ vi.mock('./components', async (importOriginal) => {
             <button aria-label="Fake attachment composer" onClick={() => onSubmitted('Summarize this', [{ id: 'pdf-1', kind: 'pdf', name: 'brief.pdf', size: 4 }])}>
               Fake attachment composer
             </button>
+            <button aria-label="Fake file-only composer" onClick={() => onSubmitted('', [{ id: 'pdf-1', kind: 'pdf', name: 'brief.pdf', size: 4 }])}>
+              Fake file-only composer
+            </button>
           </>
         ),
     NewConversationToolbar: () => <div aria-label="新会话项目上下文" role="toolbar" />,
@@ -114,6 +117,16 @@ describe('conversation page', () => {
     expect(screen.getByText('brief.pdf').closest('.chat-message-user-content')).toBeNull();
     expect(document.querySelector('.chat-composer-file-card-main')).toBeNull();
     expect(document.querySelector('.chat-message-file-pill-icon [data-file-icon="pdf"]')).not.toBeNull();
+  });
+
+  it('does not render an empty text bubble for file-only user messages', () => {
+    render(<ConversationPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake file-only composer' }));
+
+    expect(screen.getByText('brief.pdf')).not.toBeNull();
+    expect(document.querySelector('.chat-message-file-pill')).not.toBeNull();
+    expect(document.querySelector('.chat-message-user-content')).toBeNull();
   });
 
   it('restores submitted attachment summaries for a reopened session', () => {
