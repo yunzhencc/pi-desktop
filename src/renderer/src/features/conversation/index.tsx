@@ -214,6 +214,24 @@ export function ConversationPage() {
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
   const lastUserMessageId = messages.findLast(message => message.role === 'user')?.id;
   const turns = groupConversationTurns(messages);
+  const renderUserMessage = (message: Message) => {
+    const visibleText = visibleUserMessageText(message);
+    return editingMessage?.id === message.id
+      ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
+      : (
+          <div className="chat-message-user-stack">
+            {message.attachments?.length ? <AttachmentList attachments={message.attachments} variant="message" /> : null}
+            {visibleText.trim()
+              ? (
+                  <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>
+                    {visibleText}
+                  </div>
+                )
+              : null}
+            <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={visibleText} timestamp={message.timestamp} />
+          </div>
+        );
+  };
   const renderMessage = (message: Message) => (
     <div className="chat-turn flex w-full flex-col">
       {message.role === 'work'
@@ -229,21 +247,7 @@ export function ConversationPage() {
                   )
                 : message.role === 'user'
                   ? (
-                      editingMessage?.id === message.id
-                        ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
-                        : (
-                            <div className="chat-message-user-stack">
-                              {message.attachments?.length ? <AttachmentList attachments={message.attachments} variant="message" /> : null}
-                              {message.text.trim()
-                                ? (
-                                    <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>
-                                      {message.text}
-                                    </div>
-                                  )
-                                : null}
-                              <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={message.text} timestamp={message.timestamp} />
-                            </div>
-                          )
+                      renderUserMessage(message)
                     )
                   : message.text}
             </article>
@@ -373,6 +377,29 @@ function ActivityTurn({ activities, work }: Extract<ConversationTurn, { type: 'a
       )}
     </div>
   );
+}
+
+function visibleUserMessageText(message: Message): string {
+  return message.attachments?.length && isAttachmentReferenceOnlyText(message.text, message.attachments.map(attachment => attachment.name))
+    ? ''
+    : message.text;
+}
+
+function isAttachmentReferenceOnlyText(text: string, attachmentNames: string[]): boolean {
+  const names = new Set(attachmentNames);
+  const lines = text.trim().split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  return lines.length > 0 && lines.every((line) => {
+    const path = parseFileReference(line);
+    return path != null && names.has(path.replaceAll('\\', '/').split('/').at(-1) ?? '');
+  });
+}
+
+function parseFileReference(line: string): string | undefined {
+  const quoted = line.match(/^@"((?:\\.|[^"\\])*)"$/);
+  if (quoted)
+    return quoted[1]!.replaceAll(/\\(["\\])/g, '$1');
+  const unquoted = line.match(/^@(\S+)$/);
+  return unquoted?.[1];
 }
 
 const sessionAttachmentsStorageKey = 'pi-desktop:session-attachments:v1';

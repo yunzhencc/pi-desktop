@@ -130,6 +130,7 @@ describe('conversation page', () => {
     expect(screen.getByText('brief.pdf')).not.toBeNull();
     expect(document.querySelector('.chat-message-file-pill')).not.toBeNull();
     expect(document.querySelector('.chat-message-user-content')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy message' })).toBeNull();
   });
 
   it('restores submitted attachment summaries for a reopened session', () => {
@@ -147,6 +148,26 @@ describe('conversation page', () => {
     })));
 
     expect(screen.getByText('brief.pdf')).not.toBeNull();
+  });
+
+  it('hides restored attachment reference text when the attachment card is present', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<ConversationPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake attachment composer' }));
+    act(() => onUpdate.mock.calls[0]![0]({ sessionPath: '/sessions/active.jsonl', type: 'session' }));
+    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
+      detail: {
+        messages: [{ role: 'user', text: '@/Users/wangxingkang/Desktop/brief.pdf\n' }],
+        path: '/sessions/active.jsonl',
+      },
+    })));
+
+    expect(screen.getByText('brief.pdf').closest('.chat-message-file-pill')).not.toBeNull();
+    expect(screen.queryByText('@/Users/wangxingkang/Desktop/brief.pdf')).toBeNull();
+    expect(document.querySelector('.chat-message-user-content')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy message' })).toBeNull();
   });
 
   it('keeps the latest assistant reply actions visible while its timestamp stays hover-only', () => {

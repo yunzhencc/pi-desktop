@@ -193,14 +193,17 @@ export function WorkedFor({ completedAtMs, done, expanded, onToggle, startedAtMs
 
 export function UserMessageFooter({ canEdit, onEdit, text, timestamp }: UserMessageFooterProps) {
   const time = formatMessageTime(timestamp);
+  const hasText = text.trim().length > 0;
 
   return (
     <footer className="chat-message-user-footer">
       {time != null && <time dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
       {canEdit && <button aria-label="Edit message" className="chat-message-user-copy grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary" onClick={onEdit} title="Edit message" type="button"><Pencil aria-hidden="true" size={14} /></button>}
-      <button aria-label="Copy message" className="chat-message-user-copy grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button">
-        <Copy aria-hidden="true" size={14} />
-      </button>
+      {hasText && (
+        <button aria-label="Copy message" className="chat-message-user-copy grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button">
+          <Copy aria-hidden="true" size={14} />
+        </button>
+      )}
     </footer>
   );
 }
