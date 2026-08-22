@@ -11,7 +11,7 @@ export interface WorkspaceSnapshot {
   workspaces: WorkspaceSummary[];
 }
 
-export type AttachmentKind = 'image' | 'text';
+export type AttachmentKind = 'file' | 'image' | 'pdf' | 'text';
 
 export interface AttachmentMetadata {
   id: string;

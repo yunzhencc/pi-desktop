@@ -1,8 +1,9 @@
 import type { AttachmentStore } from '../../attachments';
 import type { PiRuntime } from '../../pi-runtime';
 import { IPC_CHANNELS } from '@shared/ipc-channels';
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, clipboard, shell } from 'electron';
 import { createComposerHandlers } from '../../composer-ipc';
+import { readClipboardFilePaths } from '../clipboard-file-paths';
 import { registerHandler } from '../registry';
 
 interface ComposerHandlerDependencies {
@@ -22,10 +23,19 @@ export function registerComposerHandlers({ attachmentStore, piRuntime }: Compose
       throw new TypeError('Invalid attachment paths');
     return composer.addAttachments(paths);
   });
+  registerHandler(IPC_CHANNELS.ComposerAddClipboardAttachments, () => composer.addAttachments(readClipboardFilePaths(format => clipboard.read(format))));
   registerHandler(IPC_CHANNELS.ComposerAddPastedImage, (_event, name: unknown, data: unknown) => {
     if (typeof name !== 'string' || typeof data !== 'string')
       throw new TypeError('Invalid pasted image');
     return composer.addPastedImage(name, data);
+  });
+  registerHandler(IPC_CHANNELS.ComposerRevealAttachment, (_event, id: unknown) => {
+    if (typeof id !== 'string')
+      throw new TypeError('Invalid attachment ID');
+    const path = attachmentStore.reveal(id);
+    if (!path)
+      throw new Error('该附件没有本地文件路径');
+    shell.showItemInFolder(path);
   });
   registerHandler(IPC_CHANNELS.ComposerRemoveAttachment, (_event, id: unknown) => {
     if (typeof id !== 'string')

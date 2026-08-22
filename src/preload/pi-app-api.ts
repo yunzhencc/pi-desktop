@@ -10,6 +10,7 @@ import type {
   TranscriptUpdate,
   WorkspaceSnapshot,
 } from '../shared/types';
+import { webUtils } from 'electron';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 
 type IpcListener = (event: unknown, ...args: unknown[]) => void;
@@ -37,10 +38,16 @@ export function createPiAppAPI(ipc: PiAppIpc) {
     },
     composer: {
       addDroppedAttachments: (paths: string[]): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipc.invoke(IPC_CHANNELS.ComposerAddAttachments, paths),
+      addClipboardFiles: (files: File[]): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipc.invoke(
+        IPC_CHANNELS.ComposerAddAttachments,
+        files.map(file => webUtils.getPathForFile(file)).filter(Boolean),
+      ),
+      addClipboardAttachments: (): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipc.invoke(IPC_CHANNELS.ComposerAddClipboardAttachments),
       addPastedImage: (name: string, data: string): Promise<{ attachments: AttachmentMetadata[]; failures: AttachmentFailure[] }> => ipc.invoke(IPC_CHANNELS.ComposerAddPastedImage, name, data),
       editLastUserMessage: (text?: string): Promise<string | undefined> => ipc.invoke(IPC_CHANNELS.ComposerEditLastUserMessage, text),
       forkAssistantMessage: (entryId: string): Promise<PiSessionSnapshot> => ipc.invoke(IPC_CHANNELS.ComposerForkAssistantMessage, entryId),
       newConversation: (): Promise<void> => ipc.invoke(IPC_CHANNELS.ComposerNewConversation),
+      revealAttachment: (id: string): Promise<void> => ipc.invoke(IPC_CHANNELS.ComposerRevealAttachment, id),
       removeAttachment: (id: string): Promise<void> => ipc.invoke(IPC_CHANNELS.ComposerRemoveAttachment, id),
       send: (prompt: string, attachmentIds: string[]): Promise<void> => ipc.invoke(IPC_CHANNELS.ComposerSend, prompt, attachmentIds),
       stop: (): Promise<void> => ipc.invoke(IPC_CHANNELS.ComposerStop),

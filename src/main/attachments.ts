@@ -2,7 +2,7 @@ import type { ImageContent } from '@earendil-works/pi-ai';
 import type { AttachmentFailure, AttachmentKind, AttachmentMetadata } from '@shared/types';
 import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
-import { readFile, stat } from 'node:fs/promises';
+import { open, readFile, stat } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
 
 interface StoredAttachment extends AttachmentMetadata {
@@ -60,18 +60,20 @@ export class AttachmentStore {
     for (const path of paths) {
       const name = basename(path);
       try {
-        const source = await readFile(path);
         const fileStat = await stat(path);
-        const imageMimeType = detectImageMimeType(source);
-        const kind: AttachmentKind | undefined = imageMimeType ? 'image' : textExtensions.has(extname(name).toLowerCase()) ? 'text' : undefined;
-
-        if (!kind) {
-          failures.push({ name, reason: '不支持此文件类型，仅支持图片和 UTF-8 文本/代码文件。' });
+        if (!fileStat.isFile()) {
+          failures.push({ name, reason: '只能添加文件。' });
           continue;
         }
-
-        if (kind === 'text')
-          decodeUtf8(source);
+        const source = await readImageSource(path);
+        const imageMimeType = source && detectImageMimeType(source);
+        const kind: AttachmentKind = imageMimeType
+          ? 'image'
+          : extname(name).toLowerCase() === '.pdf'
+            ? 'pdf'
+            : textExtensions.has(extname(name).toLowerCase())
+              ? 'text'
+              : 'file';
 
         const attachment: StoredAttachment = {
           id: randomUUID(),
@@ -84,8 +86,8 @@ export class AttachmentStore {
         this.#attachments.set(attachment.id, attachment);
         attachments.push(toMetadata(attachment));
       }
-      catch (error) {
-        failures.push({ name, reason: error instanceof TypeError ? '文件不是有效的 UTF-8 文本。' : '无法读取此文件。' });
+      catch {
+        failures.push({ name, reason: '无法读取此文件。' });
       }
     }
 
@@ -120,20 +122,27 @@ export class AttachmentStore {
     });
   }
 
+  reveal(id: string): string | undefined {
+    return this.#attachments.get(id)?.path;
+  }
+
   async toPrompt(ids: string[]): Promise<PromptAttachments> {
     const images: ImageContent[] = [];
     let text = '';
 
     for (const attachment of this.resolve(ids)) {
-      const source = attachment.source ?? await readFile(attachment.path!);
       if (attachment.kind === 'image') {
+        const source = attachment.source ?? (attachment.path ? await readFile(attachment.path) : undefined);
+        if (!source)
+          continue;
         const mimeType = detectImageMimeType(source);
         if (!mimeType)
           throw new TypeError(`附件 ${attachment.name} 已不再是受支持的图片。`);
         images.push({ type: 'image', data: source.toString('base64'), mimeType });
+        continue;
       }
-      else {
-        text += `<file name="${attachment.name.replaceAll('"', '&quot;')}">\n${decodeUtf8(source)}\n</file>\n`;
+      if (attachment.path) {
+        text += `${fileReference(attachment.path)}\n`;
       }
     }
 
@@ -145,8 +154,23 @@ function toMetadata({ path: _path, source: _source, ...attachment }: StoredAttac
   return attachment;
 }
 
-function decodeUtf8(source: Buffer): string {
-  return new TextDecoder('utf-8', { fatal: true }).decode(source);
+function fileReference(path: string): string {
+  const normalized = path.replaceAll('\\', '/');
+  return /\s/.test(normalized)
+    ? `@"${normalized.replaceAll(/(["\\])/g, '\\$1')}"`
+    : `@${normalized}`;
+}
+
+async function readImageSource(path: string): Promise<Buffer | undefined> {
+  const file = await open(path, 'r');
+  try {
+    const header = Buffer.alloc(12);
+    const { bytesRead } = await file.read(header, 0, header.length, 0);
+    return detectImageMimeType(header.subarray(0, bytesRead)) ? readFile(path) : undefined;
+  }
+  finally {
+    await file.close();
+  }
 }
 
 function detectImageMimeType(source: Buffer): string | undefined {

@@ -86,3 +86,163 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+.chat-composer-attachments {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.chat-composer-attachments-row {
+  display: flex;
+  min-width: max-content;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 1px;
+}
+
+.chat-composer-image {
+  width: 80px;
+  height: 80px;
+
+  &.chat-composer-image-compact {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+.chat-composer-file-card {
+  position: relative;
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: 16rem;
+}
+
+.chat-composer-file-card-main {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 40px 6px 6px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  color: var(--foreground);
+  cursor: pointer;
+  text-align: left;
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--foreground) 8%, transparent);
+    outline: none;
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--focus);
+  }
+}
+
+.chat-composer-file-card-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+
+.chat-composer-pdf-icon {
+  position: relative;
+  display: grid;
+  width: 20px;
+  height: 24px;
+  padding-top: 6px;
+  place-items: center;
+  border-radius: 4px;
+  background: #fb5966;
+  color: #fff;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chat-composer-pdf-icon::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 7px;
+  border-bottom-left-radius: 2px;
+  background: color-mix(in srgb, #fff 45%, #fb5966);
+  content: '';
+}
+
+.chat-composer-file-card-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-composer-file-card-name,
+.chat-composer-file-card-subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-composer-file-card-name {
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.chat-composer-file-card-subtitle {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.chat-composer-file-card-open {
+  display: none;
+}
+
+.chat-composer-file-card-main:hover,
+.chat-composer-file-card-main:focus-visible {
+  .chat-composer-file-card-extension {
+    display: none;
+  }
+
+  .chat-composer-file-card-open {
+    display: inline;
+  }
+}
+
+.chat-composer-file-card-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--foreground);
+  color: var(--surface);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--foreground) 85%, var(--surface));
+    color: var(--surface);
+    outline: none;
+  }
+}

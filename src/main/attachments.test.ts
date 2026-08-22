@@ -30,6 +30,10 @@ describe('attachmentStore', () => {
     expect(result.attachments[0]).toMatchObject({ kind: 'image', name: 'diagram.png', size: png.length });
     expect(result.attachments[0]?.previewDataUrl).toMatch(/^data:image\/png;base64,/);
     expect(result.attachments[0]).not.toHaveProperty('path');
+    await expect(store.toPrompt([result.attachments[0]!.id])).resolves.toEqual({
+      images: [{ type: 'image', data: png.toString('base64'), mimeType: 'image/png' }],
+      text: '',
+    });
   });
 
   it('accepts copied image bytes without a file path', async () => {
@@ -44,7 +48,7 @@ describe('attachmentStore', () => {
     });
   });
 
-  it('accepts UTF-8 code files without exposing their contents', async () => {
+  it('accepts local files without exposing their paths', async () => {
     const store = new AttachmentStore();
     const result = await store.add([await fixture('example.ts', 'export const answer = 42;')]);
 
@@ -54,18 +58,22 @@ describe('attachmentStore', () => {
     expect(result.attachments[0]).not.toHaveProperty('content');
   });
 
-  it('rejects unsupported and invalid UTF-8 files', async () => {
+  it('accepts PDFs and formats local file references for Pi', async () => {
     const store = new AttachmentStore();
     const result = await store.add([
-      await fixture('recording.mp3', Buffer.from([0x49, 0x44, 0x33])),
-      await fixture('broken.ts', Buffer.from([0xFF, 0xFE])),
+      await fixture('document.pdf', Buffer.from('%PDF-1.7')),
+      await fixture('notes with space.txt', 'Hello'),
     ]);
 
-    expect(result.attachments).toEqual([]);
-    expect(result.failures).toEqual([
-      expect.objectContaining({ name: 'recording.mp3', reason: expect.stringContaining('不支持') }),
-      expect.objectContaining({ name: 'broken.ts', reason: expect.stringContaining('UTF-8') }),
+    expect(result.failures).toEqual([]);
+    expect(result.attachments).toEqual([
+      expect.objectContaining({ kind: 'pdf', name: 'document.pdf' }),
+      expect.objectContaining({ kind: 'text', name: 'notes with space.txt' }),
     ]);
+    await expect(store.toPrompt(result.attachments.map(attachment => attachment.id))).resolves.toEqual({
+      images: [],
+      text: expect.stringMatching(/@.*document\.pdf\n@".*notes with space\.txt"\n/),
+    });
   });
 
   it('does not resolve an attachment after removal', async () => {

@@ -8,9 +8,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatComposer, NewConversationToolbar } from '.';
 
 const composer = {
+  addClipboardFiles: vi.fn(),
+  addClipboardAttachments: vi.fn(),
   addDroppedAttachments: vi.fn(),
   addPastedImage: vi.fn(),
   onUpdate: vi.fn(),
+  revealAttachment: vi.fn(),
   removeAttachment: vi.fn(),
   send: vi.fn(),
 };
@@ -32,6 +35,7 @@ const workspaces = {
 };
 
 beforeEach(() => {
+  vi.clearAllMocks();
   localStorage.clear();
   onProvidersChanged = undefined;
   vi.stubGlobal('ResizeObserver', class {
@@ -46,9 +50,12 @@ beforeEach(() => {
   Object.defineProperty(Range.prototype, 'getClientRects', { configurable: true, value: () => [rect] });
   Object.defineProperty(window, 'scrollBy', { configurable: true, value: () => {} });
   vi.stubGlobal('piApp', { composer, providers, workspaces });
+  composer.addClipboardAttachments.mockResolvedValue({ attachments: [], failures: [] });
+  composer.addClipboardFiles.mockResolvedValue({ attachments: [], failures: [] });
   composer.addDroppedAttachments.mockResolvedValue({ attachments: [], failures: [] });
   composer.addPastedImage.mockResolvedValue({ attachments: [], failures: [] });
   composer.removeAttachment.mockResolvedValue(undefined);
+  composer.revealAttachment.mockResolvedValue(undefined);
   composer.send.mockResolvedValue(undefined);
   providers.onChanged.mockImplementation((callback) => {
     onProvidersChanged = callback;
@@ -585,6 +592,25 @@ describe('chat composer', () => {
     await waitFor(() => expect(composer.addDroppedAttachments).toHaveBeenCalledWith(['/tmp/notes.txt']));
   });
 
+  it('reveals PDF attachments in the local file manager', async () => {
+    const user = userEvent.setup();
+    composer.addDroppedAttachments.mockResolvedValue({
+      attachments: [{ id: 'pdf-1', kind: 'pdf', name: 'brief.pdf', size: 4 }],
+      failures: [],
+    });
+    renderComposer();
+    const file = new File(['%PDF'], 'brief.pdf', { type: 'application/pdf' });
+    Object.defineProperty(file, 'path', { value: '/tmp/brief.pdf' });
+
+    fireEvent.drop(screen.getByRole('textbox', { name: 'Message Pi' }), { dataTransfer: { files: [file] } });
+
+    const revealButton = await screen.findByRole('button', { name: 'Show brief.pdf in folder' });
+    expect(revealButton.closest('.chat-composer-file-card')).not.toBeNull();
+    expect(revealButton.querySelector('.chat-composer-pdf-icon')).not.toBeNull();
+    await user.click(revealButton);
+    expect(composer.revealAttachment).toHaveBeenCalledWith('pdf-1');
+  });
+
   it('adds a clipboard image while the editor is not focused', async () => {
     renderComposer();
     const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });
@@ -593,6 +619,26 @@ describe('chat composer', () => {
     fireEvent.paste(window, { clipboardData: { items: [item] } });
 
     await waitFor(() => expect(composer.addPastedImage).toHaveBeenCalledWith('clipboard.png', 'iVBORw=='));
+  });
+
+  it('prefers a local clipboard file over its generated image preview', async () => {
+    composer.addClipboardFiles.mockResolvedValue({
+      attachments: [{ id: 'pdf-clipboard', kind: 'pdf', name: 'brief.pdf', size: 4 }],
+      failures: [],
+    });
+    composer.addClipboardAttachments.mockResolvedValue({
+      attachments: [{ id: 'pdf-clipboard', kind: 'pdf', name: 'brief.pdf', size: 4 }],
+      failures: [],
+    });
+    renderComposer();
+    const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });
+    const item = { getAsFile: () => image, kind: 'file', type: 'image/png' } as DataTransferItem;
+
+    fireEvent.paste(window, { clipboardData: { files: [image], items: [item] } });
+
+    expect(await screen.findByRole('button', { name: 'Show brief.pdf in folder' })).toBeTruthy();
+    expect(composer.addClipboardFiles).toHaveBeenCalledWith([image]);
+    expect(composer.addPastedImage).not.toHaveBeenCalled();
   });
 
   it('renders pasted images as Codex thumbnail attachments', async () => {
@@ -608,6 +654,27 @@ describe('chat composer', () => {
 
     expect((await screen.findByAltText('0000.jpg')).closest('.chat-composer-image')).not.toBeNull();
     expect(screen.queryByText('0000.jpg')).toBeNull();
+  });
+
+  it('uses Codex compact image sizing while a file attachment is present', async () => {
+    const user = userEvent.setup();
+    composer.addDroppedAttachments.mockResolvedValue({
+      attachments: [
+        { id: 'image-1', kind: 'image', name: '0000.jpg', previewDataUrl: 'data:image/jpeg;base64,/9j/', size: 4 },
+        { id: 'pdf-1', kind: 'pdf', name: 'brief.pdf', size: 4 },
+      ],
+      failures: [],
+    });
+    renderComposer();
+    const file = new File(['%PDF'], 'brief.pdf', { type: 'application/pdf' });
+    Object.defineProperty(file, 'path', { value: '/tmp/brief.pdf' });
+
+    fireEvent.drop(screen.getByRole('textbox', { name: 'Message Pi' }), { dataTransfer: { files: [file] } });
+
+    const image = await screen.findByAltText('0000.jpg');
+    expect(image.closest('.chat-composer-image')).toHaveClass('chat-composer-image-compact');
+    await user.click(screen.getByRole('button', { name: 'Remove brief.pdf' }));
+    await waitFor(() => expect(image.closest('.chat-composer-image')).not.toHaveClass('chat-composer-image-compact'));
   });
 
   it('opens image attachments in the preview', async () => {

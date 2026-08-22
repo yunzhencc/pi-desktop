@@ -205,7 +205,7 @@ describe('pi runtime', () => {
     await expect(runtime.send('Hello', [])).rejects.toThrow('请先选择工作区');
   });
 
-  it('passes Pi image content and text-file content to a session prompt', async () => {
+  it('passes Pi image content and local file references to a session prompt', async () => {
     const attachments = new AttachmentStore();
     const result = await attachments.add([
       await fixture('diagram.png', png),
@@ -218,7 +218,7 @@ describe('pi runtime', () => {
     await runtime.send('Explain these files', result.attachments.map(attachment => attachment.id));
 
     expect(prompt).toHaveBeenCalledWith(
-      'Explain these files\n<file name="notes.md">\n# Notes\n</file>\n',
+      expect.stringMatching(/^Explain these files\n@.*notes\.md\n$/),
       { images: [expect.objectContaining({ data: png.toString('base64'), mimeType: 'image/png', type: 'image' })] },
     );
   });

@@ -34,7 +34,9 @@ export const IPC_CHANNELS = Enum({
   SessionsSetPinned: 'sessions:set-pinned',
 
   ComposerAddAttachments: 'composer:add-attachments',
+  ComposerAddClipboardAttachments: 'composer:add-clipboard-attachments',
   ComposerAddPastedImage: 'composer:add-pasted-image',
+  ComposerRevealAttachment: 'composer:reveal-attachment',
   ComposerRemoveAttachment: 'composer:remove-attachment',
   ComposerSend: 'composer:send',
   ComposerEditLastUserMessage: 'composer:edit-last-user-message',

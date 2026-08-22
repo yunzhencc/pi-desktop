@@ -78,6 +78,11 @@ function selectedModelOption(models: ModelOption[], snapshot?: ProvidersSnapshot
   return models.find(model => model.providerId === snapshot?.defaultModel?.providerId && model.id === snapshot.defaultModel.modelId) ?? models[0];
 }
 
+function attachmentExtension(name: string): string | undefined {
+  const extensionStart = name.lastIndexOf('.');
+  return extensionStart > 0 && extensionStart < name.length - 1 ? name.slice(extensionStart + 1).toUpperCase() : undefined;
+}
+
 function groupedModelOptions(models: ModelOption[]) {
   return models.reduce<Array<{ providerId: string; providerName: string; models: ModelOption[] }>>((groups, model) => {
     const group = groups.find(group => group.providerId === model.providerId);
@@ -252,6 +257,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   const [providersSnapshot, setProvidersSnapshot] = useState<ProvidersSnapshot>();
   const [text, setText] = useState('');
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
+  const hasNonImageAttachment = attachments.some(attachment => attachment.kind !== 'image');
   const initialText = inlineEdit?.initialText ?? draft?.text;
   const canSend = Boolean(inlineEdit ? text.trim() : selectedWorkspace && (text.trim() || attachments.length)) && !isSending && !isRunning;
   const placeholder = inlineEdit ? 'Edit message' : formatMessage({ id: 'composer.placeholder' });
@@ -406,33 +412,57 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
         const image = item.kind === 'file' && item.type.startsWith('image/') ? item.getAsFile() : null;
         return image ? [image] : [];
       });
-      if (images.length === 0)
+      const files = Array.from(event.clipboardData?.files ?? []);
+      const clipboardData = event.clipboardData;
+      const localFileUri = typeof clipboardData?.getData === 'function'
+        && clipboardData.getData('text/uri-list').split(/\r?\n/).some(uri => uri.startsWith('file:'));
+      if (files.length === 0 && images.length === 0 && !localFileUri)
         return;
-      if (typeof window.piApp.composer.addPastedImage !== 'function') {
+      if (typeof window.piApp.composer.addClipboardFiles !== 'function' || typeof window.piApp.composer.addClipboardAttachments !== 'function' || typeof window.piApp.composer.addPastedImage !== 'function') {
         setError('请重启 Pi Desktop 后再粘贴图片。');
         return;
       }
 
       event.preventDefault();
-      void Promise.all(images.map(async (image) => {
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onerror = () => reject(reader.error ?? new Error('无法读取剪贴板图片。'));
-          reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('无法读取剪贴板图片。'));
-          reader.readAsDataURL(image);
-        });
-        const data = dataUrl.slice(dataUrl.indexOf(',') + 1);
-        addSelection(await window.piApp.composer.addPastedImage(image.name || 'pasted-image.png', data));
-      })).catch(() => setError('无法读取剪贴板图片。'));
+      void window.piApp.composer.addClipboardFiles(files).then(async (fileAttachments) => {
+        if (fileAttachments.attachments.length > 0) {
+          addSelection(fileAttachments);
+          return;
+        }
+        const clipboardAttachments = await window.piApp.composer.addClipboardAttachments();
+        if (clipboardAttachments.attachments.length > 0) {
+          addSelection(clipboardAttachments);
+          return;
+        }
+        await Promise.all(images.map(async (image) => {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(reader.error ?? new Error('无法读取剪贴板图片。'));
+            reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('无法读取剪贴板图片。'));
+            reader.readAsDataURL(image);
+          });
+          const data = dataUrl.slice(dataUrl.indexOf(',') + 1);
+          addSelection(await window.piApp.composer.addPastedImage(image.name || 'pasted-image.png', data));
+        }));
+      }).catch(() => setError('无法读取剪贴板图片。'));
     };
 
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
+    window.addEventListener('paste', handlePaste, true);
+    return () => window.removeEventListener('paste', handlePaste, true);
   }, [addSelection, inlineEdit]);
 
   const removeAttachment = async (id: string) => {
     await window.piApp.composer.removeAttachment(id);
     setAttachments(current => current.filter(attachment => attachment.id !== id));
+  };
+
+  const revealAttachment = async (id: string) => {
+    try {
+      await window.piApp.composer.revealAttachment(id);
+    }
+    catch {
+      setError('无法在文件夹中显示该文件。');
+    }
   };
 
   const send = async () => {
@@ -520,7 +550,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
       }}
     >
       {!inlineEdit && attachments.length > 0 && (
-        <div aria-label="Attachments" className="chat-composer-attachments flex flex-wrap gap-2 px-3 pt-3">
+        <div aria-label="Attachments" className="chat-composer-attachments overflow-x-auto px-3 pt-3">
           <Image.PreviewGroup
             icons={{ close: <X aria-hidden="true" size={18} />, next: <ChevronRight aria-hidden="true" size={20} />, prev: <ChevronLeft aria-hidden="true" size={20} /> }}
             preview={{
@@ -544,30 +574,42 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
               wheel: true,
             }}
           >
-            {attachments.map(attachment => attachment.kind === 'image'
-              ? (
-                  <div className="chat-composer-image relative size-20 shrink-0 overflow-visible rounded-lg border border-[color-mix(in_srgb,var(--foreground)_20%,transparent)]" key={attachment.id}>
-                    <Image alt={attachment.name} className="block size-full rounded-[7px] object-cover" rootClassName="block size-full" src={attachment.previewDataUrl} />
-                    <button
-                      aria-label={`Remove ${attachment.name}`}
-                      className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-foreground p-0 text-background shadow-[0_1px_2px_color-mix(in_srgb,#000_28%,transparent)]"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void removeAttachment(attachment.id);
-                      }}
-                      type="button"
-                    >
-                      <X aria-hidden="true" size={10} />
-                    </button>
-                  </div>
-                )
-              : (
-                  <div className="chat-composer-chip flex h-[30px] max-w-60 items-center gap-1.5 rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] py-[3px] pr-[5px] pl-[7px] text-xs text-text-secondary" key={attachment.id}>
-                    <FileText aria-hidden="true" size={15} />
-                    <span className="truncate">{attachment.name}</span>
-                    <button aria-label={`Remove ${attachment.name}`} className="grid place-items-center rounded-lg p-0.5 text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-foreground" onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={14} /></button>
-                  </div>
-                ))}
+            <div className="chat-composer-attachments-row">
+              {attachments.map(attachment => attachment.kind === 'image'
+                ? (
+                    <div className={`chat-composer-image ${hasNonImageAttachment ? 'chat-composer-image-compact' : ''} relative shrink-0 overflow-visible rounded-lg border border-[color-mix(in_srgb,var(--foreground)_20%,transparent)]`} key={attachment.id}>
+                      <Image alt={attachment.name} className="block size-full rounded-[7px] object-cover" rootClassName="block size-full" src={attachment.previewDataUrl} />
+                      <button
+                        aria-label={`Remove ${attachment.name}`}
+                        className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-foreground p-0 text-background shadow-[0_1px_2px_color-mix(in_srgb,#000_28%,transparent)]"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void removeAttachment(attachment.id);
+                        }}
+                        type="button"
+                      >
+                        <X aria-hidden="true" size={10} />
+                      </button>
+                    </div>
+                  )
+                : (
+                    <div className="chat-composer-file-card" key={attachment.id}>
+                      <button aria-label={`Show ${attachment.name} in folder`} className="chat-composer-file-card-main" onClick={() => void revealAttachment(attachment.id)} type="button">
+                        <span className="chat-composer-file-card-icon">
+                          {attachment.kind === 'pdf' ? <span aria-hidden="true" className="chat-composer-pdf-icon">PDF</span> : <FileText aria-hidden="true" size={24} />}
+                        </span>
+                        <span className="chat-composer-file-card-content">
+                          <span className="chat-composer-file-card-name">{attachment.name}</span>
+                          <span className="chat-composer-file-card-subtitle">
+                            <span className="chat-composer-file-card-extension">{attachmentExtension(attachment.name)}</span>
+                            <span className="chat-composer-file-card-open">在 Finder 中显示</span>
+                          </span>
+                        </span>
+                      </button>
+                      <button aria-label={`Remove ${attachment.name}`} className="chat-composer-file-card-remove" onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={12} /></button>
+                    </div>
+                  ))}
+            </div>
           </Image.PreviewGroup>
         </div>
       )}
