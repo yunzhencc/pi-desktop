@@ -46,6 +46,7 @@
     "@pi-desktop/pi-sdk": "workspace:*",
     "@pi-desktop/shadcn-ui": "workspace:*",
     "@pi-desktop/utils": "workspace:*",
+    "@rc-component/image": "catalog:core",
     "@tanstack/react-hotkeys": "catalog:core",
     "@tanstack/react-query": "catalog:core",
     "@tanstack/react-router": "catalog:core",

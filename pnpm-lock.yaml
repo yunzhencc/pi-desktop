@@ -33,6 +33,9 @@ catalogs:
     '@lobehub/icons':
       specifier: 5.16.0
       version: 5.16.0
+    '@rc-component/image':
+      specifier: ^1.10.0
+      version: 1.10.0
     '@tanstack/react-hotkeys':
       specifier: 0.10.0
       version: 0.10.0
@@ -309,6 +312,9 @@ importers:
       '@pi-desktop/utils':
         specifier: workspace:*
         version: link:packages/utils
+      '@rc-component/image':
+        specifier: catalog:core
+        version: 1.10.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@tanstack/react-hotkeys':
         specifier: catalog:core
         version: 0.10.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
