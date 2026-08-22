@@ -1,0 +1,88 @@
+.composer-image-preview {
+  .rc-image-preview-mask {
+    background: rgb(0 0 0 / 90%);
+  }
+
+  .rc-image-preview-img {
+    max-width: min(100%, calc(100vw - 4rem));
+    max-height: calc(100dvh - 9rem);
+    border-radius: 8px;
+  }
+
+  .rc-image-preview-close,
+  .rc-image-preview-switch {
+    background: color-mix(in srgb, var(--surface-elevated) 92%, transparent);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 24%);
+  }
+
+  .rc-image-preview-close {
+    top: 16px;
+    right: 16px;
+    display: grid;
+    place-items: center;
+  }
+
+  .rc-image-preview-switch {
+    width: 36px;
+    height: 36px;
+
+    &-prev {
+      inset-inline-start: 16px;
+    }
+
+    &-next {
+      inset-inline-end: 16px;
+    }
+  }
+
+  .rc-image-preview-footer {
+    bottom: 20px;
+  }
+}
+
+.composer-image-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--surface-elevated) 92%, transparent);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 24%);
+  color: var(--foreground);
+
+  button,
+  a {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 9999px;
+    background: transparent;
+    color: inherit;
+  }
+
+  button {
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--foreground) 10%, transparent);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.4;
+    }
+  }
+
+  a:hover {
+    background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  }
+
+  span {
+    min-width: 44px;
+    text-align: center;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+}

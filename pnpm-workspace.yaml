@@ -47,6 +47,7 @@ catalogs:
     hosted-git-info: ^10.1.1
     jotai: 2.20.2
     js-yaml: 5.3.0
+    less: ^4.9.0
     lucide-react: 1.33.0
     mdast-util-from-markdown: 2.0.3
     mdast-util-gfm: 3.1.0

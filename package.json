@@ -106,6 +106,7 @@
     "eslint-plugin-format": "catalog:lint",
     "eslint-plugin-react-refresh": "catalog:lint",
     "jsdom": "catalog:test",
+    "less": "catalog:core",
     "lint-staged": "catalog:dev",
     "playwright": "catalog:test",
     "react": "catalog:core",

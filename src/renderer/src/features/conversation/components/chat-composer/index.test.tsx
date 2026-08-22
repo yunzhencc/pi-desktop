@@ -610,6 +610,39 @@ describe('chat composer', () => {
     expect(screen.queryByText('0000.jpg')).toBeNull();
   });
 
+  it('opens image attachments in the preview', async () => {
+    const user = userEvent.setup();
+    composer.addPastedImage.mockResolvedValue({
+      attachments: [{ id: 'image-1', kind: 'image', name: '0000.jpg', previewDataUrl: 'data:image/jpeg;base64,/9j/', size: 4 }],
+      failures: [],
+    });
+    renderComposer();
+    const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });
+    const item = { getAsFile: () => image, kind: 'file', type: 'image/png' } as DataTransferItem;
+
+    fireEvent.paste(window, { clipboardData: { items: [item] } });
+
+    await user.click(await screen.findByAltText('0000.jpg'));
+    expect(document.querySelector('.composer-image-preview')).not.toBeNull();
+  });
+
+  it('removes image attachments without opening the preview', async () => {
+    composer.addPastedImage.mockResolvedValue({
+      attachments: [{ id: 'image-1', kind: 'image', name: '0000.jpg', previewDataUrl: 'data:image/jpeg;base64,/9j/', size: 4 }],
+      failures: [],
+    });
+    renderComposer();
+    const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });
+    const item = { getAsFile: () => image, kind: 'file', type: 'image/png' } as DataTransferItem;
+
+    fireEvent.paste(window, { clipboardData: { items: [item] } });
+
+    await screen.findByAltText('0000.jpg');
+    fireEvent.click(screen.getByRole('button', { name: 'Remove 0000.jpg' }));
+    await waitFor(() => expect(screen.queryByAltText('0000.jpg')).toBeNull());
+    expect(document.querySelector('.composer-image-preview')).toBeNull();
+  });
+
   it('asks for a restart when the running preload bridge is outdated', async () => {
     vi.stubGlobal('piApp', { composer: { ...composer, addPastedImage: undefined } });
     renderComposer();

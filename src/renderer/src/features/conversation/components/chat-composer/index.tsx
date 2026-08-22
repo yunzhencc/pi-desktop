@@ -9,9 +9,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@pi-desktop/shadcn-ui/components/popover';
+import Image from '@rc-component/image';
 import { PrimaryScopeEnum } from '@shared/config';
 import { Command } from 'cmdk';
-import { ArrowUp, Bot, Check, ChevronDown, ExternalLink, FileText, Folder, GitBranch, Laptop, Link, LoaderCircle, Pencil, Search, Square, X } from 'lucide-react';
+import { ArrowUp, Bot, Check, ChevronDown, ChevronLeft, ChevronRight, Download, ExternalLink, FileText, Folder, GitBranch, Laptop, Link, LoaderCircle, Minus, Pencil, Plus, Search, Square, X } from 'lucide-react';
 import { baseKeymap, splitBlock } from 'prosemirror-commands';
 import { history } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -23,6 +24,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { createPortal } from 'react-dom';
 import { useIntl } from 'react-intl';
 import { ProjectPicker } from '../project-picker';
+import '@rc-component/image/assets/index.css';
+import './image-preview.less';
 import './style.css';
 
 type ComposerAttachment = Awaited<ReturnType<Window['piApp']['composer']['addDroppedAttachments']>>['attachments'][number];
@@ -518,20 +521,54 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
     >
       {!inlineEdit && attachments.length > 0 && (
         <div aria-label="Attachments" className="chat-composer-attachments flex flex-wrap gap-2 px-3 pt-3">
-          {attachments.map(attachment => attachment.kind === 'image'
-            ? (
-                <div className="chat-composer-image relative size-20 shrink-0 overflow-visible rounded-lg border border-[color-mix(in_srgb,var(--foreground)_20%,transparent)]" key={attachment.id}>
-                  <img alt={attachment.name} className="block size-full rounded-[7px] object-cover" src={attachment.previewDataUrl} />
-                  <button aria-label={`Remove ${attachment.name}`} className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-foreground p-0 text-background shadow-[0_1px_2px_color-mix(in_srgb,#000_28%,transparent)]" onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={10} /></button>
+          <Image.PreviewGroup
+            icons={{ close: <X aria-hidden="true" size={18} />, next: <ChevronRight aria-hidden="true" size={20} />, prev: <ChevronLeft aria-hidden="true" size={20} /> }}
+            preview={{
+              actionsRender: (_, { actions, image, transform }) => (
+                <div className="composer-image-preview-actions">
+                  <button aria-label="Zoom out" disabled={transform.scale <= 0.1} onClick={actions.onZoomOut} type="button"><Minus aria-hidden="true" size={16} /></button>
+                  <span>
+                    {Math.round(transform.scale * 100)}
+                    %
+                  </span>
+                  <button aria-label="Zoom in" disabled={transform.scale >= 4} onClick={actions.onZoomIn} type="button"><Plus aria-hidden="true" size={16} /></button>
+                  <a aria-label={`Download ${image.alt}`} download={image.alt || 'image'} href={image.url}><Download aria-hidden="true" size={16} /></a>
                 </div>
-              )
-            : (
-                <div className="chat-composer-chip flex h-[30px] max-w-60 items-center gap-1.5 rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] py-[3px] pr-[5px] pl-[7px] text-xs text-text-secondary" key={attachment.id}>
-                  <FileText aria-hidden="true" size={15} />
-                  <span className="truncate">{attachment.name}</span>
-                  <button aria-label={`Remove ${attachment.name}`} className="grid place-items-center rounded-lg p-0.5 text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-foreground" onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={14} /></button>
-                </div>
-              ))}
+              ),
+              maskClosable: true,
+              maxScale: 4,
+              minScale: 0.1,
+              movable: true,
+              rootClassName: 'composer-image-preview',
+              scaleStep: 0.25,
+              wheel: true,
+            }}
+          >
+            {attachments.map(attachment => attachment.kind === 'image'
+              ? (
+                  <div className="chat-composer-image relative size-20 shrink-0 overflow-visible rounded-lg border border-[color-mix(in_srgb,var(--foreground)_20%,transparent)]" key={attachment.id}>
+                    <Image alt={attachment.name} className="block size-full rounded-[7px] object-cover" rootClassName="block size-full" src={attachment.previewDataUrl} />
+                    <button
+                      aria-label={`Remove ${attachment.name}`}
+                      className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-foreground p-0 text-background shadow-[0_1px_2px_color-mix(in_srgb,#000_28%,transparent)]"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void removeAttachment(attachment.id);
+                      }}
+                      type="button"
+                    >
+                      <X aria-hidden="true" size={10} />
+                    </button>
+                  </div>
+                )
+              : (
+                  <div className="chat-composer-chip flex h-[30px] max-w-60 items-center gap-1.5 rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] py-[3px] pr-[5px] pl-[7px] text-xs text-text-secondary" key={attachment.id}>
+                    <FileText aria-hidden="true" size={15} />
+                    <span className="truncate">{attachment.name}</span>
+                    <button aria-label={`Remove ${attachment.name}`} className="grid place-items-center rounded-lg p-0.5 text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-foreground" onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={14} /></button>
+                  </div>
+                ))}
+          </Image.PreviewGroup>
         </div>
       )}
       <div className="chat-composer-editor mb-1 min-h-0 px-3" ref={editorHostRef} />
