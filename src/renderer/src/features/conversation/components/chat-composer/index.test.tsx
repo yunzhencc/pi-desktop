@@ -625,6 +625,28 @@ describe('chat composer', () => {
     expect((await screen.findByRole('button', { name: 'Show brief.docx in folder' })).querySelector('[data-file-icon="word"]')).not.toBeNull();
   });
 
+  it('maps spreadsheet, presentation, code, and archive attachments to Codex icon categories', async () => {
+    composer.addDroppedAttachments.mockResolvedValue({
+      attachments: [
+        { id: 'sheet-1', kind: 'file', name: 'budget.xlsx', size: 4 },
+        { id: 'slides-1', kind: 'file', name: 'launch.pptx', size: 4 },
+        { id: 'code-1', kind: 'text', name: 'app.ts', size: 4 },
+        { id: 'archive-1', kind: 'file', name: 'source.zip', size: 4 },
+      ],
+      failures: [],
+    });
+    renderComposer();
+    const file = new File(['attachments'], 'attachments.txt', { type: 'text/plain' });
+    Object.defineProperty(file, 'path', { value: '/tmp/attachments.txt' });
+
+    fireEvent.drop(screen.getByRole('textbox', { name: 'Message Pi' }), { dataTransfer: { files: [file] } });
+
+    expect((await screen.findByRole('button', { name: 'Show budget.xlsx in folder' })).querySelector('[data-file-icon="spreadsheet"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show launch.pptx in folder' }).querySelector('[data-file-icon="presentation"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show app.ts in folder' }).querySelector('[data-file-icon="code"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show source.zip in folder' }).querySelector('[data-file-icon="archive"]')).not.toBeNull();
+  });
+
   it('adds a clipboard image while the editor is not focused', async () => {
     renderComposer();
     const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });

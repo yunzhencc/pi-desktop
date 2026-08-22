@@ -12,7 +12,7 @@ import {
 import Image from '@rc-component/image';
 import { PrimaryScopeEnum } from '@shared/config';
 import { Command } from 'cmdk';
-import { ArrowUp, Bot, Check, ChevronDown, ChevronLeft, ChevronRight, Download, ExternalLink, FileText, Folder, GitBranch, Laptop, Link, LoaderCircle, Minus, Pencil, Plus, Search, Square, X } from 'lucide-react';
+import { ArrowUp, Bot, Check, ChevronDown, ChevronLeft, ChevronRight, Download, ExternalLink, FileArchive, FileCode2, FileJson2, FileSpreadsheet, FileTerminal, FileText, FileType2, Folder, GitBranch, Laptop, Link, LoaderCircle, Minus, Pencil, Plus, Presentation, Search, Square, X } from 'lucide-react';
 import { baseKeymap, splitBlock } from 'prosemirror-commands';
 import { history } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -109,9 +109,46 @@ function WordDocumentIcon() {
   );
 }
 
-function isWordDocument(name: string) {
-  const extension = attachmentExtension(name);
-  return extension === 'DOC' || extension === 'DOCX';
+function attachmentIconType(name: string) {
+  const normalizedName = name.toLowerCase();
+  const extension = attachmentExtension(name)?.toLowerCase();
+  if (normalizedName === 'skill.md')
+    return 'skill';
+  if (extension === 'doc' || extension === 'docx')
+    return 'word';
+  if (['csv', 'tsv', 'xls', 'xlsm', 'xlsx'].includes(extension ?? ''))
+    return 'spreadsheet';
+  if (['ppt', 'pptx'].includes(extension ?? ''))
+    return 'presentation';
+  if (['zip', 'gz', 'tgz', 'tar'].includes(extension ?? ''))
+    return 'archive';
+  if (['json', 'jsonc'].includes(extension ?? ''))
+    return 'json';
+  if (['md', 'mdx', 'markdown', 'mkd', 'mdown', 'xml', 'html', 'htm', 'yaml', 'yml', 'toml'].includes(extension ?? ''))
+    return 'document';
+  if (['dockerfile', 'sh', 'bash', 'zsh', 'fish', 'ps1'].includes(extension ?? '') || normalizedName === 'dockerfile')
+    return 'terminal';
+  if (['build', 'bazel', 'bzl', 'ninja', 'gradle', 'mk', 'makefile', 'sha', 'sha1', 'sha256', 'md5', 'checksum', 'sum'].includes(extension ?? '') || ['dockerfile', 'makefile'].includes(normalizedName))
+    return 'build';
+  if (['ts', 'tsx', 'jsx', 'js', 'mjs', 'cjs', 'hs', 'py', 'java', 'rs', 'php', 'css', 'scss', 'less', 'sass', 'cpp', 'cxx', 'cc', 'c', 'hpp', 'hh', 'h', 'rb', 'go', 'kt', 'swift', 'm', 'mm', 'cs', 'sql', 'ipynb'].includes(extension ?? ''))
+    return 'code';
+  return 'file';
+}
+
+function AttachmentFileIcon({ name }: { name: string }) {
+  switch (attachmentIconType(name)) {
+    case 'word': return <WordDocumentIcon />;
+    case 'spreadsheet': return <FileSpreadsheet aria-hidden="true" className="text-[#1d6f42]" data-file-icon="spreadsheet" size={24} />;
+    case 'presentation': return <Presentation aria-hidden="true" className="text-[#d24726]" data-file-icon="presentation" size={24} />;
+    case 'archive': return <Folder aria-hidden="true" className="text-[#b7791f]" data-file-icon="archive" size={24} />;
+    case 'json': return <FileJson2 aria-hidden="true" className="text-[#ca8a04]" data-file-icon="json" size={24} />;
+    case 'terminal': return <FileTerminal aria-hidden="true" className="text-[#475569]" data-file-icon="terminal" size={24} />;
+    case 'build': return <FileArchive aria-hidden="true" className="text-[#64748b]" data-file-icon="build" size={24} />;
+    case 'code': return <FileCode2 aria-hidden="true" className="text-[#2563eb]" data-file-icon="code" size={24} />;
+    case 'document':
+    case 'skill': return <FileType2 aria-hidden="true" className="text-[#2563eb]" data-file-icon="document" size={24} />;
+    default: return <FileText aria-hidden="true" data-file-icon="file" size={24} />;
+  }
 }
 
 function groupedModelOptions(models: ModelOption[]) {
@@ -627,7 +664,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
                     <div className="chat-composer-file-card" key={attachment.id}>
                       <button aria-label={`Show ${attachment.name} in folder`} className="chat-composer-file-card-main" onClick={() => void revealAttachment(attachment.id)} type="button">
                         <span className="chat-composer-file-card-icon">
-                          {attachment.kind === 'pdf' ? <span aria-hidden="true" className="chat-composer-pdf-icon">PDF</span> : isWordDocument(attachment.name) ? <WordDocumentIcon /> : <FileText aria-hidden="true" size={24} />}
+                          {attachment.kind === 'pdf' ? <span aria-hidden="true" className="chat-composer-pdf-icon">PDF</span> : <AttachmentFileIcon name={attachment.name} />}
                         </span>
                         <span className="chat-composer-file-card-content">
                           <span className="chat-composer-file-card-name">{attachment.name}</span>
