@@ -460,7 +460,7 @@ export function AttachmentList({ attachments, onRemove, onReveal, variant = 'com
           : (
               <div className="chat-message-file-pill composer-attachment-surface" key={attachment.id}>
                 <span className="chat-message-file-pill-icon">
-                  <AttachmentFileIcon muted name={attachment.name} size={14} />
+                  <AttachmentFileIcon muted name={attachment.name} size={18} />
                 </span>
                 <span className="chat-message-file-pill-name">{attachment.name}</span>
               </div>

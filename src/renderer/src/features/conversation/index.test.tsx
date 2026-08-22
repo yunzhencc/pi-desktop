@@ -116,7 +116,10 @@ describe('conversation page', () => {
     expect(screen.getByText('brief.pdf').closest('.chat-message-file-pill')).not.toBeNull();
     expect(screen.getByText('brief.pdf').closest('.chat-message-user-content')).toBeNull();
     expect(document.querySelector('.chat-composer-file-card-main')).toBeNull();
-    expect(document.querySelector('.chat-message-file-pill-icon [data-file-icon="pdf"]')).not.toBeNull();
+    const icon = document.querySelector('.chat-message-file-pill-icon [data-file-icon="pdf"]');
+    expect(icon).not.toBeNull();
+    expect(icon?.getAttribute('width')).toBe('18');
+    expect(icon?.getAttribute('height')).toBe('18');
   });
 
   it('does not render an empty text bubble for file-only user messages', () => {
