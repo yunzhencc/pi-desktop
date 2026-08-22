@@ -62,11 +62,6 @@ function MarkdownTable({ node, nodeKey }: { node: MarkdownNode; nodeKey: string 
   const tableText = tableToTsv(node);
   return (
     <div className="markdown-message-table-container" data-wide-block>
-      <div className="markdown-message-table-actions">
-        <IconButton label="Copy table" onClick={() => void navigator.clipboard?.writeText(tableText)}>
-          <Copy aria-hidden="true" size={14} />
-        </IconButton>
-      </div>
       <div className="markdown-message-table-scroller">
         <div className="markdown-message-table-wrapper">
           <table className="markdown-message-table">
@@ -74,6 +69,11 @@ function MarkdownTable({ node, nodeKey }: { node: MarkdownNode; nodeKey: string 
             <tbody>{(node.children ?? []).slice(1).map((row, rowIndex) => renderTableRow(row, `${nodeKey}-${rowIndex}`, 'td', node.align ?? []))}</tbody>
           </table>
         </div>
+      </div>
+      <div className="markdown-message-table-actions">
+        <IconButton label="Copy table" onClick={() => void navigator.clipboard?.writeText(tableText)}>
+          <Copy aria-hidden="true" size={14} />
+        </IconButton>
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
 .markdown-message {
   --markdown-font-size: 16px;
   --markdown-line-height: 24px;
-  --markdown-wide-margin: max(0px, calc((100vw - min(100vw, 720px)) / -2 + 24px));
+  --markdown-table-width: calc(100% + (var(--thread-content-margin, 24px) * 2));
+  --markdown-table-margin: calc(var(--thread-content-margin, 24px) * -1);
+  --thread-content-max-width: 48rem;
 
   color: var(--foreground);
   font-size: var(--markdown-font-size);
@@ -23,6 +25,10 @@
 
 .markdown-message-paragraph[data-markdown-han-text='true'] {
   margin-bottom: 8px;
+}
+
+.markdown-message > .markdown-message-paragraph[data-markdown-han-text='true']:has(+ .markdown-message-paragraph[data-markdown-han-text='true']) {
+  margin-bottom: 4px;
 }
 
 .markdown-message-heading {
@@ -52,16 +58,22 @@
 }
 
 .markdown-message-list {
-  margin: 0 0 11px;
+  margin: 0;
   padding-inline-start: 21px;
+  list-style-position: outside;
 }
 
 .markdown-message-paragraph:has(+ .markdown-message-list) {
   margin-bottom: 10px;
 }
 
+.markdown-message > .markdown-message-list:not(:last-child) {
+  margin-bottom: 10px;
+}
+
 .markdown-message-list .markdown-message-list {
-  margin: 6px 0 0;
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 
 .markdown-message-list-unordered {
@@ -78,45 +90,86 @@
 
 .markdown-message-list-item {
   padding-left: 2px;
+  display: list-item;
 }
 
 .markdown-message-list-item + .markdown-message-list-item {
-  margin-top: 7px;
+  margin-top: 8px;
+}
+
+.markdown-message-list-item > :first-child {
+  margin-top: 0;
 }
 
 .markdown-message-list-item > .markdown-message-paragraph {
+  margin: 0;
+}
+
+.markdown-message-list-item > :last-child {
   margin-bottom: 0;
 }
 
+.markdown-message-list-item > .markdown-message-paragraph + .markdown-message-paragraph {
+  margin-top: 11px;
+}
+
 .markdown-message-task-list-item {
-  list-style: none;
+  padding-left: 0;
+  list-style-type: none;
+}
+
+.markdown-message-task-list-item:has(> .markdown-message-paragraph) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.markdown-message-task-list-item:has(> .markdown-message-paragraph) > :not(:first-child) {
+  grid-column: 2;
 }
 
 .markdown-message-task-list-item > input[type='checkbox'] {
-  margin: 0 7px 0 -20px;
+  margin: 4px 7px 0 0;
   vertical-align: -2px;
+}
+
+.markdown-message-list-unordered > .markdown-message-list-item::marker,
+.markdown-message-list-ordered > .markdown-message-list-item::marker {
+  color: var(--foreground);
 }
 
 .markdown-message-blockquote {
   position: relative;
-  margin: 0 0 11px;
+  margin: 0 0 8px;
   padding: 8px 0 8px 24px;
   color: var(--foreground);
+  border: 0;
+  font-style: normal;
+  line-height: 24px;
+  background-color: transparent !important;
 }
 
-.markdown-message-blockquote::before {
+.markdown-message-blockquote::after {
   position: absolute;
   top: 8px;
   bottom: 8px;
-  left: 8px;
+  left: 0;
   width: 4px;
-  border-radius: 4px;
+  border-radius: 2px;
   background: var(--border-subtle);
   content: '';
 }
 
+.markdown-message-blockquote > :first-child {
+  margin-top: 0;
+}
+
 .markdown-message-blockquote > :last-child {
   margin-bottom: 0;
+}
+
+.markdown-message-blockquote > .markdown-message-paragraph {
+  margin: 0;
+  font-weight: 400;
 }
 
 .markdown-message-hr {
@@ -125,14 +178,22 @@
   border-top: 1px solid var(--border-subtle);
 }
 
+.markdown-message-hr + * {
+  margin-top: 0;
+}
+
 .markdown-message-inline-code,
 .markdown-message :not(pre) > code {
+  display: inline;
   padding: 1px 6px;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  background: color-mix(in srgb, color-mix(in srgb, var(--foreground) 8%, transparent) 60%, var(--foreground) 6%);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.92em;
+  overflow-wrap: anywhere;
   word-break: break-word;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .markdown-message-link {
@@ -240,56 +301,92 @@
 }
 
 .markdown-message-table-container {
-  margin: 14px var(--markdown-wide-margin);
-}
-
-.markdown-message-table-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 4px;
-  color: var(--text-secondary);
+  position: relative;
+  width: var(--markdown-table-width);
+  margin-inline: var(--markdown-table-margin);
 }
 
 .markdown-message-table-scroller {
   overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.markdown-message-table-container[data-wide-block] .markdown-message-table-scroller {
+  display: flex;
+  justify-content: safe center;
 }
 
 .markdown-message-table-wrapper {
-  width: max-content;
-  min-width: min(100%, 520px);
-  overflow: hidden;
-  border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  width: fit-content;
+  margin-inline: var(--thread-content-margin, 24px);
+  pointer-events: auto;
 }
 
 .markdown-message-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: color-mix(in srgb, var(--surface-elevated) 72%, transparent);
+  width: fit-content;
+  min-width: min(calc(100vw - 32px), calc(var(--thread-content-max-width, 48rem) - 32px));
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+  text-align: start;
+  background: transparent;
   font-size: 14px;
   line-height: 20px;
 }
 
-.markdown-message-table-row:not(:last-child) {
+.markdown-message-table-row:not(:last-child) .markdown-message-table-cell {
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .markdown-message-table-header-cell,
 .markdown-message-table-cell {
-  min-width: 110px;
-  padding: 8px 11px;
-  border-right: 1px solid var(--border-subtle);
+  max-width: calc(var(--thread-content-max-width, 48rem) * 18 / 24);
+  padding-right: 24px;
   vertical-align: top;
-}
-
-.markdown-message-table-header-cell:last-child,
-.markdown-message-table-cell:last-child {
-  border-right: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .markdown-message-table-header-cell {
-  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  padding-top: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--foreground);
   font-weight: 600;
+  line-height: 16px;
+  text-align: start;
+}
+
+.markdown-message-table-cell {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.markdown-message-table-header-cell:last-child {
+  padding-right: 40px;
+}
+
+.markdown-message-table-cell:last-child {
+  padding-right: 0;
+}
+
+.markdown-message-table tbody .markdown-message-table-row:last-child .markdown-message-table-cell {
+  padding-bottom: 24px;
+}
+
+.markdown-message-table-actions {
+  position: absolute;
+  z-index: 10;
+  inset-block: 0;
+  right: 0;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.markdown-message-table-container:not(:hover):not(:focus-within) .markdown-message-table-actions {
+  opacity: 0;
 }
 
 .markdown-message-math-inline {
