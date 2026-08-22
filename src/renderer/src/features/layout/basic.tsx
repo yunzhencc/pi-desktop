@@ -93,7 +93,7 @@ export function BasicLayout() {
     }
 
     try {
-      const { session, workspace } = await window.api.sessions.open(location.workspacePath, location.sessionPath);
+      const { session, workspace } = await window.piApp.sessions.open(location.workspacePath, location.sessionPath);
       if (navigationId !== navigationIdRef.current)
         return false;
       window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: workspace }));
@@ -127,8 +127,8 @@ export function BasicLayout() {
     if (location.kind !== 'session')
       return;
 
-    void window.api.workspaces.get()
-      .then(workspace => window.api.sessions.setPinned(
+    void window.piApp.workspaces.get()
+      .then(workspace => window.piApp.sessions.setPinned(
         location.workspacePath,
         location.sessionPath,
         !(workspace.pinnedSessionPaths ?? []).includes(location.sessionPath),
@@ -174,19 +174,19 @@ export function BasicLayout() {
   );
 
   useEffect(() => {
-    window.api.windowControls.getIsFullscreen().then(setIsFullscreen);
-    return window.api.windowControls.onFullscreenChange(setIsFullscreen);
+    window.piApp.windowControls.getIsFullscreen().then(setIsFullscreen);
+    return window.piApp.windowControls.onFullscreenChange(setIsFullscreen);
   }, []);
 
   useEffect(() => {
     let active = true;
     let receivedChange = false;
-    const stopListening = window.api.windowControls.onOpaqueSurfaceChange((opaque) => {
+    const stopListening = window.piApp.windowControls.onOpaqueSurfaceChange((opaque) => {
       receivedChange = true;
       setIsWindowOpaque(opaque);
     });
 
-    window.api.windowControls.getIsOpaqueSurface().then((opaque) => {
+    window.piApp.windowControls.getIsOpaqueSurface().then((opaque) => {
       if (active && !receivedChange)
         setIsWindowOpaque(opaque);
     });

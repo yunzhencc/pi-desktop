@@ -19,7 +19,7 @@ const providers = {
   onChanged: vi.fn(),
   setDefaultModel: vi.fn(),
 };
-let onProvidersChanged: ((snapshot: Awaited<ReturnType<Window['api']['providers']['get']>>) => void) | undefined;
+let onProvidersChanged: ((snapshot: Awaited<ReturnType<Window['piApp']['providers']['get']>>) => void) | undefined;
 const weather = { displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' };
 const notes = { displayName: 'notes', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/notes' };
 const workspaces = {
@@ -45,7 +45,7 @@ beforeEach(() => {
   Object.defineProperty(Range.prototype, 'getBoundingClientRect', { configurable: true, value: () => rect });
   Object.defineProperty(Range.prototype, 'getClientRects', { configurable: true, value: () => [rect] });
   Object.defineProperty(window, 'scrollBy', { configurable: true, value: () => {} });
-  vi.stubGlobal('api', { composer, providers, workspaces });
+  vi.stubGlobal('piApp', { composer, providers, workspaces });
   composer.addDroppedAttachments.mockResolvedValue({ attachments: [], failures: [] });
   composer.addPastedImage.mockResolvedValue({ attachments: [], failures: [] });
   composer.removeAttachment.mockResolvedValue(undefined);
@@ -611,7 +611,7 @@ describe('chat composer', () => {
   });
 
   it('asks for a restart when the running preload bridge is outdated', async () => {
-    vi.stubGlobal('api', { composer: { ...composer, addPastedImage: undefined } });
+    vi.stubGlobal('piApp', { composer: { ...composer, addPastedImage: undefined } });
     renderComposer();
     const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });
     const item = { getAsFile: () => image, kind: 'file', type: 'image/png' } as DataTransferItem;

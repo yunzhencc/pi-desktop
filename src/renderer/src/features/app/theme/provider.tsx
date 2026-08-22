@@ -25,7 +25,7 @@ function NativeThemeSourceSync() {
   const { theme } = useTheme();
 
   React.useEffect(() => {
-    void window.api.windowControls.setThemeSource(readAppearanceTheme(theme ?? 'system'));
+    void window.piApp.windowControls.setThemeSource(readAppearanceTheme(theme ?? 'system'));
   }, [theme]);
 
   return null;

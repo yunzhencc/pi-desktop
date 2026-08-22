@@ -10,7 +10,7 @@ const research = { displayName: 'research', lastOpenedAt: '2026-08-19T00:00:00.0
 const session = { firstMessage: 'Summarize the forecast', id: 'session-1', modifiedAt: '2026-08-19T00:00:00.000Z', path: '/sessions/session-1.jsonl' };
 
 beforeEach(() => {
-  vi.stubGlobal('api', {
+  vi.stubGlobal('piApp', {
     sessions: {
       list: vi.fn(() => Promise.resolve([])),
       open: vi.fn(() => Promise.resolve({ session: { messages: [], path: session.path }, workspace: { pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather] } })),
@@ -68,7 +68,7 @@ describe('workspace sidebar', () => {
   });
 
   it('shows pinned projects in the global section and persists project pinning', async () => {
-    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], pinnedWorkspacePaths: [research.path], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
+    window.piApp.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], pinnedWorkspacePaths: [research.path], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -85,14 +85,14 @@ describe('workspace sidebar', () => {
     fireEvent.contextMenu(screen.getByRole('button', { name: 'weather' }));
     fireEvent.click(screen.getByRole('menuitem', { name: '置顶' }));
 
-    await waitFor(() => expect(window.api.workspaces.setPinned).toHaveBeenCalledWith(weather.path, true));
+    await waitFor(() => expect(window.piApp.workspaces.setPinned).toHaveBeenCalledWith(weather.path, true));
   });
 
   it('starts a new chat in the project selected from its action menu', async () => {
     const onNewConversation = vi.fn();
     window.addEventListener('new-conversation', onNewConversation);
-    window.api.workspaces.select.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: research.path, workspaces: [weather, research] });
-    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
+    window.piApp.workspaces.select.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: research.path, workspaces: [weather, research] });
+    window.piApp.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -103,13 +103,13 @@ describe('workspace sidebar', () => {
     fireEvent.contextMenu(screen.getByRole('button', { name: 'research' }));
     fireEvent.click(screen.getByRole('menuitem', { name: '新建聊天' }));
 
-    await waitFor(() => expect(window.api.workspaces.select).toHaveBeenCalledWith(research.path));
+    await waitFor(() => expect(window.piApp.workspaces.select).toHaveBeenCalledWith(research.path));
     expect(onNewConversation).toHaveBeenCalledOnce();
     window.removeEventListener('new-conversation', onNewConversation);
   });
 
   it('opens a project source folder from its action menu', async () => {
-    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
+    window.piApp.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -120,11 +120,11 @@ describe('workspace sidebar', () => {
     fireEvent.contextMenu(screen.getByRole('button', { name: 'research' }));
     fireEvent.click(screen.getByRole('menuitem', { name: '在 Finder 中显示' }));
 
-    await waitFor(() => expect(window.api.workspaces.openDirectory).toHaveBeenCalledWith(research.path));
+    await waitFor(() => expect(window.piApp.workspaces.openDirectory).toHaveBeenCalledWith(research.path));
   });
 
   it('pins a project from its action menu', async () => {
-    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
+    window.piApp.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -135,7 +135,7 @@ describe('workspace sidebar', () => {
     fireEvent.contextMenu(screen.getByRole('button', { name: 'research' }));
     fireEvent.click(screen.getByRole('menuitem', { name: '置顶' }));
 
-    await waitFor(() => expect(window.api.workspaces.setPinned).toHaveBeenCalledWith(research.path, true));
+    await waitFor(() => expect(window.piApp.workspaces.setPinned).toHaveBeenCalledWith(research.path, true));
   });
 
   it('opens the project action menu from the ellipsis icon', async () => {
@@ -154,7 +154,7 @@ describe('workspace sidebar', () => {
   });
 
   it('unpins a project from its action menu', async () => {
-    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], pinnedWorkspacePaths: [research.path], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
+    window.piApp.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], pinnedWorkspacePaths: [research.path], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -165,13 +165,13 @@ describe('workspace sidebar', () => {
     fireEvent.contextMenu(screen.getByRole('button', { name: 'research' }));
     fireEvent.click(screen.getByRole('menuitem', { name: '取消置顶' }));
 
-    await waitFor(() => expect(window.api.workspaces.setPinned).toHaveBeenCalledWith(research.path, false));
+    await waitFor(() => expect(window.piApp.workspaces.setPinned).toHaveBeenCalledWith(research.path, false));
   });
 
   it('edits a project name and source folder from its action menu', async () => {
     const edited = { displayName: '天气助手', lastOpenedAt: weather.lastOpenedAt, path: '/projects/weather-agent' };
-    window.api.workspaces.pickDirectory.mockResolvedValue(edited.path);
-    window.api.workspaces.update.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: edited.path, workspaces: [edited] });
+    window.piApp.workspaces.pickDirectory.mockResolvedValue(edited.path);
+    window.piApp.workspaces.update.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: edited.path, workspaces: [edited] });
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -186,12 +186,12 @@ describe('workspace sidebar', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: edited.path })).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: '保存项目' }));
 
-    await waitFor(() => expect(window.api.workspaces.update).toHaveBeenCalledWith(weather.path, edited.displayName, edited.path));
+    await waitFor(() => expect(window.piApp.workspaces.update).toHaveBeenCalledWith(weather.path, edited.displayName, edited.path));
     expect(await screen.findByRole('button', { name: edited.displayName })).not.toBeNull();
   });
 
   it('does not show a project info card on hover', async () => {
-    window.api.sessions.list.mockResolvedValue([session]);
+    window.piApp.sessions.list.mockResolvedValue([session]);
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -204,7 +204,7 @@ describe('workspace sidebar', () => {
   });
 
   it('renders the pinned section before projects and collapses it independently', async () => {
-    window.api.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], pinnedWorkspacePaths: [research.path], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
+    window.piApp.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], pinnedWorkspacePaths: [research.path], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -229,7 +229,7 @@ describe('workspace sidebar', () => {
     const initialSessions = new Promise<typeof session[]>((resolve) => {
       resolveInitial = resolve;
     });
-    window.api.sessions.list.mockReturnValueOnce(initialSessions);
+    window.piApp.sessions.list.mockReturnValueOnce(initialSessions);
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -237,9 +237,9 @@ describe('workspace sidebar', () => {
     );
 
     await screen.findByRole('button', { name: 'weather' });
-    await waitFor(() => expect(window.api.sessions.list).toHaveBeenCalledOnce());
-    window.api.sessions.list.mockResolvedValue([session]);
-    const onUpdate = window.api.composer.onUpdate as ReturnType<typeof vi.fn>;
+    await waitFor(() => expect(window.piApp.sessions.list).toHaveBeenCalledOnce());
+    window.piApp.sessions.list.mockResolvedValue([session]);
+    const onUpdate = window.piApp.composer.onUpdate as ReturnType<typeof vi.fn>;
     act(() => onUpdate.mock.calls[0]![0]({ sessionPath: session.path, type: 'session' }));
 
     await expect(screen.findByText('Summarize the forecast')).resolves.not.toBeNull();
@@ -249,7 +249,7 @@ describe('workspace sidebar', () => {
   });
 
   it('collapses and expands a project session history from its project row', async () => {
-    window.api.sessions.list.mockResolvedValue([session]);
+    window.piApp.sessions.list.mockResolvedValue([session]);
     render(
       <I18nProvider>
         <WorkspaceSidebar />
@@ -281,13 +281,13 @@ describe('workspace sidebar', () => {
     fireEvent.click(screen.getByRole('button', { name: '添加项目' }));
 
     expect(screen.getByRole('dialog', { name: '创建项目' })).not.toBeNull();
-    expect(window.api.workspaces.pickDirectory).not.toHaveBeenCalled();
+    expect(window.piApp.workspaces.pickDirectory).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: '添加 PI 可读取和编辑的文件夹' }));
-    await waitFor(() => expect(window.api.workspaces.pickDirectory).toHaveBeenCalledOnce());
+    await waitFor(() => expect(window.piApp.workspaces.pickDirectory).toHaveBeenCalledOnce());
     fireEvent.change(screen.getByRole('textbox', { name: '项目名称' }), { target: { value: '天气助手' } });
     fireEvent.click(screen.getByRole('button', { name: '创建项目' }));
 
-    await waitFor(() => expect(window.api.workspaces.create).toHaveBeenCalledWith('天气助手', '/projects/weather'));
+    await waitFor(() => expect(window.piApp.workspaces.create).toHaveBeenCalledWith('天气助手', '/projects/weather'));
   });
 
   it('creates a project without requiring a project name', async () => {
@@ -300,10 +300,10 @@ describe('workspace sidebar', () => {
     await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: '添加项目' }));
     fireEvent.click(screen.getByRole('button', { name: '添加 PI 可读取和编辑的文件夹' }));
-    await waitFor(() => expect(window.api.workspaces.pickDirectory).toHaveBeenCalledOnce());
+    await waitFor(() => expect(window.piApp.workspaces.pickDirectory).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByRole('button', { name: '创建项目' }));
 
-    await waitFor(() => expect(window.api.workspaces.create).toHaveBeenCalledWith('', '/projects/weather'));
+    await waitFor(() => expect(window.piApp.workspaces.create).toHaveBeenCalledWith('', '/projects/weather'));
   });
 
   it('opens project creation when requested by the composer', async () => {
@@ -337,8 +337,8 @@ describe('workspace sidebar', () => {
   });
 
   it('keeps the create-project dialog open while the project is saving', async () => {
-    let finishCreate: (workspace: Awaited<ReturnType<Window['api']['workspaces']['create']>>) => void;
-    window.api.workspaces.create.mockImplementationOnce(() => new Promise((resolve) => {
+    let finishCreate: (workspace: Awaited<ReturnType<Window['piApp']['workspaces']['create']>>) => void;
+    window.piApp.workspaces.create.mockImplementationOnce(() => new Promise((resolve) => {
       finishCreate = resolve;
     }));
     render(
@@ -350,7 +350,7 @@ describe('workspace sidebar', () => {
     await waitFor(() => expect(screen.getByText('weather')).not.toBeNull());
     fireEvent.click(screen.getByRole('button', { name: '添加项目' }));
     fireEvent.click(screen.getByRole('button', { name: '添加 PI 可读取和编辑的文件夹' }));
-    await waitFor(() => expect(window.api.workspaces.pickDirectory).toHaveBeenCalledOnce());
+    await waitFor(() => expect(window.piApp.workspaces.pickDirectory).toHaveBeenCalledOnce());
     fireEvent.change(screen.getByRole('textbox', { name: '项目名称' }), { target: { value: '天气助手' } });
     fireEvent.click(screen.getByRole('button', { name: '创建项目' }));
 

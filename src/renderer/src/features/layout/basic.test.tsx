@@ -51,7 +51,7 @@ describe('app window surface', () => {
     navigate.mockReset();
     opaqueSurfaceListener = undefined;
     document.documentElement.classList.remove('electron-opaque');
-    Object.defineProperty(window, 'api', {
+    Object.defineProperty(window, 'piApp', {
       configurable: true,
       value: {
         composer: {
@@ -119,11 +119,11 @@ describe('app window surface', () => {
     const first = deferred<{ session: { messages: []; path: string }; workspace: { pinnedSessionPaths: []; workspaces: [] } }>();
     const second = deferred<{ session: { messages: []; path: string }; workspace: { pinnedSessionPaths: []; workspaces: [] } }>();
     const openedSessions: string[] = [];
-    window.api.sessions.list = () => Promise.resolve([
+    window.piApp.sessions.list = () => Promise.resolve([
       { firstMessage: 'First', id: 'first', modifiedAt: '2026-08-20T00:00:00.000Z', path: '/sessions/first.jsonl' },
       { firstMessage: 'Second', id: 'second', modifiedAt: '2026-08-20T00:00:00.000Z', path: '/sessions/second.jsonl' },
     ]);
-    window.api.sessions.open = (_workspacePath, sessionPath) => sessionPath === '/sessions/first.jsonl' ? first.promise : second.promise;
+    window.piApp.sessions.open = (_workspacePath, sessionPath) => sessionPath === '/sessions/first.jsonl' ? first.promise : second.promise;
     const onSessionChanged = (event: Event) => openedSessions.push((event as CustomEvent<{ path: string }>).detail.path);
     window.addEventListener('session-changed', onSessionChanged);
 
@@ -171,9 +171,9 @@ describe('app window surface', () => {
   it('toggles the current session pin with its shortcut', async () => {
     const session = { firstMessage: 'Forecast', id: 'session-1', modifiedAt: '2026-08-20T00:00:00.000Z', path: '/sessions/forecast.jsonl' };
     const open = vi.fn(() => Promise.resolve({ session: { messages: [], path: session.path }, workspace: { pinnedSessionPaths: [], workspaces: [] } }));
-    window.api.sessions.list = () => Promise.resolve([session]);
-    window.api.sessions.open = open;
-    window.api.sessions.setPinned = vi.fn(() => Promise.resolve({ pinnedSessionPaths: [session.path], workspaces: [] }));
+    window.piApp.sessions.list = () => Promise.resolve([session]);
+    window.piApp.sessions.open = open;
+    window.piApp.sessions.setPinned = vi.fn(() => Promise.resolve({ pinnedSessionPaths: [session.path], workspaces: [] }));
     renderApp('en');
 
     await screen.findByText('Forecast');
@@ -181,7 +181,7 @@ describe('app window surface', () => {
     await waitFor(() => expect(open).toHaveBeenCalled());
     hotkeys.get('Mod+Shift+P')?.();
 
-    await waitFor(() => expect(window.api.sessions.setPinned).toHaveBeenCalledWith('/projects/weather', session.path, true));
+    await waitFor(() => expect(window.piApp.sessions.setPinned).toHaveBeenCalledWith('/projects/weather', session.path, true));
   });
 
   it('does not register global shortcuts for focused inputs', () => {

@@ -1,12 +1,10 @@
-import type { ElectronAPI } from '@electron-toolkit/preload';
 import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments';
 import type { PiSessionSnapshot, PiSessionSummary, PiUsageStats, TranscriptUpdate } from '../main/pi-runtime';
 import type { ModelPickerScope, ProviderId, ProvidersSnapshot, WorkspaceSnapshot } from '../shared/types';
 
 declare global {
   interface Window {
-    electron: ElectronAPI;
-    api: {
+    piApp: {
       windowControls: {
         getIsFullscreen: () => Promise<boolean>;
         onFullscreenChange: (callback: (isFullscreen: boolean) => void) => () => void;

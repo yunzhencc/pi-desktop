@@ -19,7 +19,7 @@ export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: 
   const pickDirectory = async () => {
     if (isSubmitting)
       return;
-    const path = await window.api.workspaces.pickDirectory();
+    const path = await window.piApp.workspaces.pickDirectory();
     if (path) {
       setSourcePath(path);
       setError(undefined);
@@ -38,8 +38,8 @@ export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: 
     setError(undefined);
     try {
       onCreated(isEditing
-        ? await window.api.workspaces.update(project.path, name.trim(), sourcePath)
-        : await window.api.workspaces.create(name.trim(), sourcePath));
+        ? await window.piApp.workspaces.update(project.path, name.trim(), sourcePath)
+        : await window.piApp.workspaces.create(name.trim(), sourcePath));
       onClose();
     }
     catch (reason) {

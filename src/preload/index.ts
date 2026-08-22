@@ -2,12 +2,10 @@ import type { AttachmentFailure, AttachmentMetadata } from '../main/attachments'
 import type { PiSessionSnapshot, PiSessionSummary, PiUsageStats, TranscriptUpdate } from '../main/pi-runtime';
 import type { ModelPickerScope, ProviderId, ProvidersSnapshot, WorkspaceSnapshot } from '../shared/types';
 import process from 'node:process';
-import { electronAPI } from '@electron-toolkit/preload';
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from '../shared/ipc-channels';
 
-// Custom APIs for renderer
-const api = {
+const piApp = {
   windowControls: {
     getIsFullscreen: (): Promise<boolean> => ipcRenderer.invoke(IPC_CHANNELS.WindowIsFullScreen),
     onFullscreenChange: (callback: (isFullscreen: boolean) => void) => {
@@ -71,13 +69,10 @@ const api = {
   },
 };
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+// Expose only the app-owned preload API to the renderer.
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('electron', electronAPI);
-    contextBridge.exposeInMainWorld('api', api);
+    contextBridge.exposeInMainWorld('piApp', piApp);
   }
   catch (error) {
     console.error(error);
@@ -85,7 +80,5 @@ if (process.contextIsolated) {
 }
 else {
   // @ts-expect-error 暂时忽略
-  window.electron = electronAPI;
-  // @ts-expect-error 暂时忽略
-  window.api = api;
+  window.piApp = piApp;
 }

@@ -13,7 +13,7 @@ import {
 } from './model/transcript';
 import './style.css';
 
-type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
+type WorkspaceSnapshot = Awaited<ReturnType<Window['piApp']['workspaces']['get']>>;
 
 export function ConversationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -28,7 +28,7 @@ export function ConversationPage() {
 
   useEffect(() => {
     let active = true;
-    void window.api.workspaces.get().then((snapshot) => {
+    void window.piApp.workspaces.get().then((snapshot) => {
       if (active) {
         workspaceRef.current = snapshot;
         setWorkspace(snapshot);
@@ -56,7 +56,7 @@ export function ConversationPage() {
   useEffect(() => {
     const startNewConversation = () => {
       setMessages([]);
-      void window.api.composer.newConversation();
+      void window.piApp.composer.newConversation();
     };
     const openSession = (event: Event) => {
       if (streamingFrameRef.current != null)
@@ -110,7 +110,7 @@ export function ConversationPage() {
       streamingFrameRef.current = null;
       pendingAssistantRef.current = null;
     };
-    const unsubscribe = window.api.composer.onUpdate((update) => {
+    const unsubscribe = window.piApp.composer.onUpdate((update) => {
       if (update.type === 'status') {
         if (update.status === 'settled')
           flushAssistant();
@@ -145,7 +145,7 @@ export function ConversationPage() {
   const composer = (
     <ChatComposer
       isRunning={isRunning}
-      onStop={() => void window.api.composer.stop()}
+      onStop={() => void window.piApp.composer.stop()}
       onSubmitted={(text) => {
         setMessages(current => appendSubmittedUserMessage(current, text));
       }}
@@ -157,7 +157,7 @@ export function ConversationPage() {
     const message = editingMessage;
     if (message == null || !text.trim())
       return;
-    const sourceText = await window.api.composer.editLastUserMessage(text);
+    const sourceText = await window.piApp.composer.editLastUserMessage(text);
     if (sourceText == null)
       return;
     setMessages(current => updateUserMessageText(current, message.id, text));
@@ -166,17 +166,17 @@ export function ConversationPage() {
   };
 
   const forkAssistantMessage = async (entryId: string) => {
-    const session = await window.api.composer.forkAssistantMessage(entryId);
+    const session = await window.piApp.composer.forkAssistantMessage(entryId);
     window.dispatchEvent(new CustomEvent<PiSessionSnapshot>('session-changed', { detail: session }));
     window.dispatchEvent(new Event('sessions-changed'));
   };
 
   const createProject = () => window.dispatchEvent(new Event('create-project'));
   const selectProject = (path: string) => {
-    void window.api.workspaces.select(path).then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
+    void window.piApp.workspaces.select(path).then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
   };
   const clearProject = () => {
-    void window.api.workspaces.clear().then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
+    void window.piApp.workspaces.clear().then(next => window.dispatchEvent(new CustomEvent<WorkspaceSnapshot>('workspace-changed', { detail: next })));
   };
   const newConversationToolbar = (
     <NewConversationToolbar

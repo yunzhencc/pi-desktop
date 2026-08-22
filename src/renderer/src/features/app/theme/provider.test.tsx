@@ -31,7 +31,7 @@ describe('theme provider', () => {
         removeListener: () => {},
       }),
     });
-    Object.defineProperty(window, 'api', {
+    Object.defineProperty(window, 'piApp', {
       configurable: true,
       value: { windowControls: { setThemeSource } },
     });

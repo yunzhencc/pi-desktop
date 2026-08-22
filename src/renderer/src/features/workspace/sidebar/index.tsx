@@ -8,7 +8,7 @@ import { ProjectItem } from '../project/item';
 import { SessionItem } from '../session/item';
 import './style.css';
 
-type PiSessionSummary = Awaited<ReturnType<Window['api']['sessions']['list']>>[number];
+type PiSessionSummary = Awaited<ReturnType<Window['piApp']['sessions']['list']>>[number];
 
 interface SessionEntry {
   session: PiSessionSummary;
@@ -32,7 +32,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
   const [editingProject, setEditingProject] = useState<WorkspaceSummary>();
 
   useEffect(() => {
-    void window.api.workspaces.get().then(setWorkspace);
+    void window.piApp.workspaces.get().then(setWorkspace);
     const onWorkspaceChanged = (event: Event) => setWorkspace((event as CustomEvent<WorkspaceSnapshot>).detail);
     const onSessionChanged = (event: Event) => setSelectedSessionPath((event as CustomEvent<{ path: string }>).detail.path);
     const openCreateProject = () => setIsCreating(true);
@@ -46,7 +46,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
     };
   }, []);
 
-  useEffect(() => window.api.composer.onUpdate((update) => {
+  useEffect(() => window.piApp.composer.onUpdate((update) => {
     if (update.type === 'session') {
       window.dispatchEvent(new Event('sessions-changed'));
       return;
@@ -63,7 +63,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
     let refreshVersion = 0;
     const refresh = () => {
       const version = ++refreshVersion;
-      return Promise.all(workspace.workspaces.map(async item => [item.path, await window.api.sessions.list(item.path)] as const)).then((entries) => {
+      return Promise.all(workspace.workspaces.map(async item => [item.path, await window.piApp.sessions.list(item.path)] as const)).then((entries) => {
         if (active && version === refreshVersion)
           setSessionsByWorkspace(Object.fromEntries(entries));
       }).catch(() => {
@@ -92,7 +92,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
       onOpenSession(workspacePath, sessionPath);
       return;
     }
-    const { session, workspace } = await window.api.sessions.open(workspacePath, sessionPath);
+    const { session, workspace } = await window.piApp.sessions.open(workspacePath, sessionPath);
     update(workspace);
     setSelectedSessionPath(sessionPath);
     window.dispatchEvent(new CustomEvent('session-changed', { detail: session }));
@@ -103,7 +103,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
     if (!current)
       return;
     try {
-      update(await window.api.workspaces.select(workspacePath));
+      update(await window.piApp.workspaces.select(workspacePath));
       setSelectedSessionPath(undefined);
       window.dispatchEvent(new Event('new-conversation'));
     }
@@ -121,7 +121,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
       paths.push(sessionPath);
     update({ ...current, pinnedSessionPaths: paths });
     try {
-      update(await window.api.sessions.setPinned(workspacePath, sessionPath, pinned));
+      update(await window.piApp.sessions.setPinned(workspacePath, sessionPath, pinned));
     }
     catch {
       update(current);
@@ -137,7 +137,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
       paths.push(workspacePath);
     update({ ...current, pinnedWorkspacePaths: paths });
     try {
-      update(await window.api.workspaces.setPinned(workspacePath, pinned));
+      update(await window.piApp.workspaces.setPinned(workspacePath, pinned));
     }
     catch {
       update(current);
@@ -166,7 +166,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
           onTogglePin={() => void setWorkspacePinned(item.path, !isPinned)}
           onEdit={() => setEditingProject(item)}
           onNewConversation={() => void startProjectConversation(item.path)}
-          onOpenSource={() => void window.api.workspaces.openDirectory(item.path)}
+          onOpenSource={() => void window.piApp.workspaces.openDirectory(item.path)}
           isRunning={isRunning}
         >
           {item.displayName}

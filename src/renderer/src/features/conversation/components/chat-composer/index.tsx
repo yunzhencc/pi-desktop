@@ -25,9 +25,9 @@ import { useIntl } from 'react-intl';
 import { ProjectPicker } from '../project-picker';
 import './style.css';
 
-type ComposerAttachment = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>['attachments'][number];
-type SelectionResult = Awaited<ReturnType<Window['api']['composer']['addDroppedAttachments']>>;
-type WorkspaceSnapshot = Awaited<ReturnType<Window['api']['workspaces']['get']>>;
+type ComposerAttachment = Awaited<ReturnType<Window['piApp']['composer']['addDroppedAttachments']>>['attachments'][number];
+type SelectionResult = Awaited<ReturnType<Window['piApp']['composer']['addDroppedAttachments']>>;
+type WorkspaceSnapshot = Awaited<ReturnType<Window['piApp']['workspaces']['get']>>;
 type ModelOption = ProviderModelSnapshot & { providerName: string };
 interface LinkPopover {
   element: HTMLElement;
@@ -177,7 +177,7 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
     if (!selectedWorkspace)
       return;
     const { path } = selectedWorkspace;
-    void window.api.workspaces.getGitBranch(path).then(branch => setBranchResult({ branch, path })).catch(() => setBranchResult({ path }));
+    void window.piApp.workspaces.getGitBranch(path).then(branch => setBranchResult({ branch, path })).catch(() => setBranchResult({ path }));
   }, [selectedWorkspace]);
 
   const branch = selectedWorkspace && selectedWorkspace.path === branchResult?.path ? branchResult?.branch : undefined;
@@ -335,11 +335,11 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   useEffect(() => {
     if (inlineEdit)
       return;
-    if (typeof window.api.providers?.get !== 'function')
+    if (typeof window.piApp.providers?.get !== 'function')
       return;
-    window.api.providers.get().then(setProvidersSnapshot).catch(() => undefined);
-    return typeof window.api.providers.onChanged === 'function'
-      ? window.api.providers.onChanged(setProvidersSnapshot)
+    window.piApp.providers.get().then(setProvidersSnapshot).catch(() => undefined);
+    return typeof window.piApp.providers.onChanged === 'function'
+      ? window.piApp.providers.onChanged(setProvidersSnapshot)
       : undefined;
   }, [inlineEdit]);
 
@@ -405,7 +405,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
       });
       if (images.length === 0)
         return;
-      if (typeof window.api.composer.addPastedImage !== 'function') {
+      if (typeof window.piApp.composer.addPastedImage !== 'function') {
         setError('请重启 Pi Desktop 后再粘贴图片。');
         return;
       }
@@ -419,7 +419,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
           reader.readAsDataURL(image);
         });
         const data = dataUrl.slice(dataUrl.indexOf(',') + 1);
-        addSelection(await window.api.composer.addPastedImage(image.name || 'pasted-image.png', data));
+        addSelection(await window.piApp.composer.addPastedImage(image.name || 'pasted-image.png', data));
       })).catch(() => setError('无法读取剪贴板图片。'));
     };
 
@@ -428,7 +428,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   }, [addSelection, inlineEdit]);
 
   const removeAttachment = async (id: string) => {
-    await window.api.composer.removeAttachment(id);
+    await window.piApp.composer.removeAttachment(id);
     setAttachments(current => current.filter(attachment => attachment.id !== id));
   };
 
@@ -444,7 +444,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
         return;
       }
       onSubmitted(text);
-      await window.api.composer.send(text, attachments.map(attachment => attachment.id));
+      await window.piApp.composer.send(text, attachments.map(attachment => attachment.id));
       editorViewRef.current?.dispatch(editorViewRef.current.state.tr.delete(0, editorViewRef.current.state.doc.content.size));
       setAttachments([]);
     }
@@ -509,7 +509,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
           setError('当前环境无法读取拖入文件。');
           return;
         }
-        window.api.composer.addDroppedAttachments(paths).then(addSelection).catch(() => setError('无法读取拖入文件。'));
+        window.piApp.composer.addDroppedAttachments(paths).then(addSelection).catch(() => setError('无法读取拖入文件。'));
       }}
       onSubmit={(event) => {
         event.preventDefault();
@@ -548,7 +548,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
                 <ModelPicker
                   models={modelOptions}
                   onSelect={async (model) => {
-                    const next = await window.api.providers.setDefaultModel(model.providerId, model.id);
+                    const next = await window.piApp.providers.setDefaultModel(model.providerId, model.id);
                     setProvidersSnapshot(next);
                   }}
                   showGroups={groupModelOptions}

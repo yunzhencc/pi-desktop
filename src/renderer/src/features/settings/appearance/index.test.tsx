@@ -39,7 +39,7 @@ vi.mock('next-themes', () => ({
 
 describe('settings view', () => {
   beforeEach(() => {
-    Object.defineProperty(window, 'api', {
+    Object.defineProperty(window, 'piApp', {
       configurable: true,
       value: {
         sessions: {
@@ -61,7 +61,7 @@ describe('settings view', () => {
     cleanup();
     hotkeys.clear();
     setTheme.mockReset();
-    delete (window as Partial<Window>).api;
+    delete (window as Partial<Window>).piApp;
   });
 
   it('renders the settings copy in Chinese when the active locale is Chinese', () => {
@@ -146,10 +146,9 @@ describe('settings view', () => {
       </IntlProvider>,
     );
 
-    expect(await screen.findByText('当前项目会话')).not.toBeNull();
-    expect(screen.getAllByText('置顶项目')).toHaveLength(1);
-    expect(screen.getAllByText('置顶会话')).toHaveLength(1);
-    expect(screen.getByText('会话活动')).not.toBeNull();
+    expect(await screen.findByText('累计 Token 数')).not.toBeNull();
+    expect(screen.getByText('峰值 Token 数')).not.toBeNull();
+    expect(screen.getByText('Token 活动')).not.toBeNull();
     expect(screen.queryByText('活动洞察')).toBeNull();
     expect(screen.queryByText('最常用项目')).toBeNull();
     expect(container.querySelectorAll('.settings-profile-heatmap span')).toHaveLength(371);

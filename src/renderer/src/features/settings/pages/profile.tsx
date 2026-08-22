@@ -108,17 +108,17 @@ function useProfileStats(): UsageStats | undefined {
   const [stats, setStats] = useState<UsageStats>();
 
   useEffect(() => {
-    const api = (window as Window & { api?: Window['api'] }).api;
-    if (!api)
+    const { piApp } = window;
+    if (!piApp)
       return;
 
     let cancelled = false;
 
     async function load() {
-      const workspace = await api.workspaces.get();
+      const workspace = await piApp.workspaces.get();
       if (cancelled)
         return;
-      const results = await Promise.allSettled(workspace.workspaces.map(project => api.sessions.getUsageStats(project.path)));
+      const results = await Promise.allSettled(workspace.workspaces.map(project => piApp.sessions.getUsageStats(project.path)));
       if (!cancelled)
         setStats(mergeUsageStats(results.flatMap(result => result.status === 'fulfilled' ? [result.value] : [])));
     }

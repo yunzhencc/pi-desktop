@@ -60,7 +60,7 @@ beforeEach(() => {
     })),
     select: vi.fn(),
   };
-  vi.stubGlobal('api', { composer: { editLastUserMessage: vi.fn(), newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}) }, workspaces });
+  vi.stubGlobal('piApp', { composer: { editLastUserMessage: vi.fn(), newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}) }, workspaces });
 });
 
 afterEach(() => {
@@ -101,7 +101,7 @@ describe('conversation page', () => {
     const writeText = vi.fn(() => Promise.resolve());
     const onUpdate = vi.fn(() => () => {});
     vi.stubGlobal('navigator', { clipboard: { writeText } });
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     const { container } = render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', timestamp: Date.now(), type: 'assistant' }));
@@ -117,7 +117,7 @@ describe('conversation page', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-19T10:00:00Z'));
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     const { container } = render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -130,7 +130,7 @@ describe('conversation page', () => {
 
   it('shows previous assistant reply actions only on hover', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     const { container } = render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -146,7 +146,7 @@ describe('conversation page', () => {
 
   it('does not render Fork when the assistant reply has no branch target', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', timestamp: 1_000, type: 'assistant' }));
@@ -163,7 +163,7 @@ describe('conversation page', () => {
       ],
       path: '/sessions/forked.jsonl',
     }));
-    vi.stubGlobal('api', { composer: { forkAssistantMessage, newConversation: vi.fn(), onUpdate }, workspaces });
+    vi.stubGlobal('piApp', { composer: { forkAssistantMessage, newConversation: vi.fn(), onUpdate }, workspaces });
     render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: true, entryId: 'assistant-1', text: 'Original reply', timestamp: 2_000, type: 'assistant' }));
@@ -178,7 +178,7 @@ describe('conversation page', () => {
   it('edits the latest user message in place without navigating until it is resent', async () => {
     const editLastUserMessage = vi.fn(() => Promise.resolve('Build this'));
     const send = vi.fn(() => Promise.resolve());
-    vi.stubGlobal('api', { composer: { editLastUserMessage, newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}), send }, workspaces });
+    vi.stubGlobal('piApp', { composer: { editLastUserMessage, newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}), send }, workspaces });
     render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -271,7 +271,7 @@ describe('conversation page', () => {
 
   it('renders submitted and streamed turns through the transcript log', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
@@ -284,7 +284,7 @@ describe('conversation page', () => {
 
   it('shows a running tool command and collapses its completed output', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ args: { command: 'git status --short' }, sessionPath: '/sessions/active.jsonl', status: 'running', toolCallId: 'tool-1', toolName: 'bash', type: 'tool' }));
@@ -309,7 +309,7 @@ describe('conversation page', () => {
 
   it('renders a streamed assistant snapshot as Markdown', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
     const { container } = render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: false, text: 'Use **bold** text.', type: 'assistant' }));
@@ -320,7 +320,7 @@ describe('conversation page', () => {
 
   it('renders only the latest streamed snapshot in an animation frame', () => {
     const onUpdate = vi.fn(() => () => {});
-    vi.stubGlobal('api', { composer: { onUpdate }, workspaces });
+    vi.stubGlobal('piApp', { composer: { onUpdate }, workspaces });
     render(<ConversationPage />);
 
     act(() => {
@@ -336,7 +336,7 @@ describe('conversation page', () => {
   it('keeps the composer active until the agent settles and can stop it', () => {
     const onUpdate = vi.fn(() => () => {});
     const stop = vi.fn();
-    vi.stubGlobal('api', { composer: { newConversation: vi.fn(), onUpdate, stop }, workspaces });
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate, stop }, workspaces });
     render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ status: 'running', type: 'status' }));
