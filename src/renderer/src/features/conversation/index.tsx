@@ -1,8 +1,9 @@
+import type { AttachmentMetadata } from '@shared/types';
 import type { CSSProperties } from 'react';
 import type { Message, PiSessionSnapshot } from './model/transcript';
 import logo from '@renderer/assets/icon.svg';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChatComposer, MarkdownMessage, NewConversationToolbar, ProjectPicker, ThreadScrollLayout } from './components';
+import { AttachmentList, ChatComposer, MarkdownMessage, NewConversationToolbar, ProjectPicker, ThreadScrollLayout } from './components';
 import { AssistantMessageFooter, ToolActivity, UserMessageFooter, WorkedFor } from './components/message-turn';
 import {
   appendAssistantMessage,
@@ -24,6 +25,7 @@ export function ConversationPage() {
   const composerFooterRef = useRef<HTMLDivElement>(null);
   const pendingAssistantRef = useRef<{ done: boolean; entryId?: string; text: string; timestamp?: number } | null>(null);
   const streamingFrameRef = useRef<number | null>(null);
+  const sessionPathRef = useRef<string>();
   const [composerFooterHeightPx, setComposerFooterHeightPx] = useState(0);
 
   useEffect(() => {
@@ -41,8 +43,10 @@ export function ConversationPage() {
     });
     const onWorkspaceChanged = (event: Event) => {
       const next = (event as CustomEvent<WorkspaceSnapshot>).detail;
-      if (next.selectedWorkspacePath !== workspaceRef.current?.selectedWorkspacePath)
+      if (next.selectedWorkspacePath !== workspaceRef.current?.selectedWorkspacePath) {
+        sessionPathRef.current = undefined;
         setMessages([]);
+      }
       workspaceRef.current = next;
       setWorkspace(next);
     };
@@ -55,6 +59,7 @@ export function ConversationPage() {
 
   useEffect(() => {
     const startNewConversation = () => {
+      sessionPathRef.current = undefined;
       setMessages([]);
       void window.piApp.composer.newConversation();
     };
@@ -65,7 +70,8 @@ export function ConversationPage() {
       pendingAssistantRef.current = null;
       setIsRunning(false);
       const session = (event as CustomEvent<PiSessionSnapshot>).detail;
-      setMessages(restoreSessionMessages(session));
+      sessionPathRef.current = session.path;
+      setMessages(restoreSessionMessages(session, readSessionAttachments(session.path)));
     };
     window.addEventListener('new-conversation', startNewConversation);
     window.addEventListener('session-changed', openSession);
@@ -118,6 +124,16 @@ export function ConversationPage() {
         setIsRunning(update.status === 'running');
         return;
       }
+      if (update.type === 'session') {
+        sessionPathRef.current = update.sessionPath;
+        if (update.sessionPath) {
+          setMessages((current) => {
+            writeSessionAttachments(update.sessionPath!, current);
+            return current;
+          });
+        }
+        return;
+      }
       if (update.type === 'error') {
         flushAssistant();
         setMessages(current => applyComposerUpdate(current, update));
@@ -146,8 +162,13 @@ export function ConversationPage() {
     <ChatComposer
       isRunning={isRunning}
       onStop={() => void window.piApp.composer.stop()}
-      onSubmitted={(text) => {
-        setMessages(current => appendSubmittedUserMessage(current, text));
+      onSubmitted={(text, attachments) => {
+        setMessages((current) => {
+          const next = appendSubmittedUserMessage(current, text, attachments);
+          if (sessionPathRef.current)
+            writeSessionAttachments(sessionPathRef.current, next);
+          return next;
+        });
       }}
       workspace={workspace}
     />
@@ -212,7 +233,6 @@ export function ConversationPage() {
           )
         : (
             <ThreadScrollLayout
-              footer={<div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]" ref={composerFooterRef}>{composer}</div>}
               turns={messages.map(message => ({ key: String(message.id), message }))}
             >
               {({ message }) => (
@@ -233,10 +253,13 @@ export function ConversationPage() {
                                   editingMessage?.id === message.id
                                     ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
                                     : (
-                                        <>
-                                          <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>{message.text}</div>
+                                        <div className="chat-message-user-stack">
+                                          {message.attachments?.length ? <AttachmentList attachments={message.attachments} variant="message" /> : null}
+                                          <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>
+                                            {message.text}
+                                          </div>
                                           <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={message.text} timestamp={message.timestamp} />
-                                        </>
+                                        </div>
                                       )
                                 )
                               : message.role === 'activity'
@@ -248,14 +271,56 @@ export function ConversationPage() {
               )}
             </ThreadScrollLayout>
           )}
-      {messages.length === 0 && (
-        <div className="chat-composer-footer absolute right-0 bottom-0 left-0 z-[1] bg-surface pb-4" ref={composerFooterRef}>
-          <div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]">
-            {newConversationToolbar}
-            {composer}
-          </div>
+      <div className="chat-composer-footer absolute right-0 bottom-0 left-0 z-[1] bg-surface pb-4" ref={composerFooterRef}>
+        <div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]">
+          {messages.length === 0 && newConversationToolbar}
+          {composer}
         </div>
-      )}
+      </div>
     </section>
   );
+}
+
+const sessionAttachmentsStorageKey = 'pi-desktop:session-attachments:v1';
+
+function readSessionAttachments(sessionPath?: string): AttachmentMetadata[][] {
+  if (!sessionPath)
+    return [];
+  try {
+    const stored = localStorage.getItem(sessionAttachmentsStorageKey);
+    if (!stored)
+      return [];
+    const value = JSON.parse(stored) as Record<string, AttachmentMetadata[][]>;
+    const attachments = value[sessionPath];
+    return Array.isArray(attachments) ? attachments.map(group => Array.isArray(group) ? group.filter(isAttachmentMetadata) : []) : [];
+  }
+  catch {
+    return [];
+  }
+}
+
+function writeSessionAttachments(sessionPath: string, messages: Message[]): void {
+  const userAttachments = messages
+    .filter(message => message.role === 'user')
+    .map(message => message.attachments ?? []);
+  if (!userAttachments.some(attachments => attachments.length > 0))
+    return;
+  try {
+    const stored = localStorage.getItem(sessionAttachmentsStorageKey);
+    const value = stored ? JSON.parse(stored) as Record<string, AttachmentMetadata[][]> : {};
+    value[sessionPath] = userAttachments;
+    localStorage.setItem(sessionAttachmentsStorageKey, JSON.stringify(value));
+  }
+  catch {
+    // Ignore attachment display cache failures; prompt delivery does not depend on it.
+  }
+}
+
+function isAttachmentMetadata(value: unknown): value is AttachmentMetadata {
+  return typeof value === 'object'
+    && value !== null
+    && typeof (value as AttachmentMetadata).id === 'string'
+    && typeof (value as AttachmentMetadata).name === 'string'
+    && typeof (value as AttachmentMetadata).size === 'number'
+    && ['file', 'image', 'pdf', 'text'].includes((value as AttachmentMetadata).kind);
 }

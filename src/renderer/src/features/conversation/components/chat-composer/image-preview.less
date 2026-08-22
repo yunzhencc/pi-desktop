@@ -93,6 +93,14 @@
   &::-webkit-scrollbar {
     display: none;
   }
+
+  &[data-variant='composer'] {
+    padding: 12px 12px 0;
+  }
+
+  &[data-variant='message'] {
+    margin-bottom: 8px;
+  }
 }
 
 .chat-composer-attachments-row {
@@ -101,6 +109,54 @@
   align-items: flex-end;
   gap: 8px;
   padding: 1px;
+}
+
+.chat-message-attachments {
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.chat-message-file-pill {
+  display: inline-flex;
+  max-width: min(100%, 320px);
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--surface-elevated) 92%, transparent);
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.chat-message-file-pill-icon {
+  display: flex;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  color: var(--text-tertiary);
+}
+
+.chat-message-file-pill-name {
+  min-width: 0;
+  overflow: hidden;
+  padding-right: 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-message-image {
+  width: 80px;
+  height: 80px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
+  border-radius: 8px;
 }
 
 .chat-composer-image {
@@ -124,23 +180,30 @@
   display: flex;
   width: 100%;
   min-height: 52px;
-  padding: 6px 40px 6px 6px;
+  padding: 6px;
   align-items: center;
   gap: 10px;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   background: color-mix(in srgb, var(--foreground) 4%, transparent);
   color: var(--foreground);
-  cursor: pointer;
   text-align: left;
 
-  &:hover,
-  &:focus-visible {
+  &[data-removable='true'] {
+    padding-right: 40px;
+  }
+
+  &.can-reveal {
+    cursor: pointer;
+  }
+
+  &.can-reveal:hover,
+  &.can-reveal:focus-visible {
     background: color-mix(in srgb, var(--foreground) 8%, transparent);
     outline: none;
   }
 
-  &:focus-visible {
+  &.can-reveal:focus-visible {
     box-shadow: 0 0 0 2px var(--focus);
   }
 }
@@ -214,8 +277,8 @@
   display: none;
 }
 
-.chat-composer-file-card-main:hover,
-.chat-composer-file-card-main:focus-visible {
+.chat-composer-file-card-main.can-reveal:hover,
+.chat-composer-file-card-main.can-reveal:focus-visible {
   .chat-composer-file-card-extension {
     display: none;
   }

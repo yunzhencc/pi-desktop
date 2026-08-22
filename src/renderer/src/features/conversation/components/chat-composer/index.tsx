@@ -1,4 +1,4 @@
-import type { ProviderModelSnapshot, ProvidersSnapshot } from '@shared/types';
+import type { AttachmentMetadata, ProviderModelSnapshot, ProvidersSnapshot } from '@shared/types';
 import type { CSSProperties } from 'react';
 import DeepSeekIcon from '@lobehub/icons/es/DeepSeek/components/Color.js';
 import OpenAIIcon from '@lobehub/icons/es/OpenAI/components/Mono.js';
@@ -28,7 +28,6 @@ import '@rc-component/image/assets/index.css';
 import './image-preview.less';
 import './style.css';
 
-type ComposerAttachment = Awaited<ReturnType<Window['piApp']['composer']['addDroppedAttachments']>>['attachments'][number];
 type SelectionResult = Awaited<ReturnType<Window['piApp']['composer']['addDroppedAttachments']>>;
 type WorkspaceSnapshot = Awaited<ReturnType<Window['piApp']['workspaces']['get']>>;
 type ModelOption = ProviderModelSnapshot & { providerName: string };
@@ -135,19 +134,34 @@ function attachmentIconType(name: string) {
   return 'file';
 }
 
-function AttachmentFileIcon({ name }: { name: string }) {
+function AttachmentFileIcon({ muted = false, name, size = 24 }: { muted?: boolean; name: string; size?: number }) {
+  if (muted) {
+    switch (attachmentIconType(name)) {
+      case 'spreadsheet': return <FileSpreadsheet aria-hidden="true" data-file-icon="spreadsheet" size={size} />;
+      case 'presentation': return <Presentation aria-hidden="true" data-file-icon="presentation" size={size} />;
+      case 'archive': return <Folder aria-hidden="true" data-file-icon="archive" size={size} />;
+      case 'json': return <FileJson2 aria-hidden="true" data-file-icon="json" size={size} />;
+      case 'terminal': return <FileTerminal aria-hidden="true" data-file-icon="terminal" size={size} />;
+      case 'build': return <FileArchive aria-hidden="true" data-file-icon="build" size={size} />;
+      case 'code': return <FileCode2 aria-hidden="true" data-file-icon="code" size={size} />;
+      case 'document':
+      case 'skill': return <FileType2 aria-hidden="true" data-file-icon="document" size={size} />;
+      default: return <FileText aria-hidden="true" data-file-icon="file" size={size} />;
+    }
+  }
+
   switch (attachmentIconType(name)) {
     case 'word': return <WordDocumentIcon />;
-    case 'spreadsheet': return <FileSpreadsheet aria-hidden="true" className="text-[#1d6f42]" data-file-icon="spreadsheet" size={24} />;
-    case 'presentation': return <Presentation aria-hidden="true" className="text-[#d24726]" data-file-icon="presentation" size={24} />;
-    case 'archive': return <Folder aria-hidden="true" className="text-[#b7791f]" data-file-icon="archive" size={24} />;
-    case 'json': return <FileJson2 aria-hidden="true" className="text-[#ca8a04]" data-file-icon="json" size={24} />;
-    case 'terminal': return <FileTerminal aria-hidden="true" className="text-[#475569]" data-file-icon="terminal" size={24} />;
-    case 'build': return <FileArchive aria-hidden="true" className="text-[#64748b]" data-file-icon="build" size={24} />;
-    case 'code': return <FileCode2 aria-hidden="true" className="text-[#2563eb]" data-file-icon="code" size={24} />;
+    case 'spreadsheet': return <FileSpreadsheet aria-hidden="true" className="text-[#1d6f42]" data-file-icon="spreadsheet" size={size} />;
+    case 'presentation': return <Presentation aria-hidden="true" className="text-[#d24726]" data-file-icon="presentation" size={size} />;
+    case 'archive': return <Folder aria-hidden="true" className="text-[#b7791f]" data-file-icon="archive" size={size} />;
+    case 'json': return <FileJson2 aria-hidden="true" className="text-[#ca8a04]" data-file-icon="json" size={size} />;
+    case 'terminal': return <FileTerminal aria-hidden="true" className="text-[#475569]" data-file-icon="terminal" size={size} />;
+    case 'build': return <FileArchive aria-hidden="true" className="text-[#64748b]" data-file-icon="build" size={size} />;
+    case 'code': return <FileCode2 aria-hidden="true" className="text-[#2563eb]" data-file-icon="code" size={size} />;
     case 'document':
-    case 'skill': return <FileType2 aria-hidden="true" className="text-[#2563eb]" data-file-icon="document" size={24} />;
-    default: return <FileText aria-hidden="true" data-file-icon="file" size={24} />;
+    case 'skill': return <FileType2 aria-hidden="true" className="text-[#2563eb]" data-file-icon="document" size={size} />;
+    default: return <FileText aria-hidden="true" data-file-icon="file" size={size} />;
   }
 }
 
@@ -304,12 +318,127 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
   );
 }
 
+export function AttachmentList({ attachments, onRemove, onReveal, variant = 'composer' }: { attachments: AttachmentMetadata[]; onRemove?: (id: string) => Promise<void> | void; onReveal?: (id: string) => Promise<void> | void; variant?: 'composer' | 'message' }) {
+  const hasNonImageAttachment = attachments.some(attachment => attachment.kind !== 'image');
+  const canRemove = Boolean(onRemove);
+
+  if (variant === 'message') {
+    return (
+      <div aria-label="Attachments" className="chat-message-attachments" data-variant="message">
+        {attachments.map(attachment => attachment.kind === 'image'
+          ? (
+              <Image.PreviewGroup
+                icons={{ close: <X aria-hidden="true" size={18} />, next: <ChevronRight aria-hidden="true" size={20} />, prev: <ChevronLeft aria-hidden="true" size={20} /> }}
+                key={attachment.id}
+                preview={{ maskClosable: true, rootClassName: 'composer-image-preview' }}
+              >
+                <div className="chat-message-image">
+                  <Image alt={attachment.name} className="block size-full rounded-[7px] object-cover" rootClassName="block size-full" src={attachment.previewDataUrl} />
+                </div>
+              </Image.PreviewGroup>
+            )
+          : (
+              <div className="chat-message-file-pill composer-attachment-surface" key={attachment.id}>
+                <span className="chat-message-file-pill-icon">
+                  <AttachmentFileIcon muted name={attachment.name} size={14} />
+                </span>
+                <span className="chat-message-file-pill-name">{attachment.name}</span>
+              </div>
+            ))}
+      </div>
+    );
+  }
+
+  return (
+    <div aria-label="Attachments" className="chat-composer-attachments overflow-x-auto" data-variant={variant}>
+      <Image.PreviewGroup
+        icons={{ close: <X aria-hidden="true" size={18} />, next: <ChevronRight aria-hidden="true" size={20} />, prev: <ChevronLeft aria-hidden="true" size={20} /> }}
+        preview={{
+          actionsRender: (_, { actions, image, transform }) => (
+            <div className="composer-image-preview-actions">
+              <button aria-label="Zoom out" disabled={transform.scale <= 0.1} onClick={actions.onZoomOut} type="button"><Minus aria-hidden="true" size={16} /></button>
+              <span>
+                {Math.round(transform.scale * 100)}
+                %
+              </span>
+              <button aria-label="Zoom in" disabled={transform.scale >= 4} onClick={actions.onZoomIn} type="button"><Plus aria-hidden="true" size={16} /></button>
+              <a aria-label={`Download ${image.alt}`} download={image.alt || 'image'} href={image.url}><Download aria-hidden="true" size={16} /></a>
+            </div>
+          ),
+          maskClosable: true,
+          maxScale: 4,
+          minScale: 0.1,
+          movable: true,
+          rootClassName: 'composer-image-preview',
+          scaleStep: 0.25,
+          wheel: true,
+        }}
+      >
+        <div className="chat-composer-attachments-row">
+          {attachments.map(attachment => attachment.kind === 'image'
+            ? (
+                <div className={`chat-composer-image ${hasNonImageAttachment ? 'chat-composer-image-compact' : ''} relative shrink-0 overflow-visible rounded-lg border border-[color-mix(in_srgb,var(--foreground)_20%,transparent)]`} key={attachment.id}>
+                  <Image alt={attachment.name} className="block size-full rounded-[7px] object-cover" rootClassName="block size-full" src={attachment.previewDataUrl} />
+                  {onRemove && (
+                    <button
+                      aria-label={`Remove ${attachment.name}`}
+                      className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-foreground p-0 text-background shadow-[0_1px_2px_color-mix(in_srgb,#000_28%,transparent)]"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void onRemove(attachment.id);
+                      }}
+                      type="button"
+                    >
+                      <X aria-hidden="true" size={10} />
+                    </button>
+                  )}
+                </div>
+              )
+            : (
+                <div className="chat-composer-file-card" key={attachment.id}>
+                  {onReveal
+                    ? (
+                        <button aria-label={`Show ${attachment.name} in folder`} className="chat-composer-file-card-main can-reveal" data-removable={canRemove} onClick={() => void onReveal(attachment.id)} type="button">
+                          <AttachmentFileCardContent attachment={attachment} canReveal />
+                        </button>
+                      )
+                    : (
+                        <div className="chat-composer-file-card-main" data-removable={canRemove}>
+                          <AttachmentFileCardContent attachment={attachment} />
+                        </div>
+                      )}
+                  {onRemove && <button aria-label={`Remove ${attachment.name}`} className="chat-composer-file-card-remove" onClick={() => void onRemove(attachment.id)} type="button"><X aria-hidden="true" size={12} /></button>}
+                </div>
+              ))}
+        </div>
+      </Image.PreviewGroup>
+    </div>
+  );
+}
+
+function AttachmentFileCardContent({ attachment, canReveal = false }: { attachment: AttachmentMetadata; canReveal?: boolean }) {
+  return (
+    <>
+      <span className="chat-composer-file-card-icon">
+        {attachment.kind === 'pdf' ? <span aria-hidden="true" className="chat-composer-pdf-icon">PDF</span> : <AttachmentFileIcon name={attachment.name} />}
+      </span>
+      <span className="chat-composer-file-card-content">
+        <span className="chat-composer-file-card-name">{attachment.name}</span>
+        <span className="chat-composer-file-card-subtitle">
+          <span className="chat-composer-file-card-extension">{attachmentExtension(attachment.name)}</span>
+          {canReveal && <span className="chat-composer-file-card-open">在 Finder 中显示</span>}
+        </span>
+      </span>
+    </>
+  );
+}
+
 export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = () => {}, onSubmitted, workspace }: {
   draft?: { id: number; text: string };
   inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => Promise<void> | void };
   isRunning?: boolean;
   onStop?: () => void;
-  onSubmitted: (text: string) => void;
+  onSubmitted: (text: string, attachments: AttachmentMetadata[]) => void;
   workspace?: WorkspaceSnapshot;
 }) {
   const { formatMessage } = useIntl();
@@ -317,7 +446,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   const editorViewRef = useRef<EditorView | null>(null);
   const linkPopoverRef = useRef<HTMLDivElement>(null);
   const submitRef = useRef<() => void>(() => {});
-  const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentMetadata[]>([]);
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [linkPopover, setLinkPopover] = useState<LinkPopover>();
@@ -325,7 +454,6 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   const [providersSnapshot, setProvidersSnapshot] = useState<ProvidersSnapshot>();
   const [text, setText] = useState('');
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
-  const hasNonImageAttachment = attachments.some(attachment => attachment.kind !== 'image');
   const initialText = inlineEdit?.initialText ?? draft?.text;
   const canSend = Boolean(inlineEdit ? text.trim() : selectedWorkspace && (text.trim() || attachments.length)) && !isSending && !isRunning;
   const placeholder = inlineEdit ? 'Edit message' : formatMessage({ id: 'composer.placeholder' });
@@ -544,7 +672,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
         await inlineEdit.onSubmit(text.trim());
         return;
       }
-      onSubmitted(text);
+      onSubmitted(text, attachments);
       await window.piApp.composer.send(text, attachments.map(attachment => attachment.id));
       editorViewRef.current?.dispatch(editorViewRef.current.state.tr.delete(0, editorViewRef.current.state.doc.content.size));
       setAttachments([]);
@@ -617,70 +745,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
         void send();
       }}
     >
-      {!inlineEdit && attachments.length > 0 && (
-        <div aria-label="Attachments" className="chat-composer-attachments overflow-x-auto px-3 pt-3">
-          <Image.PreviewGroup
-            icons={{ close: <X aria-hidden="true" size={18} />, next: <ChevronRight aria-hidden="true" size={20} />, prev: <ChevronLeft aria-hidden="true" size={20} /> }}
-            preview={{
-              actionsRender: (_, { actions, image, transform }) => (
-                <div className="composer-image-preview-actions">
-                  <button aria-label="Zoom out" disabled={transform.scale <= 0.1} onClick={actions.onZoomOut} type="button"><Minus aria-hidden="true" size={16} /></button>
-                  <span>
-                    {Math.round(transform.scale * 100)}
-                    %
-                  </span>
-                  <button aria-label="Zoom in" disabled={transform.scale >= 4} onClick={actions.onZoomIn} type="button"><Plus aria-hidden="true" size={16} /></button>
-                  <a aria-label={`Download ${image.alt}`} download={image.alt || 'image'} href={image.url}><Download aria-hidden="true" size={16} /></a>
-                </div>
-              ),
-              maskClosable: true,
-              maxScale: 4,
-              minScale: 0.1,
-              movable: true,
-              rootClassName: 'composer-image-preview',
-              scaleStep: 0.25,
-              wheel: true,
-            }}
-          >
-            <div className="chat-composer-attachments-row">
-              {attachments.map(attachment => attachment.kind === 'image'
-                ? (
-                    <div className={`chat-composer-image ${hasNonImageAttachment ? 'chat-composer-image-compact' : ''} relative shrink-0 overflow-visible rounded-lg border border-[color-mix(in_srgb,var(--foreground)_20%,transparent)]`} key={attachment.id}>
-                      <Image alt={attachment.name} className="block size-full rounded-[7px] object-cover" rootClassName="block size-full" src={attachment.previewDataUrl} />
-                      <button
-                        aria-label={`Remove ${attachment.name}`}
-                        className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-foreground p-0 text-background shadow-[0_1px_2px_color-mix(in_srgb,#000_28%,transparent)]"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void removeAttachment(attachment.id);
-                        }}
-                        type="button"
-                      >
-                        <X aria-hidden="true" size={10} />
-                      </button>
-                    </div>
-                  )
-                : (
-                    <div className="chat-composer-file-card" key={attachment.id}>
-                      <button aria-label={`Show ${attachment.name} in folder`} className="chat-composer-file-card-main" onClick={() => void revealAttachment(attachment.id)} type="button">
-                        <span className="chat-composer-file-card-icon">
-                          {attachment.kind === 'pdf' ? <span aria-hidden="true" className="chat-composer-pdf-icon">PDF</span> : <AttachmentFileIcon name={attachment.name} />}
-                        </span>
-                        <span className="chat-composer-file-card-content">
-                          <span className="chat-composer-file-card-name">{attachment.name}</span>
-                          <span className="chat-composer-file-card-subtitle">
-                            <span className="chat-composer-file-card-extension">{attachmentExtension(attachment.name)}</span>
-                            <span className="chat-composer-file-card-open">在 Finder 中显示</span>
-                          </span>
-                        </span>
-                      </button>
-                      <button aria-label={`Remove ${attachment.name}`} className="chat-composer-file-card-remove" onClick={() => void removeAttachment(attachment.id)} type="button"><X aria-hidden="true" size={12} /></button>
-                    </div>
-                  ))}
-            </div>
-          </Image.PreviewGroup>
-        </div>
-      )}
+      {!inlineEdit && attachments.length > 0 && <AttachmentList attachments={attachments} onRemove={removeAttachment} onReveal={revealAttachment} />}
       <div className="chat-composer-editor mb-1 min-h-0 px-3" ref={editorHostRef} />
       {inlineEdit
         ? (

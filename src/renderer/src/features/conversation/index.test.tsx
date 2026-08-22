@@ -17,7 +17,7 @@ vi.mock('./components', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./components')>();
   return {
     ...actual,
-    ChatComposer: ({ inlineEdit, isRunning, onStop, onSubmitted }: { inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => void }; isRunning: boolean; onStop: () => void; onSubmitted: (text: string) => void }) => inlineEdit
+    ChatComposer: ({ inlineEdit, isRunning, onStop, onSubmitted }: { inlineEdit?: { initialText: string; onCancel: () => void; onSubmit: (text: string) => void }; isRunning: boolean; onStop: () => void; onSubmitted: Parameters<typeof actual.ChatComposer>[0]['onSubmitted'] }) => inlineEdit
       ? (
           <div>
             <div aria-label="Edit message" role="textbox">{inlineEdit.initialText}</div>
@@ -26,9 +26,14 @@ vi.mock('./components', async (importOriginal) => {
           </div>
         )
       : (
-          <button aria-label={isRunning ? 'Stop generating' : 'Fake composer'} onClick={() => isRunning ? onStop() : onSubmitted('Build this')}>
-            {isRunning ? 'Stop' : 'Fake composer'}
-          </button>
+          <>
+            <button aria-label={isRunning ? 'Stop generating' : 'Fake composer'} onClick={() => isRunning ? onStop() : onSubmitted('Build this')}>
+              {isRunning ? 'Stop' : 'Fake composer'}
+            </button>
+            <button aria-label="Fake attachment composer" onClick={() => onSubmitted('Summarize this', [{ id: 'pdf-1', kind: 'pdf', name: 'brief.pdf', size: 4 }])}>
+              Fake attachment composer
+            </button>
+          </>
         ),
     NewConversationToolbar: () => <div aria-label="新会话项目上下文" role="toolbar" />,
   };
@@ -61,6 +66,7 @@ beforeEach(() => {
     select: vi.fn(),
   };
   vi.stubGlobal('piApp', { composer: { editLastUserMessage: vi.fn(), newConversation: vi.fn(), onUpdate: vi.fn(() => () => {}) }, workspaces });
+  localStorage.clear();
 });
 
 afterEach(() => {
@@ -93,6 +99,38 @@ describe('conversation page', () => {
     expect(screen.getByText(/10:01/)).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Copy message' }));
     expect(writeText).toHaveBeenCalledWith('Build this');
+  });
+
+  it('renders submitted attachments on the user message', () => {
+    render(<ConversationPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake attachment composer' }));
+
+    expect(screen.getByText('brief.pdf')).not.toBeNull();
+    expect(screen.queryByText('PDF')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show brief.pdf in folder' })).toBeNull();
+    expect(screen.getByLabelText('Attachments').getAttribute('data-variant')).toBe('message');
+    expect(screen.getByText('brief.pdf').closest('.chat-message-file-pill')).not.toBeNull();
+    expect(screen.getByText('brief.pdf').closest('.chat-message-user-content')).toBeNull();
+    expect(document.querySelector('.chat-composer-file-card-main')).toBeNull();
+    expect(document.querySelector('.chat-message-file-pill-icon [data-file-icon="file"]')).not.toBeNull();
+  });
+
+  it('restores submitted attachment summaries for a reopened session', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<ConversationPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fake attachment composer' }));
+    act(() => onUpdate.mock.calls[0]![0]({ sessionPath: '/sessions/active.jsonl', type: 'session' }));
+    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
+      detail: {
+        messages: [{ role: 'user', text: 'Summarize this' }],
+        path: '/sessions/active.jsonl',
+      },
+    })));
+
+    expect(screen.getByText('brief.pdf')).not.toBeNull();
   });
 
   it('keeps the latest assistant reply actions visible while its timestamp stays hover-only', () => {
@@ -299,12 +337,13 @@ describe('conversation page', () => {
     expect(screen.getByText((_, element) => element?.tagName === 'PRE' && element.textContent === ' M src/main.ts')).not.toBeNull();
   });
 
-  it('keeps the composer inside the transcript scroll container', () => {
-    render(<ConversationPage />);
+  it('keeps the composer in the fixed page footer after messages start', () => {
+    const { container } = render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
 
-    expect(screen.getByRole('log').contains(screen.getByRole('button', { name: 'Fake composer' }))).toBe(true);
+    expect(screen.getByRole('log').contains(screen.getByRole('button', { name: 'Fake composer' }))).toBe(false);
+    expect(container.querySelector('.chat-composer-footer')?.contains(screen.getByRole('button', { name: 'Fake composer' }))).toBe(true);
   });
 
   it('renders a streamed assistant snapshot as Markdown', () => {

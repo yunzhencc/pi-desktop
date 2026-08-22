@@ -146,7 +146,7 @@ describe('chat composer', () => {
     await user.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(composer.send).toHaveBeenCalledWith('Hello Pi', []);
-    expect(onSubmitted).toHaveBeenCalledWith('Hello Pi');
+    expect(onSubmitted).toHaveBeenCalledWith('Hello Pi', []);
     expect(screen.getByRole('textbox', { name: 'Message Pi' }).textContent).toBe('');
   });
 
@@ -332,7 +332,7 @@ describe('chat composer', () => {
     await user.type(screen.getByRole('textbox', { name: 'Message Pi' }), 'Hello Pi');
     await user.click(screen.getByRole('button', { name: 'Send message' }));
 
-    expect(onSubmitted).toHaveBeenCalledWith('Hello Pi');
+    expect(onSubmitted).toHaveBeenCalledWith('Hello Pi', []);
   });
 
   it('sends typed text when Enter is pressed', async () => {

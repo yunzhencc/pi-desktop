@@ -1,4 +1,7 @@
+import type { AttachmentMetadata } from '@shared/types';
+
 export interface Message {
+  attachments?: AttachmentMetadata[];
   completedAtMs?: number;
   entryId?: string;
   id: number;
@@ -21,6 +24,7 @@ type SessionMessage
     | { entryId?: string; role: 'assistant' | 'user'; text: string; timestamp?: number };
 
 export interface PiSessionSnapshot {
+  path?: string;
   messages: SessionMessage[];
 }
 
@@ -46,8 +50,9 @@ type ComposerUpdate
     | ({ type: 'tool' } & ToolSnapshot)
     | { type: 'session' };
 
-export function restoreSessionMessages(session: PiSessionSnapshot): Message[] {
+export function restoreSessionMessages(session: PiSessionSnapshot, userAttachments: AttachmentMetadata[][] = []): Message[] {
   let latestUserStartedAtMs: number | undefined;
+  let userIndex = 0;
   const restored: Message[] = [];
   session.messages.forEach((message, index) => {
     if (message.role === 'work') {
@@ -60,8 +65,9 @@ export function restoreSessionMessages(session: PiSessionSnapshot): Message[] {
     }
     const timestamp = message.timestamp || undefined;
     if (message.role === 'user') {
+      const attachments = userAttachments[userIndex++];
       latestUserStartedAtMs = timestamp;
-      restored.push({ done: true, entryId: message.entryId, id: index, role: message.role, startedAtMs: timestamp, text: message.text, timestamp });
+      restored.push({ ...(attachments?.length ? { attachments } : {}), done: true, entryId: message.entryId, id: index, role: message.role, startedAtMs: timestamp, text: message.text, timestamp });
       return;
     }
     if (restored.at(-1)?.role !== 'work' && latestUserStartedAtMs != null && timestamp != null)
@@ -71,8 +77,10 @@ export function restoreSessionMessages(session: PiSessionSnapshot): Message[] {
   return restored;
 }
 
-export function appendSubmittedUserMessage(current: Message[], text: string, now = Date.now()): Message[] {
-  return [...current, { id: now, role: 'user', startedAtMs: now, text, timestamp: now }];
+export function appendSubmittedUserMessage(current: Message[], text: string, attachmentsOrNow: AttachmentMetadata[] | number = [], now = Date.now()): Message[] {
+  const attachments = Array.isArray(attachmentsOrNow) ? attachmentsOrNow : [];
+  const timestamp = typeof attachmentsOrNow === 'number' ? attachmentsOrNow : now;
+  return [...current, { ...(attachments.length ? { attachments } : {}), id: timestamp, role: 'user', startedAtMs: timestamp, text, timestamp }];
 }
 
 export function appendRunningWork(current: Message[], startedAtMs = Date.now()): Message[] {
