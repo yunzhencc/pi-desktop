@@ -611,6 +611,20 @@ describe('chat composer', () => {
     expect(composer.revealAttachment).toHaveBeenCalledWith('pdf-1');
   });
 
+  it('uses the Codex Word document icon for DOCX attachments', async () => {
+    composer.addDroppedAttachments.mockResolvedValue({
+      attachments: [{ id: 'word-1', kind: 'file', name: 'brief.docx', size: 4 }],
+      failures: [],
+    });
+    renderComposer();
+    const file = new File(['document'], 'brief.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    Object.defineProperty(file, 'path', { value: '/tmp/brief.docx' });
+
+    fireEvent.drop(screen.getByRole('textbox', { name: 'Message Pi' }), { dataTransfer: { files: [file] } });
+
+    expect((await screen.findByRole('button', { name: 'Show brief.docx in folder' })).querySelector('[data-file-icon="word"]')).not.toBeNull();
+  });
+
   it('adds a clipboard image while the editor is not focused', async () => {
     renderComposer();
     const image = new File([Uint8Array.from([0x89, 0x50, 0x4E, 0x47])], 'clipboard.png', { type: 'image/png' });

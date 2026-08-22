@@ -20,7 +20,7 @@ import { Schema } from 'prosemirror-model';
 import { schema } from 'prosemirror-schema-basic';
 import { EditorState, Plugin } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useIntl } from 'react-intl';
 import { ProjectPicker } from '../project-picker';
@@ -81,6 +81,37 @@ function selectedModelOption(models: ModelOption[], snapshot?: ProvidersSnapshot
 function attachmentExtension(name: string): string | undefined {
   const extensionStart = name.lastIndexOf('.');
   return extensionStart > 0 && extensionStart < name.length - 1 ? name.slice(extensionStart + 1).toUpperCase() : undefined;
+}
+
+function WordDocumentIcon() {
+  const id = useId();
+  return (
+    <svg aria-hidden="true" data-file-icon="word" fill="none" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13.004 2.594c.267 0 .538.074.813.224.275.15.583.392.925.726l4.95 4.899c.541.542.812 1.092.812 1.65v7.45c0 .725-.179 1.396-.537 2.013a4.002 4.002 0 0 1-1.463 1.449 3.87 3.87 0 0 1-2 .538h-9c-.725 0-1.396-.18-2.013-.538a4.002 4.002 0 0 1-1.45-1.449 3.937 3.937 0 0 1-.537-2.013V6.594c0-.725.179-1.392.537-2a4.002 4.002 0 0 1 1.45-1.463 3.936 3.936 0 0 1 2.012-.537h5.5Z" fill={`url(#${id}-page)`} />
+      <path d="M14.676 8.594H9.332a1.828 1.828 0 0 0-1.828 1.828v5.344c0 1.009.818 1.828 1.828 1.828h5.344c1.01 0 1.828-.819 1.828-1.828v-5.344c0-1.01-.818-1.828-1.828-1.828Z" fill={`url(#${id}-word)`} />
+      <path d="m15.089 10.522-1.107 5.142-1.324.001-.654-3.086-.684 3.086H9.982l-1.064-5.143h1.092l.657 3.394.652-3.394h1.338l.683 3.394.641-3.394 1.108-.001Z" fill="#fff" />
+      <path d="M13.004 2.594c.267 0 .537.075.812.225.275.15.583.391.925.725l4.95 4.9c.542.541.813 1.091.813 1.65h-4.788c-.833 0-1.496-.242-1.987-.725-.484-.492-.725-1.154-.725-1.988V2.594Z" fill={`url(#${id}-fold)`} />
+      <defs>
+        <linearGradient id={`${id}-page`} x1="4.504" x2="16.004" y1="20.594" y2="7.094" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#1293F1" />
+          <stop offset="1" stopColor="#043CCC" />
+        </linearGradient>
+        <radialGradient id={`${id}-word`} cx="0" cy="0" r="1" gradientTransform="translate(7.504 8.594) rotate(45) scale(12.728)" gradientUnits="userSpaceOnUse">
+          <stop offset=".081" stopColor="#367AF2" />
+          <stop offset=".872" stopColor="#001A8F" />
+        </radialGradient>
+        <linearGradient id={`${id}-fold`} x1="16.504" x2="13.504" y1="6.094" y2="9.594" gradientUnits="userSpaceOnUse">
+          <stop offset=".067" stopColor="#59B6FB" />
+          <stop offset=".721" stopColor="#7A7CF4" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function isWordDocument(name: string) {
+  const extension = attachmentExtension(name);
+  return extension === 'DOC' || extension === 'DOCX';
 }
 
 function groupedModelOptions(models: ModelOption[]) {
@@ -596,7 +627,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
                     <div className="chat-composer-file-card" key={attachment.id}>
                       <button aria-label={`Show ${attachment.name} in folder`} className="chat-composer-file-card-main" onClick={() => void revealAttachment(attachment.id)} type="button">
                         <span className="chat-composer-file-card-icon">
-                          {attachment.kind === 'pdf' ? <span aria-hidden="true" className="chat-composer-pdf-icon">PDF</span> : <FileText aria-hidden="true" size={24} />}
+                          {attachment.kind === 'pdf' ? <span aria-hidden="true" className="chat-composer-pdf-icon">PDF</span> : isWordDocument(attachment.name) ? <WordDocumentIcon /> : <FileText aria-hidden="true" size={24} />}
                         </span>
                         <span className="chat-composer-file-card-content">
                           <span className="chat-composer-file-card-name">{attachment.name}</span>
