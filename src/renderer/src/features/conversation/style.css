@@ -135,6 +135,36 @@
   gap: var(--conversation-grouped-item-gap, 8px);
 }
 
+.chat-worked-for-label {
+  display: inline-block;
+}
+
+.chat-worked-for-label.is-running {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, currentColor 45%, transparent) 0%,
+      currentColor 35%,
+      color-mix(in srgb, currentColor 45%, transparent) 70%
+    );
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: chat-worked-for-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes chat-worked-for-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+/* Legacy marker kept unused for older snapshots/tests that may still mount it. */
 .chat-worked-for-dot {
   display: inline-block;
   width: 6px;
@@ -159,6 +189,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .chat-worked-for-dot {
+    animation: none;
+  }
+
+  .chat-worked-for-label.is-running {
+    color: inherit;
+    -webkit-text-fill-color: currentColor;
     animation: none;
   }
 }

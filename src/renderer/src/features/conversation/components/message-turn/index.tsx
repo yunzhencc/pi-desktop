@@ -172,19 +172,21 @@ export function WorkedFor({ children, completedAtMs, done, expanded, onToggle, s
       : elapsedMs >= 1000
         ? formatMessage({ id: 'conversation.workingFor' }, { duration })
         : formatMessage({ id: 'conversation.working' });
+  const isRunning = !done && completedAtMs == null;
+  const showThinkingPlaceholder = isRunning && children == null;
+  const visibleLabel = showThinkingPlaceholder ? formatMessage({ id: 'conversation.thinking' }) : label;
+  const labelClassName = showThinkingPlaceholder ? 'chat-worked-for-label is-running' : 'chat-worked-for-label';
   return (
     <div className="chat-worked-for flex w-full flex-col text-[13px] leading-5 text-text-tertiary" data-duration-divider>
       {onToggle == null
         ? (
-            <p className="m-0 flex items-center gap-2">
-              {!done && completedAtMs == null && <span aria-hidden="true" className="chat-worked-for-dot" />}
-              {label}
+            <p className="m-0 flex items-center">
+              <span className={labelClassName}>{visibleLabel}</span>
             </p>
           )
         : (
             <button aria-expanded={expanded} aria-label={`${expanded ? '收起' : '展开'}工具活动`} className="flex w-fit cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit" onClick={onToggle} type="button">
-              {!done && completedAtMs == null && <span aria-hidden="true" className="chat-worked-for-dot" />}
-              <span>{label}</span>
+              <span className={labelClassName}>{visibleLabel}</span>
               <ChevronDown aria-hidden="true" className={`transition-transform ${expanded ? 'rotate-180' : ''}`} size={15} />
             </button>
           )}

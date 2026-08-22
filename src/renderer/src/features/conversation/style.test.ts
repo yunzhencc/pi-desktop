@@ -34,10 +34,11 @@ describe('message interaction affordances', () => {
     expect(styles).toMatch(/\.chat-message-assistant-footer\.is-latest \.chat-message-assistant-timestamp,\s*\.chat-message-assistant:focus-within \.chat-message-assistant-timestamp\s*\{[\s\S]*?opacity: 1;/);
   });
 
-  it('animates the running work indicator with reduced-motion fallback', () => {
-    const dotRule = styles.match(/\.chat-worked-for-dot\s*\{([\s\S]*?)\}/)?.[1];
+  it('animates the thinking placeholder label with reduced-motion fallback', () => {
+    const labelRule = styles.match(/\.chat-worked-for-label\.is-running\s*\{([\s\S]*?)\}/)?.[1];
 
-    expect(dotRule).toContain('animation: chat-worked-for-dot 1.2s ease-in-out infinite;');
+    expect(labelRule).toContain('background-clip: text;');
+    expect(labelRule).toContain('animation: chat-worked-for-shimmer 1.8s ease-in-out infinite;');
     expect(styles).toContain('@media (prefers-reduced-motion: reduce)');
   });
 

@@ -521,6 +521,7 @@ describe('conversation page', () => {
     render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ status: 'running', type: 'status' }));
+    expect(screen.getByText('正在思考').classList.contains('is-running')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Stop generating' }));
     expect(stop).toHaveBeenCalledOnce();
 
