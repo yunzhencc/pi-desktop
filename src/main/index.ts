@@ -2,6 +2,7 @@ import type { ProvidersSnapshot } from '@shared/types';
 import { join } from 'node:path';
 import process from 'node:process';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
+import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
 import { AttachmentStore } from './attachments';
@@ -25,7 +26,7 @@ let workspaceRegistry: WorkspaceRegistry;
 
 function broadcastProvidersChanged(snapshot: ProvidersSnapshot): void {
   for (const window of BrowserWindow.getAllWindows())
-    window.webContents.send('providers:changed', snapshot);
+    window.webContents.send(IPC_CHANNELS.ProvidersChanged, snapshot);
 }
 
 function getPrimaryWindowStatePath(): string {
@@ -78,7 +79,7 @@ function createWindow(): void {
         ? nativeTheme.shouldUseDarkColors ? '#000000' : '#f9f9f9'
         : '#00000000');
       mainWindow.setVibrancy(opaque ? null : 'menu');
-      mainWindow.webContents.send('window-opaque-surface-changed', opaque);
+      mainWindow.webContents.send(IPC_CHANNELS.WindowOpaqueSurfaceChanged, opaque);
     };
     syncPrimaryWindowBackdrop = syncWindowBackdrop;
     const syncTrafficLightPosition = () => {
@@ -89,7 +90,7 @@ function createWindow(): void {
     };
     mainWindow.webContents.on('did-finish-load', () => {
       syncTrafficLightPosition();
-      mainWindow.webContents.send('window-opaque-surface-changed', isPrimaryWindowOpaque);
+      mainWindow.webContents.send(IPC_CHANNELS.WindowOpaqueSurfaceChanged, isPrimaryWindowOpaque);
     });
     mainWindow.webContents.on('zoom-changed', syncTrafficLightPosition);
     mainWindow.on('focus', syncWindowBackdrop);
@@ -120,10 +121,10 @@ function createWindow(): void {
   });
 
   mainWindow.on('enter-full-screen', () => {
-    mainWindow.webContents.send('window-fullscreen-changed', true);
+    mainWindow.webContents.send(IPC_CHANNELS.WindowFullScreenChanged, true);
   });
   mainWindow.on('leave-full-screen', () => {
-    mainWindow.webContents.send('window-fullscreen-changed', false);
+    mainWindow.webContents.send(IPC_CHANNELS.WindowFullScreenChanged, false);
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -162,18 +163,18 @@ app.whenReady().then(async () => {
 
   // IPC test
   // eslint-disable-next-line no-console
-  ipcMain.on('ping', () => console.log('pong'));
-  ipcMain.handle('window:is-full-screen', event => BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false);
-  ipcMain.handle('window:is-opaque-surface', () => isPrimaryWindowOpaque);
-  ipcMain.handle('window:set-theme-source', (_event, themeSource: unknown) => {
+  ipcMain.on(IPC_CHANNELS.Ping, () => console.log('pong'));
+  ipcMain.handle(IPC_CHANNELS.WindowIsFullScreen, event => BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false);
+  ipcMain.handle(IPC_CHANNELS.WindowIsOpaqueSurface, () => isPrimaryWindowOpaque);
+  ipcMain.handle(IPC_CHANNELS.WindowSetThemeSource, (_event, themeSource: unknown) => {
     if (themeSource !== 'system' && themeSource !== 'light' && themeSource !== 'dark')
       throw new TypeError('Invalid theme source');
 
     nativeTheme.themeSource = themeSource;
     syncPrimaryWindowBackdrop?.();
   });
-  ipcMain.handle('providers:get', () => providerSettings.snapshot());
-  ipcMain.handle('providers:api-key:save', async (_event, providerId: unknown, apiKey: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ProvidersGet, () => providerSettings.snapshot());
+  ipcMain.handle(IPC_CHANNELS.ProvidersApiKeySave, async (_event, providerId: unknown, apiKey: unknown) => {
     if (!isProviderId(providerId) || providerId === 'openai-codex' || typeof apiKey !== 'string')
       throw new TypeError('无效的模型供应商配置');
     const snapshot = await providerSettings.saveApiKey(providerId, apiKey);
@@ -181,7 +182,7 @@ app.whenReady().then(async () => {
     broadcastProvidersChanged(snapshot);
     return snapshot;
   });
-  ipcMain.handle('providers:remove', async (_event, providerId: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ProvidersRemove, async (_event, providerId: unknown) => {
     if (!isProviderId(providerId) || providerId === 'openai-codex')
       throw new TypeError('无效的模型供应商');
     const snapshot = await providerSettings.removeProvider(providerId);
@@ -189,13 +190,13 @@ app.whenReady().then(async () => {
     broadcastProvidersChanged(snapshot);
     return snapshot;
   });
-  ipcMain.handle('providers:chatgpt:login', async () => {
+  ipcMain.handle(IPC_CHANNELS.ProvidersChatGptLogin, async () => {
     const snapshot = await providerSettings.loginChatGPT();
     piRuntime.refreshModelSettings();
     broadcastProvidersChanged(snapshot);
     return snapshot;
   });
-  ipcMain.handle('providers:primary:set', async (_event, providerId: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ProvidersPrimarySet, async (_event, providerId: unknown) => {
     if (!isProviderId(providerId))
       throw new TypeError('无效的主模型供应商');
     const snapshot = await providerSettings.setPrimaryProvider(providerId);
@@ -203,14 +204,14 @@ app.whenReady().then(async () => {
     broadcastProvidersChanged(snapshot);
     return snapshot;
   });
-  ipcMain.handle('providers:scope:set', async (_event, scope: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ProvidersScopeSet, async (_event, scope: unknown) => {
     if (!isModelPickerScope(scope))
       throw new TypeError('无效的模型选择范围');
     const snapshot = await providerSettings.setModelPickerScope(scope);
     broadcastProvidersChanged(snapshot);
     return snapshot;
   });
-  ipcMain.handle('providers:default-model:set', async (_event, providerId: unknown, modelId: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ProvidersDefaultModelSet, async (_event, providerId: unknown, modelId: unknown) => {
     if (!isProviderId(providerId) || typeof modelId !== 'string' || !modelId.trim())
       throw new TypeError('无效的默认模型');
     const snapshot = await providerSettings.setDefaultModel(providerId, modelId);
@@ -228,33 +229,33 @@ app.whenReady().then(async () => {
     piRuntime.setWorkspace(snapshot.selectedWorkspacePath!);
     return snapshot;
   };
-  ipcMain.handle('workspaces:get', () => workspaceRegistry.snapshot());
-  ipcMain.handle('workspaces:set-pinned', (_event, workspacePath: unknown, pinned: unknown, beforeWorkspacePath: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.WorkspacesGet, () => workspaceRegistry.snapshot());
+  ipcMain.handle(IPC_CHANNELS.WorkspacesSetPinned, (_event, workspacePath: unknown, pinned: unknown, beforeWorkspacePath: unknown) => {
     if (typeof workspacePath !== 'string' || !workspacePath.trim() || typeof pinned !== 'boolean' || (beforeWorkspacePath !== undefined && typeof beforeWorkspacePath !== 'string'))
       throw new TypeError('无效的项目置顶请求');
     return workspaceRegistry.setWorkspacePinned(workspacePath, pinned, beforeWorkspacePath);
   });
-  ipcMain.handle('workspaces:clear', async () => {
+  ipcMain.handle(IPC_CHANNELS.WorkspacesClear, async () => {
     const snapshot = await workspaceRegistry.clear();
     piRuntime.clearWorkspace();
     return snapshot;
   });
-  ipcMain.handle('workspaces:get-git-branch', (_event, path: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.WorkspacesGetGitBranch, (_event, path: unknown) => {
     if (typeof path !== 'string' || !path.trim())
       throw new TypeError('无效的工作区路径');
     return getWorkspaceGitBranch(path);
   });
-  ipcMain.handle('sessions:list', (_event, workspacePath: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.SessionsList, (_event, workspacePath: unknown) => {
     if (typeof workspacePath !== 'string' || !workspacePath.trim())
       throw new TypeError('无效的工作区路径');
     return piRuntime.listWorkspaceSessions(workspacePath);
   });
-  ipcMain.handle('sessions:get-usage-stats', (_event, workspacePath: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.SessionsGetUsageStats, (_event, workspacePath: unknown) => {
     if (typeof workspacePath !== 'string' || !workspacePath.trim())
       throw new TypeError('无效的工作区路径');
     return piRuntime.getWorkspaceUsageStats(workspacePath);
   });
-  ipcMain.handle('sessions:open', async (_event, workspacePath: unknown, sessionPath: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.SessionsOpen, async (_event, workspacePath: unknown, sessionPath: unknown) => {
     if (typeof workspacePath !== 'string' || !workspacePath.trim() || typeof sessionPath !== 'string' || !sessionPath.trim())
       throw new TypeError('无效的会话');
     const sessions = await piRuntime.listWorkspaceSessions(workspacePath);
@@ -263,7 +264,7 @@ app.whenReady().then(async () => {
     const snapshot = await activateWorkspace(workspacePath);
     return { session: await piRuntime.openSession(sessionPath), workspace: snapshot };
   });
-  ipcMain.handle('sessions:set-pinned', async (_event, workspacePath: unknown, sessionPath: unknown, pinned: unknown, beforeSessionPath: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.SessionsSetPinned, async (_event, workspacePath: unknown, sessionPath: unknown, pinned: unknown, beforeSessionPath: unknown) => {
     if (typeof workspacePath !== 'string' || !workspacePath.trim() || typeof sessionPath !== 'string' || !sessionPath.trim() || typeof pinned !== 'boolean' || (beforeSessionPath !== undefined && typeof beforeSessionPath !== 'string'))
       throw new TypeError('无效的会话置顶请求');
     const sessions = await piRuntime.listWorkspaceSessions(workspacePath);
@@ -271,28 +272,28 @@ app.whenReady().then(async () => {
       throw new TypeError('会话不属于该工作区');
     return workspaceRegistry.setSessionPinned(sessionPath, pinned, beforeSessionPath);
   });
-  ipcMain.handle('workspaces:pick-directory', async (event) => {
+  ipcMain.handle(IPC_CHANNELS.WorkspacesPickDirectory, async (event) => {
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender) ?? undefined, {
       properties: ['openDirectory'],
       title: '选择源文件夹',
     });
     return result.canceled ? undefined : result.filePaths[0];
   });
-  ipcMain.handle('workspaces:open-directory', async (_event, path: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.WorkspacesOpenDirectory, async (_event, path: unknown) => {
     if (typeof path !== 'string' || !path.trim())
       throw new TypeError('无效的工作区路径');
     const error = await shell.openPath(path);
     if (error)
       throw new Error(error);
   });
-  ipcMain.handle('workspaces:create', async (_event, name: unknown, path: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.WorkspacesCreate, async (_event, name: unknown, path: unknown) => {
     if (typeof name !== 'string' || typeof path !== 'string' || !path.trim())
       throw new TypeError('无效的项目');
     const snapshot = await workspaceRegistry.create(path, name);
     piRuntime.setWorkspace(snapshot.selectedWorkspacePath!);
     return snapshot;
   });
-  ipcMain.handle('workspaces:update', async (_event, path: unknown, name: unknown, nextPath: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.WorkspacesUpdate, async (_event, path: unknown, name: unknown, nextPath: unknown) => {
     if (typeof path !== 'string' || !path.trim() || typeof name !== 'string' || typeof nextPath !== 'string' || !nextPath.trim())
       throw new TypeError('无效的项目');
     const snapshot = await workspaceRegistry.update(path, nextPath, name);
@@ -300,7 +301,7 @@ app.whenReady().then(async () => {
       piRuntime.setWorkspace(nextPath);
     return snapshot;
   });
-  ipcMain.handle('workspaces:select', (_event, path: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.WorkspacesSelect, (_event, path: unknown) => {
     if (typeof path !== 'string' || !path.trim())
       throw new TypeError('无效的工作区路径');
     return selectWorkspace(path);
@@ -312,41 +313,41 @@ app.whenReady().then(async () => {
     (prompt, attachmentIds) => piRuntime.send(prompt, attachmentIds),
     () => piRuntime.startNewConversation(),
   );
-  ipcMain.handle('composer:add-attachments', (_event, paths: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ComposerAddAttachments, (_event, paths: unknown) => {
     if (!Array.isArray(paths) || !paths.every(path => typeof path === 'string'))
       throw new TypeError('Invalid attachment paths');
     return composer.addAttachments(paths);
   });
-  ipcMain.handle('composer:add-pasted-image', (_event, name: unknown, data: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ComposerAddPastedImage, (_event, name: unknown, data: unknown) => {
     if (typeof name !== 'string' || typeof data !== 'string')
       throw new TypeError('Invalid pasted image');
     return composer.addPastedImage(name, data);
   });
-  ipcMain.handle('composer:remove-attachment', (_event, id: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ComposerRemoveAttachment, (_event, id: unknown) => {
     if (typeof id !== 'string')
       throw new TypeError('Invalid attachment ID');
     composer.removeAttachment(id);
   });
-  ipcMain.handle('composer:send', (_event, prompt: unknown, attachmentIds: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ComposerSend, (_event, prompt: unknown, attachmentIds: unknown) => {
     if (typeof prompt !== 'string' || !Array.isArray(attachmentIds) || !attachmentIds.every(id => typeof id === 'string'))
       throw new TypeError('Invalid composer input');
     return composer.send(prompt, attachmentIds);
   });
-  ipcMain.handle('composer:edit-last-user-message', (_event, message: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ComposerEditLastUserMessage, (_event, message: unknown) => {
     if (message !== undefined && typeof message !== 'string')
       throw new TypeError('Invalid edited message');
     return piRuntime.editLastUserMessage(message);
   });
-  ipcMain.handle('composer:fork-assistant-message', (_event, entryId: unknown) => {
+  ipcMain.handle(IPC_CHANNELS.ComposerForkAssistantMessage, (_event, entryId: unknown) => {
     if (typeof entryId !== 'string' || !entryId)
       throw new TypeError('无效的回复');
     return piRuntime.forkAssistantMessage(entryId);
   });
-  ipcMain.handle('composer:new-conversation', () => composer.startNewConversation());
-  ipcMain.handle('composer:stop', () => piRuntime.abort());
+  ipcMain.handle(IPC_CHANNELS.ComposerNewConversation, () => composer.startNewConversation());
+  ipcMain.handle(IPC_CHANNELS.ComposerStop, () => piRuntime.abort());
   piRuntime.subscribe((update) => {
     for (const window of BrowserWindow.getAllWindows())
-      window.webContents.send('composer:update', update);
+      window.webContents.send(IPC_CHANNELS.ComposerUpdate, update);
   });
 
   createWindow();

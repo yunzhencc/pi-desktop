@@ -5,3 +5,4 @@ packages/components/storybook-static
 .DS_Store
 .eslintcache
 *.log*
+.pnpm-store
