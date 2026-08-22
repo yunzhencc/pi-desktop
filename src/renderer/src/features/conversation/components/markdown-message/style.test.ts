@@ -6,9 +6,14 @@ const styles = readFileSync(resolve(process.cwd(), 'src/renderer/src/features/co
 
 describe('markdown message styles', () => {
   it('inherits Codex chat font variables instead of hard-coding message size', () => {
+    const headingRule = styles.match(/\.markdown-message-heading\s*\{([\s\S]*?)\}/)?.[1];
+
     expect(styles).toContain('--markdown-font-size: var(--codex-chat-font-size, 16px);');
     expect(styles).toContain('--markdown-line-height: calc(var(--markdown-font-size) + 8px);');
     expect(styles).toContain('color: var(--codex-color-text, var(--foreground));');
+    expect(headingRule).toContain('font-size: inherit;');
+    expect(headingRule).toContain('line-height: inherit;');
+    expect(styles).not.toMatch(/\.markdown-message h[1-6]\.markdown-message-heading\s*\{/);
   });
 
   it('keeps tables aligned with Codex wide-block table styling', () => {

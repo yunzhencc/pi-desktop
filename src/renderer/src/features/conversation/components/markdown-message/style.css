@@ -34,27 +34,8 @@
 .markdown-message-heading {
   margin: var(--conversation-grouped-item-gap, 8px) 0;
   font-weight: 600;
-  line-height: 1.25;
-}
-
-.markdown-message h1.markdown-message-heading {
-  font-size: 24px;
-}
-
-.markdown-message h2.markdown-message-heading {
-  font-size: 20px;
-}
-
-.markdown-message h3.markdown-message-heading,
-.markdown-message h4.markdown-message-heading {
-  font-size: 17px;
-  line-height: 22px;
-}
-
-.markdown-message h5.markdown-message-heading,
-.markdown-message h6.markdown-message-heading {
-  font-size: 15px;
-  line-height: 20px;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .markdown-message-list {
