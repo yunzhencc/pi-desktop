@@ -45,5 +45,9 @@ export default defineConfig({
         ast: true,
       }),
     ],
+    server: {
+      port: 8200,
+      strictPort: true,
+    },
   },
 });

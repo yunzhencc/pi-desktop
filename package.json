@@ -49,6 +49,7 @@
     "@tanstack/react-hotkeys": "catalog:core",
     "@tanstack/react-query": "catalog:core",
     "@tanstack/react-router": "catalog:core",
+    "@web-kits/audio": "catalog:core",
     "better-sqlite3": "catalog:core",
     "cmdk": "catalog:core",
     "electron-updater": "catalog:core",
