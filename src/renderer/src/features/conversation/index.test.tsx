@@ -401,6 +401,54 @@ describe('conversation page', () => {
     expect(screen.getByText('git status --short')).not.toBeNull();
   });
 
+  it('keeps an active activity expanded until its work duration settles', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    render(<ConversationPage />);
+
+    act(() => {
+      onUpdate.mock.calls[0]![0]({ startedAtMs: 1_000, status: 'running', type: 'status' });
+      onUpdate.mock.calls[0]![0]({ args: { command: 'git status --short' }, status: 'completed', toolCallId: 'tool-1', toolName: 'bash', type: 'tool' });
+    });
+
+    expect(screen.getByText('运行了命令')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: '收起工具活动' })).toBeNull();
+
+    act(() => onUpdate.mock.calls[0]![0]({ completedAtMs: 2_000, status: 'settled', type: 'status' }));
+
+    expect(screen.getByRole('button', { name: '收起工具活动' })).not.toBeNull();
+  });
+
+  it('keeps an activity collapsed after virtualized turns remount', () => {
+    render(<ConversationPage />);
+    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
+      detail: {
+        messages: [
+          { role: 'user', text: 'Inspect the repository', timestamp: 1_000 },
+          { args: { command: 'git status --short' }, role: 'tool', status: 'completed', toolCallId: 'tool-1', toolName: 'bash' },
+          { completedAtMs: 2_000, role: 'work', startedAtMs: 1_000, status: 'worked' },
+          ...Array.from({ length: 20 }, (_, index) => ({ role: 'assistant', text: `Reply ${index}`, timestamp: 3_000 + index })),
+        ],
+        path: '/sessions/virtualized.jsonl',
+      },
+    })));
+
+    fireEvent.click(screen.getByRole('button', { name: '收起工具活动' }));
+    expect(screen.queryByText('运行了命令')).toBeNull();
+
+    const transcript = screen.getByRole('log');
+    Object.defineProperties(transcript, {
+      clientHeight: { configurable: true, value: 100 },
+      scrollHeight: { configurable: true, value: 2_000 },
+    });
+    transcript.scrollTop = 1_900;
+    fireEvent.scroll(transcript);
+    transcript.scrollTop = 0;
+    fireEvent.scroll(transcript);
+
+    expect(screen.queryByText('运行了命令')).toBeNull();
+  });
+
   it('collects restored tools that precede their persisted duration', () => {
     const { container } = render(<ConversationPage />);
 

@@ -105,6 +105,36 @@ describe('thread scroll layout', () => {
     expect(transcript.scrollTop).toBe(232);
   });
 
+  it('preserves the reader distance from bottom while an activity changes height', () => {
+    let notify: ResizeObserverCallback | undefined;
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(callback: ResizeObserverCallback) {
+        notify = callback;
+      }
+
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+    });
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    render(<Transcript turns={[{ key: 'activity' }]} />);
+    const transcript = transcriptViewport();
+    setScrollMetrics(transcript, 300);
+    transcript.scrollTop = 80;
+    fireEvent.scroll(transcript);
+
+    const turn = transcript.querySelector<HTMLElement>('[data-thread-turn="activity"]');
+    act(() => notify?.([{ contentRect: { height: 180 }, target: turn } as ResizeObserverEntry], {} as ResizeObserver));
+    setScrollMetrics(transcript, 420);
+    act(() => frames.forEach(callback => callback(0)));
+
+    expect(transcript.scrollTop).toBe(200);
+  });
+
   it('lets the reader jump back to the latest turn after scrolling away', () => {
     render(<Transcript turns={[{ key: 'first' }, { key: 'second' }]} />);
     const transcript = transcriptViewport();

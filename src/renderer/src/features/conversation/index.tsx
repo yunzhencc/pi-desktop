@@ -22,6 +22,7 @@ type ConversationTurn
 
 export function ConversationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [collapsedActivityTurns, setCollapsedActivityTurns] = useState<Set<number>>(() => new Set());
   const [editingMessage, setEditingMessage] = useState<{ id: number; text: string }>();
   const [isRunning, setIsRunning] = useState(false);
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
@@ -50,6 +51,7 @@ export function ConversationPage() {
       if (next.selectedWorkspacePath !== workspaceRef.current?.selectedWorkspacePath) {
         sessionPathRef.current = undefined;
         setMessages([]);
+        setCollapsedActivityTurns(new Set());
       }
       workspaceRef.current = next;
       setWorkspace(next);
@@ -65,6 +67,7 @@ export function ConversationPage() {
     const startNewConversation = () => {
       sessionPathRef.current = undefined;
       setMessages([]);
+      setCollapsedActivityTurns(new Set());
       void window.piApp.composer.newConversation();
     };
     const openSession = (event: Event) => {
@@ -76,6 +79,7 @@ export function ConversationPage() {
       const session = (event as CustomEvent<PiSessionSnapshot>).detail;
       sessionPathRef.current = session.path;
       setMessages(restoreSessionMessages(session, readSessionAttachments(session.path)));
+      setCollapsedActivityTurns(new Set());
     };
     window.addEventListener('new-conversation', startNewConversation);
     window.addEventListener('session-changed', openSession);
@@ -257,7 +261,21 @@ export function ConversationPage() {
   const renderTurn = (turn: ConversationTurn) => {
     if (turn.type === 'activity-turn') {
       return (
-        <ActivityTurn activities={turn.activities} work={turn.work} />
+        <ActivityTurn
+          activities={turn.activities}
+          collapsed={collapsedActivityTurns.has(turn.work.id)}
+          onToggle={() => {
+            setCollapsedActivityTurns((current) => {
+              const next = new Set(current);
+              if (next.has(turn.work.id))
+                next.delete(turn.work.id);
+              else
+                next.add(turn.work.id);
+              return next;
+            });
+          }}
+          work={turn.work}
+        />
       );
     }
 
@@ -362,14 +380,20 @@ function groupConversationTurns(messages: Message[]): ConversationTurn[] {
   return turns;
 }
 
-function ActivityTurn({ activities, work }: Extract<ConversationTurn, { type: 'activity-turn' }>) {
-  const [expanded, setExpanded] = useState(true);
+function ActivityTurn({ activities, collapsed, onToggle, work }: Extract<ConversationTurn, { type: 'activity-turn' }> & { collapsed: boolean; onToggle: () => void }) {
   const isRunning = !work.done && work.completedAtMs == null;
-  const isExpanded = isRunning || expanded;
+  const isExpanded = isRunning || !collapsed;
 
   return (
     <div className="chat-activity-turn flex w-full flex-col" data-activity-turn>
-      <WorkedFor completedAtMs={work.completedAtMs} done={work.done} expanded={isExpanded} onToggle={() => setExpanded(value => !value)} startedAtMs={work.startedAtMs} status={work.workStatus} />
+      <WorkedFor
+        completedAtMs={work.completedAtMs}
+        done={work.done}
+        expanded={isExpanded}
+        onToggle={isRunning ? undefined : onToggle}
+        startedAtMs={work.startedAtMs}
+        status={work.workStatus}
+      />
       {isExpanded && (
         <div className="chat-activity-turn-content grid gap-4">
           {activities.map(message => <ActivitySummary args={message.toolArgs} key={message.id} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />)}

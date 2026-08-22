@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { ThreadLayout, ThreadTurn } from './thread-virtualizer';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { ArrowDown } from 'lucide-react';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { buildThreadLayout, preserveAnchorDistance, visibleThreadRange } from './thread-virtualizer';
 import './style.css';
 
@@ -25,6 +25,9 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
   const followsBottomRef = useRef(true);
   const footerRef = useRef<HTMLDivElement>(null);
   const previousFooterHeightRef = useRef(0);
+  const lastScrollDistanceFromBottomRef = useRef(0);
+  const pendingScrollPreservationRef = useRef<{ distanceFromBottomPx: number; scrollHeightPx: number } | null>(null);
+  const measuredHeightsRef = useRef<Map<string, number>>(new Map());
   const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(() => new Map());
   const [footerHeightPx, setFooterHeightPx] = useState(0);
   const [scrollMetrics, setScrollMetrics] = useState({ distanceFromBottomPx: 0, viewportHeightPx: 0 });
@@ -37,6 +40,33 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
   const topSpacerPx = range.startIndex === 0 ? 0 : layout.totalHeightPx - layout.bottomOffsetsPx[range.startIndex]! - layout.heightsPx[range.startIndex]!;
   const bottomSpacerPx = range.endIndex === 0 ? 0 : layout.bottomOffsetsPx[range.endIndex - 1]!;
 
+  const updateScrollState = useCallback((element: HTMLElement) => {
+    const distance = distanceFromBottom(element);
+    lastScrollDistanceFromBottomRef.current = distance;
+    const followsBottom = distance <= FOLLOW_THRESHOLD;
+    followsBottomRef.current = followsBottom;
+    setShowJumpToBottom(!followsBottom);
+    setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
+      ? current
+      : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
+  }, []);
+
+  const preserveScrollPositionForNextLayout = useCallback(() => {
+    const element = scrollRef.current;
+    if (element == null || pendingScrollPreservationRef.current != null)
+      return;
+    const snapshot = { distanceFromBottomPx: lastScrollDistanceFromBottomRef.current, scrollHeightPx: element.scrollHeight };
+    pendingScrollPreservationRef.current = snapshot;
+    window.requestAnimationFrame(() => {
+      if (pendingScrollPreservationRef.current !== snapshot)
+        return;
+      pendingScrollPreservationRef.current = null;
+      if (scrollRef.current !== element || element.scrollHeight === snapshot.scrollHeightPx)
+        return;
+      element.scrollTop = Math.max(0, element.scrollHeight - element.clientHeight - snapshot.distanceFromBottomPx);
+      updateScrollState(element);
+    });
+  }, [updateScrollState]);
   useLayoutEffect(() => {
     const element = scrollRef.current;
     if (element == null)
@@ -45,10 +75,10 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
     const previousLayout = previousLayoutRef.current;
     const sameTurns = previousTurnKeysRef.current.length === layout.turnKeys.length
       && previousTurnKeysRef.current.every((key, index) => key === layout.turnKeys[index]);
-    if (followsBottomRef.current) {
+    if (pendingScrollPreservationRef.current == null && followsBottomRef.current) {
       element.scrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
     }
-    else if (sameTurns && previousLayout != null && anchorKeyRef.current != null) {
+    else if (pendingScrollPreservationRef.current == null && sameTurns && previousLayout != null && anchorKeyRef.current != null) {
       const nextDistance = preserveAnchorDistance({
         anchorKey: anchorKeyRef.current,
         distanceFromBottomPx: distanceFromBottom(element),
@@ -73,23 +103,25 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
       return;
 
     const observer = new ResizeObserver((entries) => {
-      setMeasuredHeights((current) => {
-        const next = new Map(current);
-        let changed = false;
-        for (const entry of entries) {
-          const key = entry.target.getAttribute('data-thread-turn');
-          const height = Math.ceil(entry.contentRect.height);
-          if (key != null && height > 0 && next.get(key) !== height) {
-            next.set(key, height);
-            changed = true;
-          }
+      const next = new Map(measuredHeightsRef.current);
+      let changed = false;
+      for (const entry of entries) {
+        const key = entry.target.getAttribute('data-thread-turn');
+        const height = Math.ceil(entry.contentRect.height);
+        if (key != null && height > 0 && next.get(key) !== height) {
+          next.set(key, height);
+          changed = true;
         }
-        return changed ? next : current;
-      });
+      }
+      if (!changed)
+        return;
+      measuredHeightsRef.current = next;
+      preserveScrollPositionForNextLayout();
+      setMeasuredHeights(next);
     });
     element.querySelectorAll<HTMLElement>('[data-thread-turn]').forEach(turn => observer.observe(turn));
     return () => observer.disconnect();
-  }, [range.endIndex, range.startIndex, turns]);
+  }, [preserveScrollPositionForNextLayout, range.endIndex, range.startIndex, turns]);
 
   useLayoutEffect(() => {
     const element = footerRef.current;
@@ -129,14 +161,9 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
   const handleScroll = (element: HTMLElement) => {
     scrollRef.current = element;
     const distance = distanceFromBottom(element);
-    const followsBottom = distance <= FOLLOW_THRESHOLD;
-    followsBottomRef.current = followsBottom;
-    setShowJumpToBottom(!followsBottom);
     const nextRange = visibleThreadRange({ distanceFromBottomPx: distance, layout, overscanCount: 2, viewportHeightPx: element.clientHeight });
     anchorKeyRef.current = layout.turnKeys[nextRange.startIndex] ?? null;
-    setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
-      ? current
-      : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
+    updateScrollState(element);
   };
   const jumpToBottomButton = showJumpToBottom && (
     <button
