@@ -1,40 +1,10 @@
+import type { PiSessionSnapshot, PiSessionSummary, PiUsageStats, PiWorkStatus, TranscriptUpdate } from '@shared/types';
 import type { AttachmentStore } from './attachments';
 import { join, resolve } from 'node:path';
 
-export type TranscriptUpdate
-  = | { done?: boolean; entryId?: string; text: string; timestamp?: number; type: 'assistant' }
-    | { text: string; type: 'error' }
-    | { sessionPath: string; type: 'session' }
-    | { completedAtMs?: number; sessionPath?: string; startedAtMs?: number; status: 'running' | 'settled'; type: 'status'; workStatus?: WorkStatus }
-    | { args?: unknown; output?: unknown; sessionPath?: string; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string; type: 'tool' };
-
-type WorkStatus = 'stopped' | 'worked';
 const workedForEntryType = 'pi-desktop-worked-for';
 
-export interface PiSessionSummary {
-  firstMessage: string;
-  id: string;
-  modifiedAt: string;
-  path: string;
-}
-
-export interface PiUsageStats {
-  currentStreakDays: number;
-  days: Array<{ iso: string; tokens: number }>;
-  lifetimeTokens: number;
-  longestChatMs?: number;
-  longestStreakDays: number;
-  peakTokens: number;
-}
-
-export interface PiSessionSnapshot {
-  messages: Array<
-    | { entryId: string; role: 'assistant' | 'user'; text: string; timestamp: number }
-    | { args?: unknown; output?: unknown; role: 'tool'; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string }
-    | { completedAtMs: number; role: 'work'; startedAtMs: number; status: WorkStatus }
-  >;
-  path: string;
-}
+type WorkStatus = PiWorkStatus;
 
 interface PiSession {
   abort?: () => Promise<void>;

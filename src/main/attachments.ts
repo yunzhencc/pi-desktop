@@ -1,23 +1,9 @@
 import type { ImageContent } from '@earendil-works/pi-ai';
+import type { AttachmentFailure, AttachmentKind, AttachmentMetadata } from '@shared/types';
 import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
-
-export type AttachmentKind = 'image' | 'text';
-
-export interface AttachmentMetadata {
-  id: string;
-  kind: AttachmentKind;
-  name: string;
-  size: number;
-  previewDataUrl?: string;
-}
-
-export interface AttachmentFailure {
-  name: string;
-  reason: string;
-}
 
 interface StoredAttachment extends AttachmentMetadata {
   path?: string;

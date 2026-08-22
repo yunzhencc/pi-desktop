@@ -190,7 +190,7 @@ export function ConversationPage() {
   const lastUserMessageId = messages.findLast(message => message.role === 'user')?.id;
 
   return (
-    <section className="chat-page relative flex min-h-0 flex-1 flex-col pt-[46px]" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
+    <section className="chat-page relative flex min-h-0 flex-1 flex-col pt-11.5" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
       {messages.length === 0
         ? (
             <div className="chat-empty-state m-auto flex w-[min(100%_-_32px,1000px)] -translate-y-[42px] flex-col items-center gap-6 text-center">
