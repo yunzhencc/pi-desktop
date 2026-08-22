@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const styles = readFileSync(resolve(process.cwd(), 'src/renderer/src/features/conversation/style.css'), 'utf8');
+const markdownStyles = readFileSync(resolve(process.cwd(), 'src/renderer/src/features/conversation/components/markdown-message/style.css'), 'utf8');
 
 describe('message interaction affordances', () => {
   it('reveals user message metadata only on hover or keyboard focus', () => {
@@ -44,16 +45,20 @@ describe('message interaction affordances', () => {
     const pageRule = styles.match(/\.chat-page\s*\{([\s\S]*?)\}/)?.[1];
     const messageRule = styles.match(/\.chat-message\s*\{([\s\S]*?)\}/)?.[1];
     const assistantRule = styles.match(/\.chat-message-assistant\s*\{([\s\S]*?)\}/)?.[1];
+    const activityTurnRule = styles.match(/\.chat-activity-turn,\s*\.chat-worked-for\s*\{([\s\S]*?)\}/)?.[1];
     const activityContentRule = styles.match(/\.chat-activity-turn-content\s*\{([\s\S]*?)\}/)?.[1];
+    const headingRule = markdownStyles.match(/\.markdown-message-heading\s*\{([\s\S]*?)\}/)?.[1];
 
     expect(pageRule).toContain('--codex-chat-font-size: 14px;');
     expect(pageRule).toContain('--codex-chat-code-font-size: 13px;');
     expect(pageRule).toContain('--conversation-item-gap: 16px;');
-    expect(pageRule).toContain('--conversation-grouped-item-gap: 4px;');
+    expect(pageRule).toContain('--conversation-grouped-item-gap: 8px;');
     expect(messageRule).toContain('font-size: var(--codex-chat-font-size, 14px);');
     expect(messageRule).toContain('line-height: calc(var(--codex-chat-font-size, 14px) + 8px);');
     expect(assistantRule).toContain('padding: 0;');
-    expect(activityContentRule).toContain('gap: var(--conversation-grouped-item-gap, 4px);');
+    expect(activityTurnRule).toContain('gap: var(--conversation-grouped-item-gap, 8px);');
+    expect(activityContentRule).toContain('gap: var(--conversation-grouped-item-gap, 8px);');
     expect(activityContentRule).not.toContain('margin-top');
+    expect(headingRule).toContain('margin: var(--conversation-grouped-item-gap, 8px) 0;');
   });
 });

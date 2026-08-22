@@ -173,7 +173,7 @@ export function WorkedFor({ children, completedAtMs, done, expanded, onToggle, s
         ? formatMessage({ id: 'conversation.workingFor' }, { duration })
         : formatMessage({ id: 'conversation.working' });
   return (
-    <div className="chat-worked-for flex w-full flex-col gap-2 text-[13px] leading-5 text-text-tertiary" data-duration-divider>
+    <div className="chat-worked-for flex w-full flex-col text-[13px] leading-5 text-text-tertiary" data-duration-divider>
       {onToggle == null
         ? (
             <p className="m-0 flex items-center gap-2">
@@ -185,7 +185,7 @@ export function WorkedFor({ children, completedAtMs, done, expanded, onToggle, s
             <button aria-expanded={expanded} aria-label={`${expanded ? '收起' : '展开'}工具活动`} className="flex w-fit cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit" onClick={onToggle} type="button">
               {!done && completedAtMs == null && <span aria-hidden="true" className="chat-worked-for-dot" />}
               <span>{label}</span>
-              <ChevronDown aria-hidden="true" className={`transition-transform ${expanded ? 'rotate-90' : ''}`} size={15} />
+              <ChevronDown aria-hidden="true" className={`transition-transform ${expanded ? 'rotate-180' : ''}`} size={15} />
             </button>
           )}
       <div aria-hidden="true" className="chat-worked-for-rule w-full border-t border-border-subtle" />

@@ -396,21 +396,24 @@ function groupConversationTurns(messages: Message[]): ConversationTurn[] {
 
 function ActivityTurn({ activities, assistant, collapsed, onToggle, renderAssistant, work }: Extract<ConversationTurn, { type: 'activity-turn' }> & { collapsed: boolean; onToggle: () => void; renderAssistant: (message: Message) => ReactNode }) {
   const isRunning = !work.done && work.completedAtMs == null;
+  const hasActivities = activities.length > 0;
   const isExpanded = isRunning || !collapsed;
 
   return (
-    <div className="chat-activity-turn flex w-full flex-col gap-2" data-activity-turn>
+    <div className="chat-activity-turn flex w-full flex-col" data-activity-turn>
       <WorkedFor
         completedAtMs={work.completedAtMs}
         done={work.done}
         expanded={isExpanded}
-        onToggle={isRunning ? undefined : onToggle}
+        onToggle={isRunning || !hasActivities ? undefined : onToggle}
         startedAtMs={work.startedAtMs}
         status={work.workStatus}
       >
-        <div className="chat-activity-turn-content grid">
-          {activities.map(message => <ActivitySummary args={message.toolArgs} key={message.id} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />)}
-        </div>
+        {hasActivities && (
+          <div className="chat-activity-turn-content grid">
+            {activities.map(message => <ActivitySummary args={message.toolArgs} key={message.id} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />)}
+          </div>
+        )}
       </WorkedFor>
       {assistant != null && renderAssistant(assistant)}
     </div>

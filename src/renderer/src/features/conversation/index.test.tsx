@@ -202,6 +202,7 @@ describe('conversation page', () => {
 
     expect(screen.getByText('耗时 1分 5秒')).not.toBeNull();
     expect(container.querySelector('[data-duration-divider]')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: '收起工具活动' })).toBeNull();
   });
 
   it('shows previous assistant reply actions only on hover', () => {
@@ -390,6 +391,7 @@ describe('conversation page', () => {
 
     expect(container.querySelectorAll('[data-activity-turn]')).toHaveLength(1);
     expect(screen.getByRole('button', { name: '收起工具活动' })).not.toBeNull();
+    expect(container.querySelector('.chat-worked-for .rotate-180')).not.toBeNull();
     expect(screen.getByText('运行了命令')).not.toBeNull();
     expect(screen.getByText('读取文件失败')).not.toBeNull();
     expect(container.querySelector('.chat-activity-turn-content')?.parentElement?.classList.contains('chat-worked-for')).toBe(true);

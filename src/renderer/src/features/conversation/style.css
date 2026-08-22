@@ -2,7 +2,7 @@
   --codex-chat-font-size: 14px;
   --codex-chat-code-font-size: 13px;
   --conversation-item-gap: 16px;
-  --conversation-grouped-item-gap: 4px;
+  --conversation-grouped-item-gap: 8px;
 }
 
 .chat-empty-state-project-trigger {
@@ -126,8 +126,13 @@
   line-height: 20px;
 }
 
+.chat-activity-turn,
+.chat-worked-for {
+  gap: var(--conversation-grouped-item-gap, 8px);
+}
+
 .chat-activity-turn-content {
-  gap: var(--conversation-grouped-item-gap, 4px);
+  gap: var(--conversation-grouped-item-gap, 8px);
 }
 
 .chat-worked-for-dot {
