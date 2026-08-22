@@ -8,6 +8,13 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./custom-provider-types": {
+      "types": "./src/custom-provider-types.ts",
+      "default": "./src/custom-provider-types.ts"
     }
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "catalog:core"
   }
 }
