@@ -606,7 +606,7 @@ describe('chat composer', () => {
 
     const revealButton = await screen.findByRole('button', { name: 'Show brief.pdf in folder' });
     expect(revealButton.closest('.chat-composer-file-card')).not.toBeNull();
-    expect(revealButton.querySelector('.chat-composer-pdf-icon')).not.toBeNull();
+    expect(revealButton.querySelector('[data-file-icon="pdf"]')).not.toBeNull();
     await user.click(revealButton);
     expect(composer.revealAttachment).toHaveBeenCalledWith('pdf-1');
   });
@@ -622,15 +622,23 @@ describe('chat composer', () => {
 
     fireEvent.drop(screen.getByRole('textbox', { name: 'Message Pi' }), { dataTransfer: { files: [file] } });
 
-    expect((await screen.findByRole('button', { name: 'Show brief.docx in folder' })).querySelector('[data-file-icon="word"]')).not.toBeNull();
+    expect((await screen.findByRole('button', { name: 'Show brief.docx in folder' })).querySelector('[data-file-icon="artifactDocument"]')).not.toBeNull();
   });
 
-  it('maps spreadsheet, presentation, code, and archive attachments to Codex icon categories', async () => {
+  it('maps file attachments to Codex icon categories', async () => {
     composer.addDroppedAttachments.mockResolvedValue({
       attachments: [
         { id: 'sheet-1', kind: 'file', name: 'budget.xlsx', size: 4 },
         { id: 'slides-1', kind: 'file', name: 'launch.pptx', size: 4 },
-        { id: 'code-1', kind: 'text', name: 'app.ts', size: 4 },
+        { id: 'ts-1', kind: 'text', name: 'app.ts', size: 4 },
+        { id: 'react-1', kind: 'text', name: 'view.tsx', size: 4 },
+        { id: 'js-1', kind: 'text', name: 'main.js', size: 4 },
+        { id: 'py-1', kind: 'text', name: 'worker.py', size: 4 },
+        { id: 'html-1', kind: 'text', name: 'index.html', size: 4 },
+        { id: 'yaml-1', kind: 'text', name: 'workflow.yml', size: 4 },
+        { id: 'shell-1', kind: 'text', name: 'setup.sh', size: 4 },
+        { id: 'hash-1', kind: 'text', name: 'release.sha256', size: 4 },
+        { id: 'notebook-1', kind: 'file', name: 'analysis.ipynb', size: 4 },
         { id: 'archive-1', kind: 'file', name: 'source.zip', size: 4 },
       ],
       failures: [],
@@ -643,8 +651,16 @@ describe('chat composer', () => {
 
     expect((await screen.findByRole('button', { name: 'Show budget.xlsx in folder' })).querySelector('[data-file-icon="spreadsheet"]')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Show launch.pptx in folder' }).querySelector('[data-file-icon="presentation"]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'Show app.ts in folder' }).querySelector('[data-file-icon="code"]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'Show source.zip in folder' }).querySelector('[data-file-icon="archive"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show app.ts in folder' }).querySelector('[data-file-icon="typescript"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show view.tsx in folder' }).querySelector('[data-file-icon="react"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show main.js in folder' }).querySelector('[data-file-icon="javascript"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show worker.py in folder' }).querySelector('[data-file-icon="python"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show index.html in folder' }).querySelector('[data-file-icon="html"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show workflow.yml in folder' }).querySelector('[data-file-icon="yaml"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show setup.sh in folder' }).querySelector('[data-file-icon="shell"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show release.sha256 in folder' }).querySelector('[data-file-icon="hashes"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show analysis.ipynb in folder' }).querySelector('[data-file-icon="notebook"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Show source.zip in folder' }).querySelector('[data-file-icon="folder"]')).not.toBeNull();
   });
 
   it('adds a clipboard image while the editor is not focused', async () => {

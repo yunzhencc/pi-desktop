@@ -113,7 +113,7 @@ describe('conversation page', () => {
     expect(screen.getByText('brief.pdf').closest('.chat-message-file-pill')).not.toBeNull();
     expect(screen.getByText('brief.pdf').closest('.chat-message-user-content')).toBeNull();
     expect(document.querySelector('.chat-composer-file-card-main')).toBeNull();
-    expect(document.querySelector('.chat-message-file-pill-icon [data-file-icon="file"]')).not.toBeNull();
+    expect(document.querySelector('.chat-message-file-pill-icon [data-file-icon="pdf"]')).not.toBeNull();
   });
 
   it('restores submitted attachment summaries for a reopened session', () => {

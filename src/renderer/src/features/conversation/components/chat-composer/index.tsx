@@ -82,10 +82,40 @@ function attachmentExtension(name: string): string | undefined {
   return extensionStart > 0 && extensionStart < name.length - 1 ? name.slice(extensionStart + 1).toUpperCase() : undefined;
 }
 
-function WordDocumentIcon() {
+type AttachmentIconType
+  = | 'artifactDocument'
+    | 'build'
+    | 'code'
+    | 'cplusplus'
+    | 'css'
+    | 'document'
+    | 'file'
+    | 'folder'
+    | 'hashes'
+    | 'html'
+    | 'image'
+    | 'java'
+    | 'javascript'
+    | 'json'
+    | 'notebook'
+    | 'pdf'
+    | 'php'
+    | 'presentation'
+    | 'python'
+    | 'react'
+    | 'rust'
+    | 'shell'
+    | 'skill'
+    | 'spreadsheet'
+    | 'terminal'
+    | 'toml'
+    | 'typescript'
+    | 'yaml';
+
+function WordDocumentIcon({ size = 24 }: { size?: number }) {
   const id = useId();
   return (
-    <svg aria-hidden="true" data-file-icon="word" fill="none" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden="true" data-file-icon="artifactDocument" fill="none" height={size} viewBox="0 0 24 24" width={size} xmlns="http://www.w3.org/2000/svg">
       <path d="M13.004 2.594c.267 0 .538.074.813.224.275.15.583.392.925.726l4.95 4.899c.541.542.812 1.092.812 1.65v7.45c0 .725-.179 1.396-.537 2.013a4.002 4.002 0 0 1-1.463 1.449 3.87 3.87 0 0 1-2 .538h-9c-.725 0-1.396-.18-2.013-.538a4.002 4.002 0 0 1-1.45-1.449 3.937 3.937 0 0 1-.537-2.013V6.594c0-.725.179-1.392.537-2a4.002 4.002 0 0 1 1.45-1.463 3.936 3.936 0 0 1 2.012-.537h5.5Z" fill={`url(#${id}-page)`} />
       <path d="M14.676 8.594H9.332a1.828 1.828 0 0 0-1.828 1.828v5.344c0 1.009.818 1.828 1.828 1.828h5.344c1.01 0 1.828-.819 1.828-1.828v-5.344c0-1.01-.818-1.828-1.828-1.828Z" fill={`url(#${id}-word)`} />
       <path d="m15.089 10.522-1.107 5.142-1.324.001-.654-3.086-.684 3.086H9.982l-1.064-5.143h1.092l.657 3.394.652-3.394h1.338l.683 3.394.641-3.394 1.108-.001Z" fill="#fff" />
@@ -108,28 +138,83 @@ function WordDocumentIcon() {
   );
 }
 
-function attachmentIconType(name: string) {
+function PdfDocumentIcon({ size = 24 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" data-file-icon="pdf" fill="none" height={size} viewBox="0 0 24 24" width={size} xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 2.594c.267 0 .538.074.813.224.274.15.583.393.924.726l4.95 4.9c.542.541.813 1.091.813 1.65v7.45c0 .725-.179 1.396-.537 2.013a4.001 4.001 0 0 1-1.463 1.449 3.87 3.87 0 0 1-2 .538h-9c-.725 0-1.396-.18-2.013-.538a4.031 4.031 0 0 1-1.45-1.45 3.937 3.937 0 0 1-.537-2.012V6.594c0-.725.179-1.392.537-2a4.002 4.002 0 0 1 1.45-1.463A3.936 3.936 0 0 1 7.5 2.594H13Z" fill="#F75858" />
+      <path d="M13 2.594c.267 0 .537.075.813.225.274.15.583.391.925.725l4.95 4.9c.541.541.812 1.091.812 1.65h-4.787c-.834 0-1.496-.242-1.988-.725C13.242 8.877 13 8.215 13 7.38V2.594Z" fill="#FF928C" />
+      <path d="M14.314 17.96v-3.687H17v.632h-1.975v.948h1.712v.632h-1.712v1.474h-.711Zm-3.844 0v-3.687h1.263c1.106 0 1.87.632 1.87 1.843 0 1.211-.737 1.843-1.843 1.843h-1.29Zm1.21-.633c.712 0 1.212-.29 1.212-1.211 0-.922-.5-1.211-1.211-1.211h-.5v2.422h.5ZM7 17.96v-3.687h1.659c.711 0 1.185.421 1.185 1.158 0 .738-.474 1.164-1.185 1.164h-.948v1.364H7Zm1.58-1.997c.369 0 .553-.216.553-.532 0-.316-.184-.526-.553-.526h-.869v1.058h.869Z" fill="#fff" />
+    </svg>
+  );
+}
+
+function MonogramFileIcon({ label, size = 24, type }: { label: string; size?: number; type: AttachmentIconType }) {
+  return (
+    <svg aria-hidden="true" data-file-icon={type} fill="none" height={size} viewBox="0 0 16 16" width={size} xmlns="http://www.w3.org/2000/svg">
+      <rect height="12" rx="2" stroke="currentColor" strokeWidth="1.5" width="12" x="2" y="2" />
+      <text dominantBaseline="middle" fill="currentColor" fontSize="4.5" fontWeight="700" textAnchor="middle" x="8" y="8.6">{label}</text>
+    </svg>
+  );
+}
+
+function attachmentIconType(name: string): AttachmentIconType {
   const normalizedName = name.toLowerCase();
   const extension = attachmentExtension(name)?.toLowerCase();
   if (normalizedName === 'skill.md')
     return 'skill';
+  if (/[\\/]$/.test(name))
+    return 'folder';
+  if (extension === 'ts')
+    return 'typescript';
+  if (extension === 'tsx' || extension === 'jsx')
+    return 'react';
+  if (['js', 'mjs', 'cjs', 'hs'].includes(extension ?? ''))
+    return 'javascript';
+  if (extension === 'py')
+    return 'python';
+  if (extension === 'java')
+    return 'java';
+  if (extension === 'rs')
+    return 'rust';
+  if (extension === 'php')
+    return 'php';
+  if (['css', 'scss', 'less', 'sass'].includes(extension ?? ''))
+    return 'css';
+  if (['cpp', 'cxx', 'cc', 'c', 'hpp', 'hh', 'h'].includes(extension ?? ''))
+    return 'cplusplus';
+  if (extension === 'pdf')
+    return 'pdf';
   if (extension === 'doc' || extension === 'docx')
-    return 'word';
+    return 'artifactDocument';
   if (['csv', 'tsv', 'xls', 'xlsm', 'xlsx'].includes(extension ?? ''))
     return 'spreadsheet';
   if (['ppt', 'pptx'].includes(extension ?? ''))
     return 'presentation';
   if (['zip', 'gz', 'tgz', 'tar'].includes(extension ?? ''))
-    return 'archive';
+    return 'folder';
   if (['json', 'jsonc'].includes(extension ?? ''))
     return 'json';
-  if (['md', 'mdx', 'markdown', 'mkd', 'mdown', 'xml', 'html', 'htm', 'yaml', 'yml', 'toml'].includes(extension ?? ''))
+  if (['md', 'mdx', 'markdown', 'mkd', 'mdown', 'xml', 'env', 'dotenv', 'gitignore', 'lock'].includes(extension ?? ''))
     return 'document';
-  if (['dockerfile', 'sh', 'bash', 'zsh', 'fish', 'ps1'].includes(extension ?? '') || normalizedName === 'dockerfile')
+  if (['html', 'htm'].includes(extension ?? ''))
+    return 'html';
+  if (['yaml', 'yml'].includes(extension ?? ''))
+    return 'yaml';
+  if (extension === 'toml')
+    return 'toml';
+  if (extension === 'ipynb')
+    return 'notebook';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'ico'].includes(extension ?? ''))
+    return 'image';
+  if (normalizedName === 'dockerfile')
     return 'terminal';
-  if (['build', 'bazel', 'bzl', 'ninja', 'gradle', 'mk', 'makefile', 'sha', 'sha1', 'sha256', 'md5', 'checksum', 'sum'].includes(extension ?? '') || ['dockerfile', 'makefile'].includes(normalizedName))
+  if (['sh', 'bash', 'zsh', 'fish', 'ps1'].includes(extension ?? ''))
+    return 'shell';
+  if (['sha', 'sha1', 'sha256', 'md5', 'checksum', 'sum'].includes(extension ?? ''))
+    return 'hashes';
+  if (['build', 'bazel', 'bzl', 'ninja', 'gradle', 'mk', 'makefile'].includes(extension ?? '') || normalizedName === 'makefile')
     return 'build';
-  if (['ts', 'tsx', 'jsx', 'js', 'mjs', 'cjs', 'hs', 'py', 'java', 'rs', 'php', 'css', 'scss', 'less', 'sass', 'cpp', 'cxx', 'cc', 'c', 'hpp', 'hh', 'h', 'rb', 'go', 'kt', 'swift', 'm', 'mm', 'cs', 'sql', 'ipynb'].includes(extension ?? ''))
+  if (['rb', 'go', 'kt', 'swift', 'm', 'mm', 'cs', 'sql'].includes(extension ?? ''))
     return 'code';
   return 'file';
 }
@@ -137,9 +222,27 @@ function attachmentIconType(name: string) {
 function AttachmentFileIcon({ muted = false, name, size = 24 }: { muted?: boolean; name: string; size?: number }) {
   if (muted) {
     switch (attachmentIconType(name)) {
+      case 'artifactDocument': return <WordDocumentIcon size={size} />;
+      case 'pdf': return <PdfDocumentIcon size={size} />;
+      case 'typescript': return <MonogramFileIcon label="TS" size={size} type="typescript" />;
+      case 'react': return <MonogramFileIcon label="R" size={size} type="react" />;
+      case 'javascript': return <MonogramFileIcon label="JS" size={size} type="javascript" />;
+      case 'python': return <MonogramFileIcon label="PY" size={size} type="python" />;
+      case 'java': return <MonogramFileIcon label="JA" size={size} type="java" />;
+      case 'rust': return <MonogramFileIcon label="RS" size={size} type="rust" />;
+      case 'php': return <MonogramFileIcon label="PHP" size={size} type="php" />;
+      case 'cplusplus': return <MonogramFileIcon label="C+" size={size} type="cplusplus" />;
+      case 'css': return <FileCode2 aria-hidden="true" data-file-icon="css" size={size} />;
+      case 'html': return <FileCode2 aria-hidden="true" data-file-icon="html" size={size} />;
+      case 'yaml': return <FileText aria-hidden="true" data-file-icon="yaml" size={size} />;
+      case 'toml': return <FileText aria-hidden="true" data-file-icon="toml" size={size} />;
+      case 'notebook': return <FileCode2 aria-hidden="true" data-file-icon="notebook" size={size} />;
+      case 'image': return <FileText aria-hidden="true" data-file-icon="image" size={size} />;
+      case 'shell': return <FileTerminal aria-hidden="true" data-file-icon="shell" size={size} />;
+      case 'hashes': return <FileText aria-hidden="true" data-file-icon="hashes" size={size} />;
       case 'spreadsheet': return <FileSpreadsheet aria-hidden="true" data-file-icon="spreadsheet" size={size} />;
       case 'presentation': return <Presentation aria-hidden="true" data-file-icon="presentation" size={size} />;
-      case 'archive': return <Folder aria-hidden="true" data-file-icon="archive" size={size} />;
+      case 'folder': return <Folder aria-hidden="true" data-file-icon="folder" size={size} />;
       case 'json': return <FileJson2 aria-hidden="true" data-file-icon="json" size={size} />;
       case 'terminal': return <FileTerminal aria-hidden="true" data-file-icon="terminal" size={size} />;
       case 'build': return <FileArchive aria-hidden="true" data-file-icon="build" size={size} />;
@@ -151,10 +254,27 @@ function AttachmentFileIcon({ muted = false, name, size = 24 }: { muted?: boolea
   }
 
   switch (attachmentIconType(name)) {
-    case 'word': return <WordDocumentIcon />;
+    case 'artifactDocument': return <WordDocumentIcon size={size} />;
+    case 'pdf': return <PdfDocumentIcon size={size} />;
+    case 'typescript': return <MonogramFileIcon label="TS" size={size} type="typescript" />;
+    case 'react': return <MonogramFileIcon label="R" size={size} type="react" />;
+    case 'javascript': return <MonogramFileIcon label="JS" size={size} type="javascript" />;
+    case 'python': return <MonogramFileIcon label="PY" size={size} type="python" />;
+    case 'java': return <MonogramFileIcon label="JA" size={size} type="java" />;
+    case 'rust': return <MonogramFileIcon label="RS" size={size} type="rust" />;
+    case 'php': return <MonogramFileIcon label="PHP" size={size} type="php" />;
+    case 'cplusplus': return <MonogramFileIcon label="C+" size={size} type="cplusplus" />;
+    case 'css': return <FileCode2 aria-hidden="true" className="text-[#2563eb]" data-file-icon="css" size={size} />;
+    case 'html': return <FileCode2 aria-hidden="true" className="text-[#2563eb]" data-file-icon="html" size={size} />;
+    case 'yaml': return <FileText aria-hidden="true" data-file-icon="yaml" size={size} />;
+    case 'toml': return <FileText aria-hidden="true" data-file-icon="toml" size={size} />;
+    case 'notebook': return <FileCode2 aria-hidden="true" className="text-[#2563eb]" data-file-icon="notebook" size={size} />;
+    case 'image': return <FileText aria-hidden="true" data-file-icon="image" size={size} />;
+    case 'shell': return <FileTerminal aria-hidden="true" className="text-[#475569]" data-file-icon="shell" size={size} />;
+    case 'hashes': return <FileText aria-hidden="true" data-file-icon="hashes" size={size} />;
     case 'spreadsheet': return <FileSpreadsheet aria-hidden="true" className="text-[#1d6f42]" data-file-icon="spreadsheet" size={size} />;
     case 'presentation': return <Presentation aria-hidden="true" className="text-[#d24726]" data-file-icon="presentation" size={size} />;
-    case 'archive': return <Folder aria-hidden="true" className="text-[#b7791f]" data-file-icon="archive" size={size} />;
+    case 'folder': return <Folder aria-hidden="true" className="text-[#b7791f]" data-file-icon="folder" size={size} />;
     case 'json': return <FileJson2 aria-hidden="true" className="text-[#ca8a04]" data-file-icon="json" size={size} />;
     case 'terminal': return <FileTerminal aria-hidden="true" className="text-[#475569]" data-file-icon="terminal" size={size} />;
     case 'build': return <FileArchive aria-hidden="true" className="text-[#64748b]" data-file-icon="build" size={size} />;
@@ -420,7 +540,7 @@ function AttachmentFileCardContent({ attachment, canReveal = false }: { attachme
   return (
     <>
       <span className="chat-composer-file-card-icon">
-        {attachment.kind === 'pdf' ? <span aria-hidden="true" className="chat-composer-pdf-icon">PDF</span> : <AttachmentFileIcon name={attachment.name} />}
+        <AttachmentFileIcon name={attachment.name} />
       </span>
       <span className="chat-composer-file-card-content">
         <span className="chat-composer-file-card-name">{attachment.name}</span>
