@@ -1,0 +1,14 @@
+.thread-scroll-layout {
+  position: absolute;
+  inset: 46px 0 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-anchor: none;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-color: var(--border) transparent;
+}
+
+.thread-scroll-layout:hover,
+.thread-scroll-layout:active {
+  scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent) transparent;
+}

@@ -1,24 +1,22 @@
 import type { ReactNode } from 'react';
 import type { ThreadLayout, ThreadTurn } from './thread-virtualizer';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
-import { useOverlayScrollbarsTheme } from '@renderer/features/app/theme';
 import { ArrowDown } from 'lucide-react';
-import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { buildThreadLayout, preserveAnchorDistance, visibleThreadRange } from './thread-virtualizer';
+import './style.css';
 
 const DEFAULT_TURN_HEIGHT = 72;
 const FOLLOW_THRESHOLD = 24;
 const TURN_GAP = 16;
 const jumpToBottomButtonClass = 'thread-scroll-to-bottom absolute right-[max(16px,calc((100%_-_720px)/2))] z-[2] grid size-8 place-items-center rounded-full border border-border-subtle bg-surface-elevated text-foreground shadow-[0_4px_12px_color-mix(in_srgb,var(--foreground)_12%,transparent)]';
-const threadContentClass = 'thread-scroll-content flex-[1_0_auto] px-[max(16px,calc((100%_-_720px)/2))] pt-4 pb-[var(--thread-scroll-padding-bottom,32px)] [&>[data-thread-turn]]:flex';
+const threadContentClass = 'thread-scroll-content flex-[1_0_auto] px-[max(16px,calc((100%_-_720px)/2))] pt-4 pb-4 [&>[data-thread-turn]]:flex';
 
 export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, turns }: {
   children: (turn: T) => ReactNode;
   footer?: ReactNode;
   turns: T[];
 }) {
-  const overlayScrollbarsTheme = useOverlayScrollbarsTheme();
   const hasFooter = footer != null;
   const scrollRef = useRef<HTMLDivElement>(null);
   const previousLayoutRef = useRef<ThreadLayout | null>(null);
@@ -29,7 +27,6 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
   const previousFooterHeightRef = useRef(0);
   const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(() => new Map());
   const [footerHeightPx, setFooterHeightPx] = useState(0);
-  const [scrollbarInitialized, setScrollbarInitialized] = useState(false);
   const [scrollMetrics, setScrollMetrics] = useState({ distanceFromBottomPx: 0, viewportHeightPx: 0 });
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const layout = useMemo(() => buildThreadLayout(turns, measuredHeights, TURN_GAP, DEFAULT_TURN_HEIGHT), [measuredHeights, turns]);
@@ -68,7 +65,7 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
     setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
       ? current
       : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
-  }, [layout, scrollbarInitialized]);
+  }, [layout]);
 
   useLayoutEffect(() => {
     const element = scrollRef.current;
@@ -158,17 +155,11 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
 
   return (
     <>
-      <OverlayScrollbarsComponent
+      <div
         aria-live="polite"
-        className="thread-scroll-layout absolute inset-x-0 top-[46px] bottom-0 overflow-hidden scroll-pb-[var(--thread-scroll-padding-bottom,32px)]"
-        events={{
-          initialized: (instance) => {
-            scrollRef.current = instance.elements().viewport;
-            setScrollbarInitialized(true);
-          },
-          scroll: instance => handleScroll(instance.elements().viewport),
-        }}
-        options={{ scrollbars: { autoHide: 'leave', theme: overlayScrollbarsTheme } }}
+        className="thread-scroll-layout scroll-pb-[var(--thread-scroll-padding-bottom,32px)]"
+        onScroll={event => handleScroll(event.currentTarget)}
+        ref={scrollRef}
         role="log"
       >
         <div className="thread-scroll-surface flex min-h-full flex-col" data-thread-scroll-surface>
@@ -188,7 +179,7 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
             </div>
           )}
         </div>
-      </OverlayScrollbarsComponent>
+      </div>
       {!footer && jumpToBottomButton}
     </>
   );

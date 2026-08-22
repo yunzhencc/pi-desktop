@@ -337,13 +337,13 @@ describe('conversation page', () => {
     expect(screen.getByText((_, element) => element?.tagName === 'PRE' && element.textContent === ' M src/main.ts')).not.toBeNull();
   });
 
-  it('keeps the composer in the fixed page footer after messages start', () => {
-    const { container } = render(<ConversationPage />);
+  it('keeps the composer inside the transcript sticky footer after messages start', () => {
+    render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
 
-    expect(screen.getByRole('log').contains(screen.getByRole('button', { name: 'Fake composer' }))).toBe(false);
-    expect(container.querySelector('.chat-composer-footer')?.contains(screen.getByRole('button', { name: 'Fake composer' }))).toBe(true);
+    expect(screen.getByRole('log').contains(screen.getByRole('button', { name: 'Fake composer' }))).toBe(true);
+    expect(document.querySelector('.thread-scroll-footer')?.contains(screen.getByRole('button', { name: 'Fake composer' }))).toBe(true);
   });
 
   it('renders a streamed assistant snapshot as Markdown', () => {

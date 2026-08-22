@@ -233,6 +233,7 @@ export function ConversationPage() {
           )
         : (
             <ThreadScrollLayout
+              footer={<div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]" ref={composerFooterRef}>{composer}</div>}
               turns={messages.map(message => ({ key: String(message.id), message }))}
             >
               {({ message }) => (
@@ -271,12 +272,14 @@ export function ConversationPage() {
               )}
             </ThreadScrollLayout>
           )}
-      <div className="chat-composer-footer absolute right-0 bottom-0 left-0 z-[1] bg-surface pb-4" ref={composerFooterRef}>
-        <div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]">
-          {messages.length === 0 && newConversationToolbar}
-          {composer}
+      {messages.length === 0 && (
+        <div className="chat-composer-footer absolute right-0 bottom-0 left-0 z-[1] bg-surface pb-4" ref={composerFooterRef}>
+          <div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]">
+            {newConversationToolbar}
+            {composer}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 }

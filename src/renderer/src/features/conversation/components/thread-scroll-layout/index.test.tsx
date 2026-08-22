@@ -16,10 +16,7 @@ function setScrollMetrics(element: HTMLElement, scrollHeight: number) {
 }
 
 function transcriptViewport() {
-  const viewport = screen.getByRole('log').querySelector<HTMLElement>('[data-overlayscrollbars-viewport]');
-  if (viewport == null)
-    throw new Error('Transcript viewport is not initialized');
-  return viewport;
+  return screen.getByRole('log');
 }
 
 afterEach(() => {
@@ -28,10 +25,10 @@ afterEach(() => {
 });
 
 describe('thread scroll layout', () => {
-  it('uses an overlay scrollbar viewport for the transcript', () => {
+  it('uses the native transcript element as the scroll container', () => {
     render(<Transcript turns={[{ key: 'first' }]} />);
 
-    expect(screen.getByRole('log').querySelector('[data-overlayscrollbars-viewport]')).not.toBeNull();
+    expect(screen.getByRole('log')).toHaveClass('thread-scroll-layout');
   });
 
   it('keeps the footer and transcript in one full-height scroll surface', () => {
