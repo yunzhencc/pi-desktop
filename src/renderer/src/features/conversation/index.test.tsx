@@ -353,6 +353,56 @@ describe('conversation page', () => {
     expect(screen.getByText((_, element) => element?.tagName === 'PRE' && element.textContent === ' M src/main.ts')).not.toBeNull();
   });
 
+  it('collects a completed tool run beneath one duration control', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    const { container } = render(<ConversationPage />);
+
+    act(() => {
+      onUpdate.mock.calls[0]![0]({ startedAtMs: 1_000, status: 'running', type: 'status' });
+      onUpdate.mock.calls[0]![0]({ args: { command: 'git status --short' }, status: 'completed', toolCallId: 'tool-1', toolName: 'bash', type: 'tool' });
+      onUpdate.mock.calls[0]![0]({ args: { path: 'README.md' }, status: 'failed', toolCallId: 'tool-2', toolName: 'read', type: 'tool' });
+      onUpdate.mock.calls[0]![0]({ done: true, text: 'Assistant text stays visible', type: 'assistant' });
+      onUpdate.mock.calls[0]![0]({ completedAtMs: 2_000, status: 'settled', type: 'status' });
+    });
+
+    expect(container.querySelectorAll('[data-activity-turn]')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '收起工具活动' })).not.toBeNull();
+    expect(screen.getByText('运行了命令')).not.toBeNull();
+    expect(screen.getByText('读取文件失败')).not.toBeNull();
+    expect(container.querySelectorAll('.chat-tool-activity')).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole('button', { name: '收起工具活动' }));
+    expect(screen.queryByText('运行了命令')).toBeNull();
+    expect(screen.getByText('Assistant text stays visible')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '展开工具活动' }));
+    fireEvent.click(screen.getByRole('button', { name: '显示工具 bash 详情' }));
+    expect(screen.getByText('git status --short')).not.toBeNull();
+  });
+
+  it('collects restored tools that precede their persisted duration', () => {
+    const { container } = render(<ConversationPage />);
+
+    act(() => window.dispatchEvent(new CustomEvent('session-changed', {
+      detail: {
+        messages: [
+          { role: 'user', text: 'Read this PDF', timestamp: 1_000 },
+          { args: { command: 'pdftotext brief.pdf -' }, role: 'tool', status: 'completed', toolCallId: 'tool-1', toolName: 'bash' },
+          { args: { path: 'brief.pdf' }, role: 'tool', status: 'completed', toolCallId: 'tool-2', toolName: 'read' },
+          { completedAtMs: 17_000, role: 'work', startedAtMs: 1_000, status: 'worked' },
+          { role: 'assistant', text: 'The PDF has four pages.', timestamp: 17_000 },
+        ],
+        path: '/sessions/pdf.jsonl',
+      },
+    })));
+
+    expect(container.querySelectorAll('[data-activity-turn]')).toHaveLength(1);
+    expect(screen.getByText('运行了命令')).not.toBeNull();
+    expect(screen.getByText('已读取文件')).not.toBeNull();
+    expect(container.querySelectorAll('.chat-tool-activity')).toHaveLength(0);
+    expect(screen.getByText('The PDF has four pages.')).not.toBeNull();
+  });
+
   it('keeps the composer inside the transcript sticky footer after messages start', () => {
     render(<ConversationPage />);
 

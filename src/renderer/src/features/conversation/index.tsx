@@ -4,7 +4,7 @@ import type { Message, PiSessionSnapshot } from './model/transcript';
 import logo from '@renderer/assets/icon.svg';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AttachmentList, ChatComposer, MarkdownMessage, NewConversationToolbar, ProjectPicker, ThreadScrollLayout } from './components';
-import { AssistantMessageFooter, ToolActivity, UserMessageFooter, WorkedFor } from './components/message-turn';
+import { ActivitySummary, AssistantMessageFooter, ToolActivity, UserMessageFooter, WorkedFor } from './components/message-turn';
 import {
   appendAssistantMessage,
   appendSubmittedUserMessage,
@@ -15,6 +15,10 @@ import {
 import './style.css';
 
 type WorkspaceSnapshot = Awaited<ReturnType<Window['piApp']['workspaces']['get']>>;
+type ConversationTurn
+  = | { key: string; message: Message; type: 'message' }
+    | { activities: Message[]; key: string; type: 'activities' }
+    | { activities: Message[]; key: string; type: 'activity-turn'; work: Message };
 
 export function ConversationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -209,6 +213,66 @@ export function ConversationPage() {
   );
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
   const lastUserMessageId = messages.findLast(message => message.role === 'user')?.id;
+  const turns = groupConversationTurns(messages);
+  const renderMessage = (message: Message) => (
+    <div className="chat-turn flex w-full flex-col">
+      {message.role === 'work'
+        ? <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} status={message.workStatus} />
+        : (
+            <article className={`chat-message chat-message-${message.role} w-fit max-w-[min(100%,44rem)] text-base leading-normal${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
+              {message.role === 'assistant'
+                ? (
+                    <>
+                      <MarkdownMessage>{message.text}</MarkdownMessage>
+                      {message.done && message.text.trim() && <AssistantMessageFooter entryId={message.entryId} isLatest={messages.at(-1) === message} isRunning={isRunning} onFork={forkAssistantMessage} text={message.text} timestamp={message.timestamp} />}
+                    </>
+                  )
+                : message.role === 'user'
+                  ? (
+                      editingMessage?.id === message.id
+                        ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
+                        : (
+                            <div className="chat-message-user-stack">
+                              {message.attachments?.length ? <AttachmentList attachments={message.attachments} variant="message" /> : null}
+                              {message.text.trim()
+                                ? (
+                                    <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>
+                                      {message.text}
+                                    </div>
+                                  )
+                                : null}
+                              <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={message.text} timestamp={message.timestamp} />
+                            </div>
+                          )
+                    )
+                  : message.text}
+            </article>
+          )}
+    </div>
+  );
+  const renderTurn = (turn: ConversationTurn) => {
+    if (turn.type === 'activity-turn') {
+      return (
+        <ActivityTurn activities={turn.activities} work={turn.work} />
+      );
+    }
+
+    if (turn.type === 'activities') {
+      return (
+        <div className="chat-turn flex w-full flex-col">
+          <article className="chat-message chat-message-activity w-fit max-w-[min(100%,44rem)] text-base leading-normal">
+            <div className="grid gap-2.5" data-activity-group>
+              {turn.activities.map(message => (
+                <ToolActivity args={message.toolArgs} key={message.id} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />
+              ))}
+            </div>
+          </article>
+        </div>
+      );
+    }
+
+    return renderMessage(turn.message);
+  };
 
   return (
     <section className="chat-page relative flex min-h-0 flex-1 flex-col pt-11.5" style={{ '--thread-scroll-padding-bottom': `${composerFooterHeightPx + 16}px` } as CSSProperties}>
@@ -234,46 +298,9 @@ export function ConversationPage() {
         : (
             <ThreadScrollLayout
               footer={<div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]" ref={composerFooterRef}>{composer}</div>}
-              turns={messages.map(message => ({ key: String(message.id), message }))}
+              turns={turns}
             >
-              {({ message }) => (
-                <div className="chat-turn flex w-full flex-col">
-                  {message.role === 'work'
-                    ? <WorkedFor completedAtMs={message.completedAtMs} done={message.done} startedAtMs={message.startedAtMs} status={message.workStatus} />
-                    : (
-                        <article className={`chat-message chat-message-${message.role} w-fit max-w-[min(100%,44rem)] text-base leading-normal${editingMessage?.id === message.id ? ' is-editing' : ''}`}>
-                          {message.role === 'assistant'
-                            ? (
-                                <>
-                                  <MarkdownMessage>{message.text}</MarkdownMessage>
-                                  {message.done && message.text.trim() && <AssistantMessageFooter entryId={message.entryId} isLatest={messages.at(-1) === message} isRunning={isRunning} onFork={forkAssistantMessage} text={message.text} timestamp={message.timestamp} />}
-                                </>
-                              )
-                            : message.role === 'user'
-                              ? (
-                                  editingMessage?.id === message.id
-                                    ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
-                                    : (
-                                        <div className="chat-message-user-stack">
-                                          {message.attachments?.length ? <AttachmentList attachments={message.attachments} variant="message" /> : null}
-                                          {message.text.trim()
-                                            ? (
-                                                <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>
-                                                  {message.text}
-                                                </div>
-                                              )
-                                            : null}
-                                          <UserMessageFooter canEdit={!isRunning && message.id === lastUserMessageId} onEdit={() => setEditingMessage({ id: message.id, text: message.text })} text={message.text} timestamp={message.timestamp} />
-                                        </div>
-                                      )
-                                )
-                              : message.role === 'activity'
-                                ? <ToolActivity args={message.toolArgs} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />
-                                : message.text}
-                        </article>
-                      )}
-                </div>
-              )}
+              {renderTurn}
             </ThreadScrollLayout>
           )}
       {messages.length === 0 && (
@@ -285,6 +312,66 @@ export function ConversationPage() {
         </div>
       )}
     </section>
+  );
+}
+
+function groupConversationTurns(messages: Message[]): ConversationTurn[] {
+  const turns: ConversationTurn[] = [];
+  let activities: Message[] = [];
+  let activityTurn: Extract<ConversationTurn, { type: 'activity-turn' }> | undefined;
+  const flushActivityTurn = () => {
+    if (activityTurn == null)
+      return;
+    if (activityTurn.activities.length === 0)
+      turns.push({ key: activityTurn.key, message: activityTurn.work, type: 'message' });
+    else
+      turns.push(activityTurn);
+    activityTurn = undefined;
+  };
+  const flushActivities = () => {
+    if (activities.length === 0)
+      return;
+    turns.push({ activities, key: activities.map(message => message.id).join(':'), type: 'activities' });
+    activities = [];
+  };
+
+  for (const message of messages) {
+    if (message.role === 'work') {
+      flushActivityTurn();
+      activityTurn = { activities, key: String(message.id), type: 'activity-turn', work: message };
+      activities = [];
+      continue;
+    }
+    if (message.role === 'activity') {
+      if (activityTurn != null)
+        activityTurn.activities.push(message);
+      else
+        activities.push(message);
+      continue;
+    }
+    flushActivities();
+    flushActivityTurn();
+    turns.push({ key: String(message.id), message, type: 'message' });
+  }
+  flushActivities();
+  flushActivityTurn();
+  return turns;
+}
+
+function ActivityTurn({ activities, work }: Extract<ConversationTurn, { type: 'activity-turn' }>) {
+  const [expanded, setExpanded] = useState(true);
+  const isRunning = !work.done && work.completedAtMs == null;
+  const isExpanded = isRunning || expanded;
+
+  return (
+    <div className="chat-activity-turn flex w-full flex-col" data-activity-turn>
+      <WorkedFor completedAtMs={work.completedAtMs} done={work.done} expanded={isExpanded} onToggle={() => setExpanded(value => !value)} startedAtMs={work.startedAtMs} status={work.workStatus} />
+      {isExpanded && (
+        <div className="chat-activity-turn-content grid gap-4">
+          {activities.map(message => <ActivitySummary args={message.toolArgs} key={message.id} name={message.toolName ?? message.text} output={message.toolOutput} status={message.toolStatus ?? 'running'} />)}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -117,9 +117,10 @@ export function applyComposerUpdate(current: Message[], update: ComposerUpdate, 
 
 export function upsertToolActivity(current: Message[], update: ToolSnapshot, now = Date.now()): Message[] {
   const index = current.findLastIndex(message => message.role === 'activity' && message.toolCallId === update.toolCallId);
+  const id = index < 0 ? nextAvailableMessageId(current, now) : current[index]!.id;
   const message: Message = {
     done: update.status !== 'running',
-    id: index < 0 ? now : current[index]!.id,
+    id,
     role: 'activity',
     text: update.toolName,
     toolArgs: update.args ?? (index < 0 ? undefined : current[index]!.toolArgs),
@@ -131,13 +132,20 @@ export function upsertToolActivity(current: Message[], update: ToolSnapshot, now
   return index < 0 ? [...current, message] : [...current.slice(0, index), message, ...current.slice(index + 1)];
 }
 
+function nextAvailableMessageId(messages: Message[], initialId: number): number {
+  let id = initialId;
+  while (messages.some(message => message.id === id))
+    id += 1;
+  return id;
+}
+
 export function appendAssistantMessage(current: Message[], update: AssistantSnapshot, now = Date.now()): Message[] {
   const latestUserStartedAtMs = current.findLast(message => message.role === 'user')?.startedAtMs;
   const withWork = current.some(message => message.role === 'work' && !message.done) || latestUserStartedAtMs == null
     ? current
     : [...current, { completedAtMs: update.done ? update.timestamp ?? now : undefined, done: update.done, id: -now, role: 'work' as const, startedAtMs: latestUserStartedAtMs, text: '', workStatus: update.done ? 'worked' as const : undefined }];
   const last = withWork.at(-1);
-  const message = { done: update.done, entryId: update.entryId, id: last?.role === 'assistant' ? last.id : now, role: 'assistant' as const, text: update.text, timestamp: update.timestamp };
+  const message = { done: update.done, entryId: update.entryId, id: last?.role === 'assistant' ? last.id : nextAvailableMessageId(withWork, now), role: 'assistant' as const, text: update.text, timestamp: update.timestamp };
   return last?.role === 'assistant' && !last.done ? [...withWork.slice(0, -1), message] : [...withWork, message];
 }
 

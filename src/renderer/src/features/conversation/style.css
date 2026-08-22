@@ -113,3 +113,31 @@
   font-size: 13px;
   line-height: 20px;
 }
+
+.chat-worked-for-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: chat-worked-for-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes chat-worked-for-dot {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.9);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-worked-for-dot {
+    animation: none;
+  }
+}

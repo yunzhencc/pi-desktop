@@ -58,6 +58,20 @@ describe('conversation transcript model', () => {
     ]);
   });
 
+  it('assigns distinct ids to tool calls received in the same millisecond', () => {
+    const first = upsertToolActivity([], { status: 'completed', toolCallId: 'tool-1', toolName: 'bash' }, 1_000);
+    const messages = upsertToolActivity(first, { status: 'completed', toolCallId: 'tool-2', toolName: 'read' }, 1_000);
+
+    expect(messages.map(message => message.id)).toEqual([1_000, 1_001]);
+  });
+
+  it('assigns the final assistant reply a distinct id after a tool call', () => {
+    const activity = upsertToolActivity([], { status: 'completed', toolCallId: 'tool-1', toolName: 'bash' }, 1_000);
+    const messages = appendAssistantMessage(activity, { done: true, text: 'Done' }, 1_000);
+
+    expect(messages.map(message => message.id)).toEqual([1_000, 1_001]);
+  });
+
   it('appends errors and updates user message text', () => {
     const messages = appendErrorMessage([{ id: 1_000, role: 'user', text: 'Old' }], 'Failed', 2_000);
 

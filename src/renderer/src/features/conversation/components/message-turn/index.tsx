@@ -1,4 +1,4 @@
-import { Copy, GitFork, LoaderCircle, Pencil } from 'lucide-react';
+import { BookOpen, ChevronDown, CircleAlert, Copy, FilePenLine, GitFork, LoaderCircle, Pencil, Terminal, Wrench } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -14,6 +14,8 @@ interface ToolActivityProps {
 interface WorkedForProps {
   completedAtMs?: number;
   done?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
   startedAtMs?: number;
   status?: 'stopped' | 'worked';
 }
@@ -61,6 +63,59 @@ export function ToolActivity({ args, name, output, status }: ToolActivityProps) 
   );
 }
 
+export function ActivitySummary({ args, name, output, status }: ToolActivityProps) {
+  const [expanded, setExpanded] = useState(false);
+  const command = toolSummary(args);
+  const result = toolText(output);
+  const hasDetails = command != null || result != null;
+  const isExpanded = status === 'running' || expanded;
+  const label = activitySummaryLabel(name, status);
+
+  return (
+    <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-activity-summary-item" role={status === 'running' ? 'status' : undefined}>
+      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
+        <ActivityIcon name={name} status={status} />
+        <span>
+          {label}
+          {status === 'running' ? '…' : ''}
+        </span>
+        {hasDetails && status !== 'running' && <ChevronDown aria-hidden="true" className={`ml-auto transition-transform ${isExpanded ? 'rotate-180' : ''}`} size={14} />}
+      </button>
+      {isExpanded && hasDetails && (
+        <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
+          {command != null && <code>{command}</code>}
+          {result != null && <pre>{result}</pre>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function activitySummaryLabel(name: string, status: ToolStatus): string {
+  const isCommand = name === 'bash' || name === 'exec';
+  const isRead = name === 'read';
+  const isEdit = name === 'edit' || name === 'patch' || name === 'write';
+  if (status === 'running')
+    return isCommand ? '正在运行命令' : isRead ? '正在读取文件' : isEdit ? '正在编辑文件' : `正在使用工具 ${name}`;
+  if (status === 'failed')
+    return isCommand ? '命令执行失败' : isRead ? '读取文件失败' : isEdit ? '编辑文件失败' : `工具 ${name} 执行失败`;
+  return isCommand ? '运行了命令' : isRead ? '已读取文件' : isEdit ? '编辑了文件' : `已使用工具 ${name}`;
+}
+
+function ActivityIcon({ name, status }: Pick<ToolActivityProps, 'name' | 'status'>) {
+  if (status === 'running')
+    return <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} />;
+  if (status === 'failed')
+    return <CircleAlert aria-hidden="true" size={16} />;
+  if (name === 'bash' || name === 'exec')
+    return <Terminal aria-hidden="true" size={16} />;
+  if (name === 'read')
+    return <BookOpen aria-hidden="true" size={16} />;
+  if (name === 'edit' || name === 'patch' || name === 'write')
+    return <FilePenLine aria-hidden="true" size={16} />;
+  return <Wrench aria-hidden="true" size={16} />;
+}
+
 function toolSummary(args: unknown): string | undefined {
   if (args == null)
     return undefined;
@@ -87,7 +142,7 @@ function toolText(value: unknown): string | undefined {
   }
 }
 
-export function WorkedFor({ completedAtMs, done, startedAtMs, status }: WorkedForProps) {
+export function WorkedFor({ completedAtMs, done, expanded, onToggle, startedAtMs, status }: WorkedForProps) {
   const { formatMessage } = useIntl();
   const [now, setNow] = useState(() => Date.now());
 
@@ -117,7 +172,20 @@ export function WorkedFor({ completedAtMs, done, startedAtMs, status }: WorkedFo
         : formatMessage({ id: 'conversation.working' });
   return (
     <div className="chat-worked-for flex w-full flex-col gap-2 text-[13px] leading-5 text-text-tertiary" data-duration-divider>
-      <p className="m-0">{label}</p>
+      {onToggle == null
+        ? (
+            <p className="m-0 flex items-center gap-2">
+              {!done && completedAtMs == null && <span aria-hidden="true" className="chat-worked-for-dot" />}
+              {label}
+            </p>
+          )
+        : (
+            <button aria-expanded={expanded} aria-label={`${expanded ? '收起' : '展开'}工具活动`} className="flex w-fit cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit" onClick={onToggle} type="button">
+              {!done && completedAtMs == null && <span aria-hidden="true" className="chat-worked-for-dot" />}
+              <span>{label}</span>
+              <ChevronDown aria-hidden="true" className={expanded ? 'rotate-180' : ''} size={15} />
+            </button>
+          )}
       <div aria-hidden="true" className="chat-worked-for-rule w-full border-t border-border-subtle" />
     </div>
   );
