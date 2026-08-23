@@ -100,8 +100,8 @@ describe('settings view', () => {
           'appearance.light': '浅色',
           'appearance.system': '系统',
           'settings.appearance': '外观',
-          'settings.chinese': '中文',
-          'settings.english': '英语',
+          'settings.chinese': '简体中文',
+          'settings.english': 'English',
           'settings.general': '常规',
           'settings.language': '语言',
           'settings.theme': '主题',
@@ -133,7 +133,7 @@ describe('settings view', () => {
     fireEvent.click(screen.getByRole('combobox', { name: '语言' }));
     expect(screen.getByRole('listbox')).not.toBeNull();
 
-    const englishOption = screen.getByRole('option', { name: '英语' });
+    const englishOption = screen.getByRole('option', { name: 'English' });
     fireEvent.pointerDown(englishOption);
     fireEvent.click(englishOption);
     expect(onLocaleChange).toHaveBeenCalledWith('en');
