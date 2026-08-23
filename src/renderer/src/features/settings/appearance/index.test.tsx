@@ -100,6 +100,7 @@ describe('settings view', () => {
           'appearance.light': '浅色',
           'appearance.system': '系统',
           'settings.appearance': '外观',
+          'settings.autoDetect': '自动检测',
           'settings.chinese': '简体中文',
           'settings.english': 'English',
           'settings.general': '常规',
@@ -137,6 +138,35 @@ describe('settings view', () => {
     fireEvent.pointerDown(englishOption);
     fireEvent.click(englishOption);
     expect(onLocaleChange).toHaveBeenCalledWith('en');
+  });
+
+  it('clears the locale override when automatic detection is selected', () => {
+    const onLocaleChange = vi.fn();
+
+    render(
+      <IntlProvider
+        locale="zh-CN"
+        messages={{
+          'settings.autoDetect': '自动检测',
+          'settings.chinese': '简体中文',
+          'settings.english': 'English',
+          'settings.general': '常规',
+          'settings.language': '语言',
+        }}
+      >
+        <GeneralSettings locale={null} onLocaleChange={onLocaleChange} />
+      </IntlProvider>,
+    );
+
+    expect(screen.getByRole('combobox', { name: '语言' }).textContent).toContain('自动检测');
+
+    fireEvent.click(screen.getByRole('combobox', { name: '语言' }));
+
+    const automaticOption = screen.getByRole('option', { name: '自动检测' });
+    fireEvent.pointerDown(automaticOption);
+    fireEvent.click(automaticOption);
+
+    expect(onLocaleChange).toHaveBeenCalledWith(null);
   });
 
   it('shows local profile stats without account data', async () => {

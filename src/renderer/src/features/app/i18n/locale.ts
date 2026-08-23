@@ -6,8 +6,10 @@ export const LocaleEnum = Enum({
 });
 
 export type AppLocale = typeof LocaleEnum.valueType;
+export type LocalePreference = AppLocale | null;
 
-export const DEFAULT_LOCALE: AppLocale = LocaleEnum.Chinese;
+export const AUTO_LOCALE_VALUE = 'auto';
+export const DEFAULT_LOCALE: AppLocale = LocaleEnum.English;
 export const LOCALE_STORAGE_KEY = 'pi-desktop-locale';
 
 export const messages = {
@@ -193,6 +195,7 @@ export const messages = {
     'resize.rightPanel': '调整右侧面板大小',
     'resize.sidebar': '调整侧边栏大小',
     'settings.appearance': '外观',
+    'settings.autoDetect': '自动检测',
     'settings.backToApp': '返回应用',
     'settings.chinese': '简体中文',
     'settings.english': 'English',
@@ -427,6 +430,7 @@ export const messages = {
     'resize.rightPanel': 'Resize right panel',
     'resize.sidebar': 'Resize sidebar',
     'settings.appearance': 'Appearance',
+    'settings.autoDetect': 'Auto detect',
     'settings.backToApp': 'Back to app',
     'settings.chinese': '简体中文',
     'settings.english': 'English',
@@ -493,6 +497,24 @@ declare global {
   }
 }
 
-export function readLocale(value: string | null): AppLocale {
-  return LocaleEnum.has(value) ? value as AppLocale : DEFAULT_LOCALE;
+export function readLocalePreference(value: string | null): LocalePreference {
+  return LocaleEnum.has(value) ? value as AppLocale : null;
+}
+
+export function resolveLocale(preference: LocalePreference, systemLocales: readonly string[]): AppLocale {
+  if (preference)
+    return preference;
+
+  for (const locale of systemLocales) {
+    if (locale.toLowerCase().startsWith('zh'))
+      return LocaleEnum.Chinese;
+    if (locale.toLowerCase().startsWith('en'))
+      return LocaleEnum.English;
+  }
+
+  return DEFAULT_LOCALE;
+}
+
+export function readLocale(value: string | null, systemLocales: readonly string[] = []): AppLocale {
+  return resolveLocale(readLocalePreference(value), systemLocales);
 }

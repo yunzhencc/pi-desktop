@@ -16,6 +16,7 @@ const messages: Record<string, string> = {
   'profileStats.sessions': '会话',
   'profileStats.title': '统计',
   'settings.appearance': '外观',
+  'settings.autoDetect': '自动检测',
   'settings.chinese': '中文',
   'settings.english': '英语',
   'settings.general': '常规',
@@ -53,6 +54,14 @@ describe('settings search', () => {
       label: '会话',
       panel: '个人资料',
       path: '/settings/profile',
+    });
+  });
+
+  it('finds automatic language detection', () => {
+    expect(searchSettings('自动检测', formatMessage)[0]).toMatchObject({
+      label: '自动检测',
+      panel: '常规',
+      path: '/settings/general',
     });
   });
 

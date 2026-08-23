@@ -1,4 +1,4 @@
 export { useAppLocale } from './context';
-export { DEFAULT_LOCALE, LOCALE_STORAGE_KEY, LocaleEnum, messages, readLocale } from './locale';
-export type { AppLocale } from './locale';
+export { AUTO_LOCALE_VALUE, DEFAULT_LOCALE, LOCALE_STORAGE_KEY, LocaleEnum, messages, readLocale, readLocalePreference, resolveLocale } from './locale';
+export type { AppLocale, LocalePreference } from './locale';
 export { I18nProvider } from './provider';

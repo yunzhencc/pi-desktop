@@ -1,4 +1,4 @@
-import type { AppLocale } from '@renderer/features/app/i18n';
+import type { AppLocale, LocalePreference } from '@renderer/features/app/i18n';
 import {
   Select,
   SelectContent,
@@ -7,12 +7,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@pi-desktop/shadcn-ui/components/select';
-import { LocaleEnum } from '@renderer/features/app/i18n';
+import { AUTO_LOCALE_VALUE, LocaleEnum } from '@renderer/features/app/i18n';
 import { useIntl } from 'react-intl';
 
 interface GeneralSettingsProps {
-  locale: AppLocale;
-  onLocaleChange: (locale: AppLocale) => void;
+  locale: LocalePreference;
+  onLocaleChange: (locale: LocalePreference) => void;
 }
 
 export function GeneralSettings({ locale, onLocaleChange }: GeneralSettingsProps) {
@@ -27,15 +27,21 @@ export function GeneralSettings({ locale, onLocaleChange }: GeneralSettingsProps
           <label className="flex min-h-10 items-center justify-between rounded-md border border-border-subtle py-2 pr-2.5 pl-3 text-sm text-foreground">
             <span>{formatMessage({ id: 'settings.language' })}</span>
             <Select
-              items={LocaleEnum.items.map(locale => ({ label: formatMessage({ id: locale.label }), value: locale.value }))}
-              onValueChange={value => onLocaleChange(value as AppLocale)}
-              value={locale}
+              items={[
+                { label: formatMessage({ id: 'settings.autoDetect' }), value: AUTO_LOCALE_VALUE },
+                ...LocaleEnum.items.map(locale => ({ label: formatMessage({ id: locale.label }), value: locale.value })),
+              ]}
+              onValueChange={value => onLocaleChange(value === AUTO_LOCALE_VALUE ? null : value as AppLocale)}
+              value={locale ?? AUTO_LOCALE_VALUE}
             >
               <SelectTrigger aria-label={formatMessage({ id: 'settings.language' })} className="min-w-32 bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] font-[inherit] text-inherit">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="end" alignItemWithTrigger={false}>
                 <SelectGroup>
+                  <SelectItem value={AUTO_LOCALE_VALUE}>
+                    {formatMessage({ id: 'settings.autoDetect' })}
+                  </SelectItem>
                   {LocaleEnum.items.map(locale => (
                     <SelectItem key={locale.value} value={locale.value}>
                       {formatMessage({ id: locale.label })}

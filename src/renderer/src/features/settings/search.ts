@@ -16,7 +16,7 @@ export interface SettingsSearchResult {
 
 const settingsSearchTargets: SettingsSearchTarget[] = [
   {
-    messages: ['settings.language', 'settings.chinese', 'settings.english'],
+    messages: ['settings.language', 'settings.autoDetect', 'settings.chinese', 'settings.english'],
     panel: 'settings.general',
     path: '/settings/general',
   },

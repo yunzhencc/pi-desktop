@@ -1,9 +1,10 @@
-import type { AppLocale } from './locale';
+import type { AppLocale, LocalePreference } from './locale';
 import { createContext, use } from 'react';
 
 interface LocaleContextValue {
   locale: AppLocale;
-  setLocale: (locale: AppLocale) => void;
+  localePreference: LocalePreference;
+  setLocale: (locale: LocalePreference) => void;
 }
 
 export const LocaleContext = createContext<LocaleContextValue | null>(null);
