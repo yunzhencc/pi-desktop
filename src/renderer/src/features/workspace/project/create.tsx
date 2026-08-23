@@ -8,8 +8,10 @@ import {
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { Folder, FolderPlus, X } from 'lucide-react';
 import { useState } from 'react';
+import { useIntl } from 'react-intl';
 
 export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: () => void; onCreated: (workspace: WorkspaceSnapshot) => void; project?: WorkspaceSummary }) {
+  const { formatMessage } = useIntl();
   const isEditing = project !== undefined;
   const [name, setName] = useState(project?.displayName ?? '');
   const [sourcePath, setSourcePath] = useState<string | undefined>(project?.path);
@@ -31,7 +33,7 @@ export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: 
     if (isSubmitting)
       return;
     if (!sourcePath) {
-      setError('请添加源文件夹');
+      setError(formatMessage({ id: 'projects.error.sourceRequired' }));
       return;
     }
     setIsSubmitting(true);
@@ -43,7 +45,7 @@ export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: 
       onClose();
     }
     catch (reason) {
-      setError(reason instanceof Error ? reason.message : isEditing ? '保存项目失败' : '创建项目失败');
+      setError(reason instanceof Error ? reason.message : isEditing ? formatMessage({ id: 'projects.saveFailed' }) : formatMessage({ id: 'projects.createFailed' }));
     }
     finally {
       setIsSubmitting(false);
@@ -64,9 +66,9 @@ export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: 
       >
         <form aria-labelledby="create-project-title" onSubmit={event => void submit(event)}>
           <div className="mb-4 flex items-center justify-between">
-            <DialogTitle className="m-0 text-[18px] leading-normal font-normal text-foreground" id="create-project-title">{isEditing ? '编辑项目' : '创建项目'}</DialogTitle>
+            <DialogTitle className="m-0 text-[18px] leading-normal font-normal text-foreground" id="create-project-title">{formatMessage({ id: isEditing ? 'projects.editProject' : 'projects.create' })}</DialogTitle>
             <button
-              aria-label="关闭"
+              aria-label={formatMessage({ id: 'common.close' })}
               className="grid size-6 place-items-center rounded-lg text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] disabled:cursor-not-allowed disabled:opacity-45"
               disabled={isSubmitting}
               onClick={onClose}
@@ -78,18 +80,18 @@ export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: 
           <label className="flex h-10 items-center rounded-xl border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] text-text-tertiary focus-within:border-focus">
             <Folder aria-hidden="true" className="box-content size-4 border-r border-border-subtle px-3" size={24} />
             <input
-              aria-label="项目名称"
+              aria-label={formatMessage({ id: 'projects.name' })}
               autoFocus
               className="min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-foreground outline-0 placeholder:text-text-tertiary"
               onChange={(event) => {
                 setName(event.target.value);
                 setError(undefined);
               }}
-              placeholder="项目名称"
+              placeholder={formatMessage({ id: 'projects.name' })}
               value={name}
             />
           </label>
-          <span className="mt-4 mb-2 block text-sm font-medium text-foreground">源文件夹</span>
+          <span className="mt-4 mb-2 block text-sm font-medium text-foreground">{formatMessage({ id: 'projects.sourceFolder' })}</span>
           <button
             className={cn(
               'flex min-h-24 w-full flex-col items-center justify-center gap-1 rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] p-3 text-sm text-text-secondary hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] disabled:cursor-not-allowed disabled:opacity-45',
@@ -100,12 +102,12 @@ export function CreateProjectDialog({ onClose, onCreated, project }: { onClose: 
             type="button"
           >
             {sourcePath ? <Folder aria-hidden="true" className="size-4" size={20} /> : <FolderPlus aria-hidden="true" className="size-4" size={28} />}
-            <span className="max-w-full truncate">{sourcePath ?? '添加 PI 可读取和编辑的文件夹'}</span>
+            <span className="max-w-full truncate">{sourcePath ?? formatMessage({ id: 'projects.sourcePlaceholder' })}</span>
           </button>
           {error && <p className="mt-3 text-destructive" role="alert">{error}</p>}
           <div className="mt-5 flex items-center justify-end gap-2">
-            <button className="min-h-8 min-w-[90px] rounded-lg px-3 text-sm font-medium text-text-tertiary disabled:cursor-not-allowed disabled:opacity-45" disabled={isSubmitting} onClick={onClose} type="button">取消</button>
-            <button className="min-h-8 min-w-[90px] rounded-lg bg-foreground px-3 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-45" disabled={isSubmitting} type="submit">{isSubmitting ? isEditing ? '保存中…' : '创建中…' : isEditing ? '保存项目' : '创建项目'}</button>
+            <button className="min-h-8 min-w-[90px] rounded-lg px-3 text-sm font-medium text-text-tertiary disabled:cursor-not-allowed disabled:opacity-45" disabled={isSubmitting} onClick={onClose} type="button">{formatMessage({ id: 'projects.cancel' })}</button>
+            <button className="min-h-8 min-w-[90px] rounded-lg bg-foreground px-3 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-45" disabled={isSubmitting} type="submit">{formatMessage({ id: isSubmitting ? isEditing ? 'projects.saving' : 'projects.creating' : isEditing ? 'projects.save' : 'projects.create' })}</button>
           </div>
         </form>
       </DialogContent>

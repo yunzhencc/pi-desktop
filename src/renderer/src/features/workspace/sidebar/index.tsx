@@ -202,7 +202,7 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
         <>
           <div className="workspace-sidebar-heading group/sidebar-heading flex h-7 items-center gap-1 px-2 text-[13px] text-text-tertiary">
             <button aria-expanded={!isPinnedCollapsed} className="group/sidebar-toggle flex min-w-0 flex-1 items-center gap-1 rounded-md py-0.5 text-left" onClick={() => setIsPinnedCollapsed(collapsed => !collapsed)} type="button">
-              <span className="min-w-0 truncate">置顶</span>
+              <span className="min-w-0 truncate">{formatMessage({ id: 'projects.pin' })}</span>
               <CodexChevron
                 aria-hidden="true"
                 className={cn(
@@ -272,7 +272,8 @@ function SessionRow({ isPinned, isRunning, isSelected, onOpen, onTogglePin, proj
   projectName?: string;
   session: PiSessionSummary;
 }) {
-  const title = session.firstMessage || '新对话';
+  const { formatMessage } = useIntl();
+  const title = session.firstMessage || formatMessage({ id: 'conversation.new' });
 
   return (
     <>

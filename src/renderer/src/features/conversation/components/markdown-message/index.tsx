@@ -7,8 +7,11 @@ import { mathFromMarkdown } from 'mdast-util-math';
 import { gfm } from 'micromark-extension-gfm';
 import { math } from 'micromark-extension-math';
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useIntl } from 'react-intl';
 import 'katex/dist/katex.min.css';
 import './style.css';
+
+type FormatMessage = ReturnType<typeof useIntl>['formatMessage'];
 
 interface MarkdownNode {
   align?: Array<'center' | 'left' | 'right' | null>;
@@ -25,11 +28,12 @@ interface MarkdownNode {
 }
 
 export function MarkdownMessage({ children }: { children: string }) {
+  const { formatMessage } = useIntl();
   const root = fromMarkdown(children, { extensions: [gfm(), math()], mdastExtensions: [gfmFromMarkdown(), mathFromMarkdown()] }) as unknown as MarkdownNode;
-  return <div className="markdown-message" data-markdown-root>{renderBlocks(root.children ?? [], 'root')}</div>;
+  return <div className="markdown-message" data-markdown-root>{renderBlocks(root.children ?? [], 'root', formatMessage)}</div>;
 }
 
-function renderBlocks(nodes: MarkdownNode[], key: string): ReactNode[] {
+function renderBlocks(nodes: MarkdownNode[], key: string, formatMessage: FormatMessage): ReactNode[] {
   return nodes.map((node, index) => {
     const nodeKey = `${key}-${index}`;
     switch (node.type) {
@@ -38,27 +42,27 @@ function renderBlocks(nodes: MarkdownNode[], key: string): ReactNode[] {
         const Tag = `h${node.depth ?? 1}` as keyof React.JSX.IntrinsicElements;
         return <Tag className="markdown-message-heading" key={nodeKey}>{renderInline(node.children ?? [], nodeKey)}</Tag>;
       }
-      case 'blockquote': return <blockquote className="markdown-message-blockquote" key={nodeKey}>{renderBlocks(node.children ?? [], nodeKey)}</blockquote>;
-      case 'code': return <CodeBlock code={node.value ?? ''} key={nodeKey} language={node.lang ?? undefined} />;
+      case 'blockquote': return <blockquote className="markdown-message-blockquote" key={nodeKey}>{renderBlocks(node.children ?? [], nodeKey, formatMessage)}</blockquote>;
+      case 'code': return <CodeBlock code={node.value ?? ''} formatMessage={formatMessage} key={nodeKey} language={node.lang ?? undefined} />;
       case 'math': return <MathBlock key={nodeKey} value={node.value ?? ''} />;
       case 'list': {
         const Tag = node.ordered ? 'ol' : 'ul';
-        return <Tag className={`markdown-message-list ${node.ordered ? 'markdown-message-list-ordered' : 'markdown-message-list-unordered'}`} key={nodeKey} start={node.ordered ? node.start ?? 1 : undefined}>{renderBlocks(node.children ?? [], nodeKey)}</Tag>;
+        return <Tag className={`markdown-message-list ${node.ordered ? 'markdown-message-list-ordered' : 'markdown-message-list-unordered'}`} key={nodeKey} start={node.ordered ? node.start ?? 1 : undefined}>{renderBlocks(node.children ?? [], nodeKey, formatMessage)}</Tag>;
       }
       case 'listItem': return (
         <li className={`markdown-message-list-item${node.checked != null ? ' markdown-message-task-list-item' : ''}`} key={nodeKey}>
-          {node.checked != null && <input aria-label="Task" checked={node.checked} disabled type="checkbox" />}
-          {renderBlocks(node.children ?? [], nodeKey)}
+          {node.checked != null && <input aria-label={formatMessage({ id: 'markdown.task' })} checked={node.checked} disabled type="checkbox" />}
+          {renderBlocks(node.children ?? [], nodeKey, formatMessage)}
         </li>
       );
       case 'thematicBreak': return <hr className="markdown-message-hr" key={nodeKey} />;
-      case 'table': return <MarkdownTable key={nodeKey} node={node} nodeKey={nodeKey} />;
+      case 'table': return <MarkdownTable formatMessage={formatMessage} key={nodeKey} node={node} nodeKey={nodeKey} />;
       default: return null;
     }
   });
 }
 
-function MarkdownTable({ node, nodeKey }: { node: MarkdownNode; nodeKey: string }) {
+function MarkdownTable({ formatMessage, node, nodeKey }: { formatMessage: FormatMessage; node: MarkdownNode; nodeKey: string }) {
   const tableText = tableToTsv(node);
   return (
     <div className="markdown-message-table-container" data-wide-block>
@@ -71,7 +75,7 @@ function MarkdownTable({ node, nodeKey }: { node: MarkdownNode; nodeKey: string 
         </div>
       </div>
       <div className="markdown-message-table-actions">
-        <IconButton label="Copy table" onClick={() => void navigator.clipboard?.writeText(tableText)}>
+        <IconButton label={formatMessage({ id: 'markdown.table.copy' })} onClick={() => void navigator.clipboard?.writeText(tableText)}>
           <Copy aria-hidden="true" size={14} />
         </IconButton>
       </div>
@@ -112,9 +116,9 @@ function renderInline(nodes: MarkdownNode[], key: string): ReactNode[] {
   });
 }
 
-function CodeBlock({ code, language }: { code: string; language?: string | null }) {
+function CodeBlock({ code, formatMessage, language }: { code: string; formatMessage: FormatMessage; language?: string | null }) {
   const normalizedLanguage = normalizeLanguage(language);
-  const displayLanguage = languageLabel(normalizedLanguage);
+  const displayLanguage = languageLabel(normalizedLanguage, formatMessage);
   const preview = previewLanguage(normalizedLanguage);
   const highlightKey = `${normalizedLanguage}\0${code}`;
   const [highlightedHtml, setHighlightedHtml] = useState<{ html: string; key: string }>();
@@ -153,20 +157,20 @@ function CodeBlock({ code, language }: { code: string; language?: string | null 
         </span>
         <span className="markdown-code-block-actions">
           {preview && (
-            <IconButton label={view === 'preview' ? 'Show code' : 'Preview code'} onClick={() => setView(current => current === 'preview' ? 'code' : 'preview')}>
+            <IconButton label={formatMessage({ id: view === 'preview' ? 'markdown.code.show' : 'markdown.code.preview' })} onClick={() => setView(current => current === 'preview' ? 'code' : 'preview')}>
               {view === 'preview' ? <Code2 aria-hidden="true" size={14} /> : <Eye aria-hidden="true" size={14} />}
             </IconButton>
           )}
-          <IconButton label="Download code" onClick={() => downloadText(code, `code-block.${downloadExtension(normalizedLanguage)}`)}>
+          <IconButton label={formatMessage({ id: 'markdown.code.download' })} onClick={() => downloadText(code, `code-block.${downloadExtension(normalizedLanguage)}`)}>
             <Download aria-hidden="true" size={14} />
           </IconButton>
-          <IconButton label={copied ? 'Copied code' : 'Copy code'} onClick={copyCode}>
+          <IconButton label={formatMessage({ id: copied ? 'markdown.code.copied' : 'markdown.code.copy' })} onClick={copyCode}>
             {copied ? <Check aria-hidden="true" size={14} /> : <Copy aria-hidden="true" size={14} />}
           </IconButton>
         </span>
       </figcaption>
       {view === 'preview' && sourceDoc
-        ? <iframe className="markdown-code-block-preview" sandbox="" srcDoc={sourceDoc} title={`${displayLanguage} preview`} />
+        ? <iframe className="markdown-code-block-preview" sandbox="" srcDoc={sourceDoc} title={formatMessage({ id: 'markdown.code.previewTitle' }, { language: displayLanguage })} />
         : (
             <div className="markdown-code-block-body">
               {highlightedHtml?.key === highlightKey
@@ -222,8 +226,8 @@ function normalizeLanguage(language: string | null | undefined): string {
   return value;
 }
 
-function languageLabel(language: string): string {
-  return language === 'text' ? 'Code' : language;
+function languageLabel(language: string, formatMessage?: FormatMessage): string {
+  return language === 'text' ? formatMessage?.({ id: 'markdown.code' }) ?? 'Code' : language;
 }
 
 function previewLanguage(language: string): 'html' | 'svg' | undefined {

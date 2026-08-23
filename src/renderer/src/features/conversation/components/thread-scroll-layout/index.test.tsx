@@ -1,11 +1,16 @@
 // @vitest-environment jsdom
 
+import { I18nProvider } from '@renderer/features/app/i18n';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ThreadScrollLayout } from '.';
 
 function Transcript({ footer, turns }: { footer?: React.ReactNode; turns: { key: string }[] }) {
-  return <ThreadScrollLayout footer={footer} turns={turns}>{turn => <article>{turn.key}</article>}</ThreadScrollLayout>;
+  return (
+    <I18nProvider>
+      <ThreadScrollLayout footer={footer} turns={turns}>{turn => <article>{turn.key}</article>}</ThreadScrollLayout>
+    </I18nProvider>
+  );
 }
 
 function setScrollMetrics(element: HTMLElement, scrollHeight: number) {

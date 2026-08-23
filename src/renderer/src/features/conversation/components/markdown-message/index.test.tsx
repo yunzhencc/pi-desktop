@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { I18nProvider } from '@renderer/features/app/i18n';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MarkdownMessage } from './';
@@ -19,7 +20,7 @@ describe('markdown message', () => {
   it('renders GFM tables and copies them as TSV', () => {
     const writeText = vi.fn(() => Promise.resolve());
     vi.stubGlobal('navigator', { clipboard: { writeText } });
-    render(<MarkdownMessage>{'| Name | Value |\n| --- | ---: |\n| alpha | 1 |'}</MarkdownMessage>);
+    render(<I18nProvider><MarkdownMessage>{'| Name | Value |\n| --- | ---: |\n| alpha | 1 |'}</MarkdownMessage></I18nProvider>);
 
     expect(screen.getByRole('columnheader', { name: 'Name' })).not.toBeNull();
     expect(screen.getByRole('cell', { name: '1' }).style.textAlign).toBe('right');
@@ -31,7 +32,7 @@ describe('markdown message', () => {
   it('renders code block actions and previews HTML blocks', async () => {
     const writeText = vi.fn(() => Promise.resolve());
     vi.stubGlobal('navigator', { clipboard: { writeText } });
-    render(<MarkdownMessage>{'```html\n<strong>Hello</strong>\n```'}</MarkdownMessage>);
+    render(<I18nProvider><MarkdownMessage>{'```html\n<strong>Hello</strong>\n```'}</MarkdownMessage></I18nProvider>);
 
     await waitFor(() => expect(document.querySelector('.shiki')).not.toBeNull());
     expect(screen.getByText('html')).not.toBeNull();
@@ -45,7 +46,7 @@ describe('markdown message', () => {
   });
 
   it('renders math without exposing raw delimiters', () => {
-    const { container } = render(<MarkdownMessage>{'Inline $E=mc^2$.\n\n$$\na^2+b^2=c^2\n$$'}</MarkdownMessage>);
+    const { container } = render(<I18nProvider><MarkdownMessage>{'Inline $E=mc^2$.\n\n$$\na^2+b^2=c^2\n$$'}</MarkdownMessage></I18nProvider>);
 
     expect(container.querySelectorAll('.katex').length).toBeGreaterThan(1);
     expect(screen.queryByText('$E=mc^2$')).toBeNull();

@@ -16,6 +16,7 @@ import {
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { Ellipsis, FolderClosed, FolderOpen, LoaderCircle, MessageSquarePlus, Pen, Pin, PinOff, X } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 
 interface SessionItemProps extends GetProps<typeof Item> {
   /** 是否展开 */
@@ -33,6 +34,7 @@ interface SessionItemProps extends GetProps<typeof Item> {
 }
 
 export function ProjectItem(props: SessionItemProps) {
+  const { formatMessage } = useIntl();
   const contextMenuTriggerRef = useRef<HTMLDivElement>(null);
   const openingFromEllipsisRef = useRef(false);
   const [showActionsForMenu, setShowActionsForMenu] = useState(false);
@@ -142,7 +144,7 @@ export function ProjectItem(props: SessionItemProps) {
             }}
           >
             <MessageSquarePlus className="size-3" />
-            新建聊天
+            {formatMessage({ id: 'projects.newConversation' })}
           </ContextMenuItem>
           <ContextMenuItem
             className="text-xs"
@@ -152,7 +154,7 @@ export function ProjectItem(props: SessionItemProps) {
             }}
           >
             {isPinned ? <PinOff className="size-3" /> : <Pin className="size-3" />}
-            {isPinned ? '取消置顶' : '置顶'}
+            {formatMessage({ id: isPinned ? 'projects.unpin' : 'projects.pin' })}
           </ContextMenuItem>
           <ContextMenuItem
             className="text-xs"
@@ -162,7 +164,7 @@ export function ProjectItem(props: SessionItemProps) {
             }}
           >
             <Pen className="size-3" />
-            编辑
+            {formatMessage({ id: 'projects.edit' })}
           </ContextMenuItem>
         </ContextMenuGroup>
         <ContextMenuSeparator />
@@ -175,14 +177,14 @@ export function ProjectItem(props: SessionItemProps) {
             }}
           >
             <FolderOpen className="size-3" />
-            在 Finder 中显示
+            {formatMessage({ id: 'projects.openInFinder' })}
           </ContextMenuItem>
         </ContextMenuGroup>
         <ContextMenuSeparator />
         <ContextMenuGroup>
           <ContextMenuItem className="text-xs" disabled>
             <X className="size-3" />
-            移除项目
+            {formatMessage({ id: 'projects.remove' })}
           </ContextMenuItem>
         </ContextMenuGroup>
       </ContextMenuContent>

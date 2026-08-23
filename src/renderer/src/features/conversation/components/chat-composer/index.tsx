@@ -380,6 +380,7 @@ const autolinkPlugin = new Plugin({
 });
 
 export function NewConversationToolbar({ onClearProject, onCreateProject, onSelectProject, workspace }: { onClearProject?: () => void; onCreateProject?: () => void; onSelectProject?: (path: string) => void; workspace?: WorkspaceSnapshot }) {
+  const { formatMessage } = useIntl();
   const [branchResult, setBranchResult] = useState<{ branch?: string; path: string }>();
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
 
@@ -393,7 +394,7 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
   const branch = selectedWorkspace && selectedWorkspace.path === branchResult?.path ? branchResult?.branch : undefined;
 
   return (
-    <div aria-label="新会话项目上下文" className="new-conversation-toolbar mx-2 -mb-px flex min-h-10 items-center gap-2 rounded-t-2xl bg-surface-tertiary px-2 dark:bg-[color-mix(in_oklab,var(--foreground)_2.5%,transparent)]" data-has-project={Boolean(selectedWorkspace)} role="toolbar">
+    <div aria-label={formatMessage({ id: 'composer.project.context' })} className="new-conversation-toolbar mx-2 -mb-px flex min-h-10 items-center gap-2 rounded-t-2xl bg-surface-tertiary px-2 dark:bg-[color-mix(in_oklab,var(--foreground)_2.5%,transparent)]" data-has-project={Boolean(selectedWorkspace)} role="toolbar">
       {selectedWorkspace
         ? (
             <ProjectPicker
@@ -417,14 +418,14 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
               workspace={workspace}
             >
               <Folder aria-hidden="true" size={16} />
-              <span>选择项目</span>
+              <span>{formatMessage({ id: 'composer.project.select' })}</span>
             </ProjectPicker>
           )}
       {selectedWorkspace && (
         <>
           <span className={toolbarItemClass}>
             <Laptop aria-hidden="true" size={16} />
-            本地
+            {formatMessage({ id: 'composer.local' })}
           </span>
           {branch && (
             <span className={toolbarItemClass}>
@@ -439,12 +440,13 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
 }
 
 export function AttachmentList({ animationTarget, attachments, onRemove, onReveal, variant = 'composer' }: { animationTarget?: boolean; attachments: AttachmentMetadata[]; onRemove?: (id: string) => Promise<void> | void; onReveal?: (id: string) => Promise<void> | void; variant?: 'composer' | 'message' }) {
+  const { formatMessage } = useIntl();
   const hasNonImageAttachment = attachments.some(attachment => attachment.kind !== 'image');
   const canRemove = Boolean(onRemove);
 
   if (variant === 'message') {
     return (
-      <div aria-label="Attachments" className="chat-message-attachments" data-user-message-bubble={animationTarget || undefined} data-variant="message">
+      <div aria-label={formatMessage({ id: 'composer.attachments.ariaLabel' })} className="chat-message-attachments" data-user-message-bubble={animationTarget || undefined} data-variant="message">
         {attachments.map(attachment => attachment.kind === 'image'
           ? (
               <Image.PreviewGroup
@@ -470,19 +472,19 @@ export function AttachmentList({ animationTarget, attachments, onRemove, onRevea
   }
 
   return (
-    <div aria-label="Attachments" className="chat-composer-attachments overflow-x-auto" data-variant={variant}>
+    <div aria-label={formatMessage({ id: 'composer.attachments.ariaLabel' })} className="chat-composer-attachments overflow-x-auto" data-variant={variant}>
       <Image.PreviewGroup
         icons={{ close: <X aria-hidden="true" size={18} />, next: <ChevronRight aria-hidden="true" size={20} />, prev: <ChevronLeft aria-hidden="true" size={20} /> }}
         preview={{
           actionsRender: (_, { actions, image, transform }) => (
             <div className="composer-image-preview-actions">
-              <button aria-label="Zoom out" disabled={transform.scale <= 0.1} onClick={actions.onZoomOut} type="button"><Minus aria-hidden="true" size={16} /></button>
+              <button aria-label={formatMessage({ id: 'composer.attachments.zoomOut' })} disabled={transform.scale <= 0.1} onClick={actions.onZoomOut} type="button"><Minus aria-hidden="true" size={16} /></button>
               <span>
                 {Math.round(transform.scale * 100)}
                 %
               </span>
-              <button aria-label="Zoom in" disabled={transform.scale >= 4} onClick={actions.onZoomIn} type="button"><Plus aria-hidden="true" size={16} /></button>
-              <a aria-label={`Download ${image.alt}`} download={image.alt || 'image'} href={image.url}><Download aria-hidden="true" size={16} /></a>
+              <button aria-label={formatMessage({ id: 'composer.attachments.zoomIn' })} disabled={transform.scale >= 4} onClick={actions.onZoomIn} type="button"><Plus aria-hidden="true" size={16} /></button>
+              <a aria-label={formatMessage({ id: 'composer.attachments.download' }, { name: image.alt })} download={image.alt || 'image'} href={image.url}><Download aria-hidden="true" size={16} /></a>
             </div>
           ),
           maskClosable: true,
@@ -501,7 +503,7 @@ export function AttachmentList({ animationTarget, attachments, onRemove, onRevea
                   <Image alt={attachment.name} className="block size-full rounded-[7px] object-cover" rootClassName="block size-full" src={attachment.previewDataUrl} />
                   {onRemove && (
                     <button
-                      aria-label={`Remove ${attachment.name}`}
+                      aria-label={formatMessage({ id: 'composer.attachments.remove' }, { name: attachment.name })}
                       className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-foreground p-0 text-background shadow-[0_1px_2px_color-mix(in_srgb,#000_28%,transparent)]"
                       onClick={(event) => {
                         event.stopPropagation();
@@ -518,7 +520,7 @@ export function AttachmentList({ animationTarget, attachments, onRemove, onRevea
                 <div className="chat-composer-file-card" key={attachment.id}>
                   {onReveal
                     ? (
-                        <button aria-label={`Show ${attachment.name} in folder`} className="chat-composer-file-card-main can-reveal" data-removable={canRemove} onClick={() => void onReveal(attachment.id)} type="button">
+                        <button aria-label={formatMessage({ id: 'composer.attachments.showInFolder' }, { name: attachment.name })} className="chat-composer-file-card-main can-reveal" data-removable={canRemove} onClick={() => void onReveal(attachment.id)} type="button">
                           <AttachmentFileCardContent attachment={attachment} canReveal />
                         </button>
                       )
@@ -527,7 +529,7 @@ export function AttachmentList({ animationTarget, attachments, onRemove, onRevea
                           <AttachmentFileCardContent attachment={attachment} />
                         </div>
                       )}
-                  {onRemove && <button aria-label={`Remove ${attachment.name}`} className="chat-composer-file-card-remove" onClick={() => void onRemove(attachment.id)} type="button"><X aria-hidden="true" size={12} /></button>}
+                  {onRemove && <button aria-label={formatMessage({ id: 'composer.attachments.remove' }, { name: attachment.name })} className="chat-composer-file-card-remove" onClick={() => void onRemove(attachment.id)} type="button"><X aria-hidden="true" size={12} /></button>}
                 </div>
               ))}
         </div>
@@ -537,6 +539,7 @@ export function AttachmentList({ animationTarget, attachments, onRemove, onRevea
 }
 
 function AttachmentFileCardContent({ attachment, canReveal = false }: { attachment: AttachmentMetadata; canReveal?: boolean }) {
+  const { formatMessage } = useIntl();
   return (
     <>
       <span className="chat-composer-file-card-icon">
@@ -546,7 +549,7 @@ function AttachmentFileCardContent({ attachment, canReveal = false }: { attachme
         <span className="chat-composer-file-card-name">{attachment.name}</span>
         <span className="chat-composer-file-card-subtitle">
           <span className="chat-composer-file-card-extension">{attachmentExtension(attachment.name)}</span>
-          {canReveal && <span className="chat-composer-file-card-open">在 Finder 中显示</span>}
+          {canReveal && <span className="chat-composer-file-card-open">{formatMessage({ id: 'projects.openInFinder' })}</span>}
         </span>
       </span>
     </>
@@ -576,8 +579,8 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
   const initialText = inlineEdit?.initialText ?? draft?.text;
   const canSend = Boolean(inlineEdit ? text.trim() : selectedWorkspace && (text.trim() || attachments.length)) && !isSending && !isRunning;
-  const placeholder = inlineEdit ? 'Edit message' : formatMessage({ id: 'composer.placeholder' });
-  const editorLabel = inlineEdit ? 'Edit message' : 'Message Pi';
+  const placeholder = inlineEdit ? formatMessage({ id: 'composer.inlineEdit.label' }) : formatMessage({ id: 'composer.placeholder' });
+  const editorLabel = inlineEdit ? formatMessage({ id: 'composer.inlineEdit.label' }) : formatMessage({ id: 'composer.messageLabel' });
   const modelOptions = availableModelOptions(providersSnapshot);
   const selectedModel = selectedModelOption(modelOptions, providersSnapshot);
   const groupModelOptions = providersSnapshot?.modelPickerScope === PrimaryScopeEnum.All && providersSnapshot.connectedProviders.length > 1;
@@ -735,7 +738,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
       if (files.length === 0 && images.length === 0 && !localFileUri)
         return;
       if (typeof window.piApp.composer.addClipboardFiles !== 'function' || typeof window.piApp.composer.addClipboardAttachments !== 'function' || typeof window.piApp.composer.addPastedImage !== 'function') {
-        setError('请重启 Pi Desktop 后再粘贴图片。');
+        setError(formatMessage({ id: 'composer.error.pasteImageRestart' }));
         return;
       }
 
@@ -753,19 +756,19 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
         await Promise.all(images.map(async (image) => {
           const dataUrl = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onerror = () => reject(reader.error ?? new Error('无法读取剪贴板图片。'));
-            reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('无法读取剪贴板图片。'));
+            reader.onerror = () => reject(reader.error ?? new Error(formatMessage({ id: 'composer.error.readClipboardImage' })));
+            reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error(formatMessage({ id: 'composer.error.readClipboardImage' })));
             reader.readAsDataURL(image);
           });
           const data = dataUrl.slice(dataUrl.indexOf(',') + 1);
           addSelection(await window.piApp.composer.addPastedImage(image.name || 'pasted-image.png', data));
         }));
-      }).catch(() => setError('无法读取剪贴板图片。'));
+      }).catch(() => setError(formatMessage({ id: 'composer.error.readClipboardImage' })));
     };
 
     window.addEventListener('paste', handlePaste, true);
     return () => window.removeEventListener('paste', handlePaste, true);
-  }, [addSelection, inlineEdit]);
+  }, [addSelection, formatMessage, inlineEdit]);
 
   const removeAttachment = async (id: string) => {
     await window.piApp.composer.removeAttachment(id);
@@ -777,7 +780,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
       await window.piApp.composer.revealAttachment(id);
     }
     catch {
-      setError('无法在文件夹中显示该文件。');
+      setError(formatMessage({ id: 'composer.error.revealAttachment' }));
     }
   };
 
@@ -798,7 +801,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
       setAttachments([]);
     }
     catch {
-      setError('无法发送消息。请检查 Pi 配置后重试。');
+      setError(formatMessage({ id: 'composer.error.send' }));
     }
     finally {
       setIsSending(false);
@@ -855,10 +858,10 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
           return typeof path === 'string' ? [path] : [];
         });
         if (paths.length === 0) {
-          setError('当前环境无法读取拖入文件。');
+          setError(formatMessage({ id: 'composer.error.noDroppedFiles' }));
           return;
         }
-        window.piApp.composer.addDroppedAttachments(paths).then(addSelection).catch(() => setError('无法读取拖入文件。'));
+        window.piApp.composer.addDroppedAttachments(paths).then(addSelection).catch(() => setError(formatMessage({ id: 'composer.error.dropFiles' })));
       }}
       onSubmit={(event) => {
         event.preventDefault();
@@ -870,8 +873,8 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
       {inlineEdit
         ? (
             <div className="chat-message-user-editor-actions flex justify-end gap-1.5 px-3 pb-3">
-              <button aria-label="Cancel edit" className="grid h-7 min-w-0 cursor-pointer place-items-center rounded-lg border border-border-subtle bg-transparent px-3 font-[inherit] text-inherit disabled:cursor-default disabled:opacity-55" disabled={isSending} onClick={inlineEdit.onCancel} type="button">取消</button>
-              <button aria-label="Send edited message" className="grid h-7 min-w-0 cursor-pointer place-items-center rounded-lg bg-foreground px-3 font-[inherit] text-surface disabled:cursor-default disabled:opacity-55" disabled={!canSend} type="submit">{isSending ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} /> : '发送'}</button>
+              <button aria-label={formatMessage({ id: 'composer.actions.cancelEdit' })} className="grid h-7 min-w-0 cursor-pointer place-items-center rounded-lg border border-border-subtle bg-transparent px-3 font-[inherit] text-inherit disabled:cursor-default disabled:opacity-55" disabled={isSending} onClick={inlineEdit.onCancel} type="button">{formatMessage({ id: 'composer.actions.cancelEdit' })}</button>
+              <button aria-label={formatMessage({ id: 'composer.actions.sendEditedMessage' })} className="grid h-7 min-w-0 cursor-pointer place-items-center rounded-lg bg-foreground px-3 font-[inherit] text-surface disabled:cursor-default disabled:opacity-55" disabled={!canSend} type="submit">{isSending ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} /> : formatMessage({ id: 'composer.actions.sendEditedMessage' })}</button>
             </div>
           )
         : (
@@ -888,11 +891,11 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
                 />
               )}
               <button
-                aria-label={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
+                aria-label={formatMessage({ id: isRunning ? 'composer.send.stop' : isSending ? 'composer.send.sending' : 'composer.send.submit' })}
                 className="chat-composer-send grid size-7 place-items-center rounded-full bg-foreground p-0.5 text-background transition-opacity duration-150 disabled:cursor-default disabled:opacity-50"
                 disabled={isRunning ? false : !canSend}
                 onClick={isRunning ? () => onStop() : undefined}
-                title={isRunning ? 'Stop generating' : isSending ? 'Sending message' : 'Send message'}
+                title={formatMessage({ id: isRunning ? 'composer.send.stop' : isSending ? 'composer.send.sending' : 'composer.send.submit' })}
                 type={isRunning ? 'button' : 'submit'}
               >
                 {isRunning ? <Square aria-hidden="true" fill="currentColor" size={12} /> : isSending ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} /> : <ArrowUp aria-hidden="true" size={16} />}
@@ -902,7 +905,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
       {error && <p aria-live="polite" className="chat-composer-error m-0 whitespace-pre-wrap px-3 pb-2.5 text-xs text-destructive" role="status">{error}</p>}
       {linkPopover && createPortal(
         <div
-          aria-label="链接选项"
+          aria-label={formatMessage({ id: 'composer.link.options' })}
           className={`composer-link-popover composer-link-popover-${linkPopover.mode === 'actions' ? 'actions' : 'editor'}`}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -925,15 +928,15 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
                     type="button"
                   >
                     <ExternalLink aria-hidden="true" size={14} />
-                    打开链接
+                    {formatMessage({ id: 'composer.link.open' })}
                   </button>
                   <button autoFocus onClick={() => setLinkPopover({ ...linkPopover, mode: 'text', showHrefError: false, value: linkPopover.text })} type="button">
                     <Pencil aria-hidden="true" size={14} />
-                    编辑文本
+                    {formatMessage({ id: 'composer.link.editText' })}
                   </button>
                   <button onClick={() => setLinkPopover({ ...linkPopover, mode: 'url', showHrefError: false, value: linkPopover.href })} type="button">
                     <Link aria-hidden="true" size={14} />
-                    编辑链接
+                    {formatMessage({ id: 'composer.link.editLink' })}
                   </button>
                 </div>
               )
@@ -949,7 +952,7 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
                 >
                   <input
                     aria-invalid={(linkPopover.mode === 'url' && linkPopover.showHrefError) || undefined}
-                    aria-label={linkPopover.mode === 'text' ? '文本' : 'URL'}
+                    aria-label={linkPopover.mode === 'text' ? formatMessage({ id: 'composer.link.text' }) : 'URL'}
                     autoFocus
                     onChange={event => setLinkPopover({ ...linkPopover, showHrefError: false, value: event.target.value })}
                     onKeyDown={(event) => {
@@ -962,8 +965,8 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
                     type={linkPopover.mode === 'url' ? 'url' : 'text'}
                     value={linkPopover.value}
                   />
-                  {linkPopover.mode === 'url' && linkPopover.showHrefError && <span className="sr-only" role="alert">请输入 HTTP 或 HTTPS 链接</span>}
-                  <button aria-label={linkPopover.mode === 'text' ? '保存链接文本' : '保存链接 URL'} onClick={saveLink} type="button"><Check aria-hidden="true" size={14} /></button>
+                  {linkPopover.mode === 'url' && linkPopover.showHrefError && <span className="sr-only" role="alert">{formatMessage({ id: 'composer.link.invalidUrl' })}</span>}
+                  <button aria-label={formatMessage({ id: linkPopover.mode === 'text' ? 'composer.link.saveText' : 'composer.link.saveUrl' })} onClick={saveLink} type="button"><Check aria-hidden="true" size={14} /></button>
                 </form>
               )}
         </div>,
@@ -974,31 +977,32 @@ export function ChatComposer({ draft, inlineEdit, isRunning = false, onStop = ()
 }
 
 function ModelPicker({ models, onSelect, selectedModel, showGroups }: { models: ModelOption[]; onSelect: (model: ModelOption) => Promise<void>; selectedModel: ModelOption; showGroups: boolean }) {
+  const { formatMessage } = useIntl();
   const [open, setOpen] = useState(false);
   const modelGroups = groupedModelOptions(models);
 
   return (
     <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger render={<button aria-label={`选择模型，当前 ${selectedModel.name}`} className="chat-composer-model-trigger inline-flex h-7 max-w-[180px] items-center gap-[5px] rounded-full border border-border-subtle bg-transparent px-2 text-xs leading-4 text-text-secondary hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] hover:text-foreground focus-visible:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--focus)] aria-expanded:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] aria-expanded:text-foreground [&_svg]:shrink-0 [&_span]:truncate" type="button" />}>
+      <PopoverTrigger render={<button aria-label={formatMessage({ id: 'composer.model.current' }, { model: selectedModel.name })} className="chat-composer-model-trigger inline-flex h-7 max-w-[180px] items-center gap-[5px] rounded-full border border-border-subtle bg-transparent px-2 text-xs leading-4 text-text-secondary hover:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] hover:text-foreground focus-visible:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] focus-visible:text-foreground focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--focus)] aria-expanded:bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] aria-expanded:text-foreground [&_svg]:shrink-0 [&_span]:truncate" type="button" />}>
         <Bot aria-hidden="true" size={14} />
         <span>{selectedModel.name}</span>
         <ChevronDown aria-hidden="true" size={13} />
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        aria-label="选择模型"
+        aria-label={formatMessage({ id: 'composer.model.select' })}
         className="chat-composer-model-popover max-h-[min(360px,calc(100vh_-_16px))] w-[min(280px,calc(100vw_-_16px))] overflow-hidden rounded-xl border border-border-subtle bg-surface-elevated p-1.5 shadow-[0_8px_16px_-4px_color-mix(in_srgb,#000_12%,transparent)]"
         role="dialog"
         side="top"
         sideOffset={10}
       >
-        <Command className="chat-composer-model-command grid gap-1" label="搜索模型">
+        <Command className="chat-composer-model-command grid gap-1" label={formatMessage({ id: 'composer.model.search' })}>
           <div className="chat-composer-model-search flex h-8 items-center gap-1.5 px-2 text-text-tertiary [&_input]:min-w-0 [&_input]:flex-1 [&_input]:border-0 [&_input]:bg-transparent [&_input]:font-[inherit] [&_input]:text-[13px] [&_input]:text-foreground [&_input]:outline-0 [&_input::placeholder]:text-text-tertiary">
             <Search aria-hidden="true" size={14} />
-            <Command.Input aria-label="搜索模型" autoFocus placeholder="搜索模型" />
+            <Command.Input aria-label={formatMessage({ id: 'composer.model.search' })} autoFocus placeholder={formatMessage({ id: 'composer.model.search' })} />
           </div>
           <Command.List className="chat-composer-model-list max-h-[calc((1lh+22px)*6)] overflow-y-auto">
-            <Command.Empty className="chat-composer-model-empty p-2 text-[13px] text-text-tertiary">未找到模型</Command.Empty>
+            <Command.Empty className="chat-composer-model-empty p-2 text-[13px] text-text-tertiary">{formatMessage({ id: 'composer.model.empty' })}</Command.Empty>
             {showGroups
               ? modelGroups.map(group => (
                   <Command.Group className="chat-composer-model-group" heading={<ProviderGroupHeading group={group} />} key={group.providerId}>

@@ -4,6 +4,7 @@ import type { ThreadNavigation, UserMessageNavigationItem } from './components';
 import type { Message, PiSessionSnapshot } from './model/transcript';
 import logo from '@renderer/assets/icon.svg';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { AttachmentList, ChatComposer, MarkdownMessage, NewConversationToolbar, ProjectPicker, ThreadScrollLayout } from './components';
 import { ActivitySummary, AssistantMessageFooter, ToolActivity, UserMessageFooter, WorkedFor } from './components/message-turn';
 import {
@@ -22,6 +23,7 @@ type ConversationTurn
     | { activities: Message[]; assistant?: Message; key: string; type: 'activity-turn'; work: Message };
 
 export function ConversationPage() {
+  const { formatMessage } = useIntl();
   const [messages, setMessages] = useState<Message[]>([]);
   const [collapsedActivityTurns, setCollapsedActivityTurns] = useState<Set<number>>(() => new Set());
   const [bookmarkedUserEntryIds, setBookmarkedUserEntryIds] = useState<Set<string>>(() => new Set());
@@ -329,14 +331,14 @@ export function ConversationPage() {
                 {selectedWorkspace
                   ? (
                       <>
-                        {'你想让我们在 '}
+                        {formatMessage({ id: 'conversation.empty.withProject.prefix' })}
                         <ProjectPicker onCreateProject={createProject} onSelectProject={selectProject} triggerClassName="chat-empty-state-project-trigger" workspace={workspace}>
                           {selectedWorkspace.displayName}
                         </ProjectPicker>
-                        {' 中构建什么？'}
+                        {formatMessage({ id: 'conversation.empty.withProject.suffix' })}
                       </>
                     )
-                  : '我们要构建什么？'}
+                  : formatMessage({ id: 'conversation.empty.withoutProject' })}
               </h1>
             </div>
           )

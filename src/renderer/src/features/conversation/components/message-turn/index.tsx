@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 type ToolStatus = 'completed' | 'failed' | 'running';
+type FormatMessage = ReturnType<typeof useIntl>['formatMessage'];
 
 interface ToolActivityProps {
   args?: unknown;
@@ -39,18 +40,19 @@ interface AssistantMessageFooterProps {
 }
 
 export function ToolActivity({ args, name, output, status }: ToolActivityProps) {
+  const { formatMessage } = useIntl();
   const [expanded, setExpanded] = useState(false);
   if (isWebSearchTool(name))
     return <WebSearchActivity args={args} expanded={status === 'running' || expanded} onToggle={() => setExpanded(value => !value)} status={status} variant="tool" />;
 
-  const label = status === 'running' ? `正在使用工具 ${name}` : status === 'completed' ? `已完成工具 ${name}` : `工具 ${name} 执行失败`;
+  const label = toolActivityLabel(name, status, formatMessage);
   const command = toolSummary(args);
   const result = toolText(output);
   const hasDetails = command != null || result != null;
   const isExpanded = status === 'running' || expanded;
   return (
     <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-tool-activity w-[min(100%,44rem)]" role={status === 'running' ? 'status' : undefined}>
-      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="chat-tool-activity-header group flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit disabled:cursor-default" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
+      <button aria-expanded={isExpanded} aria-label={formatMessage({ id: 'conversation.tool.detailsToggle' }, { expanded: String(isExpanded), name })} className="chat-tool-activity-header group flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit disabled:cursor-default" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
         {status === 'running' && <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} />}
         <span>
           {label}
@@ -69,6 +71,7 @@ export function ToolActivity({ args, name, output, status }: ToolActivityProps) 
 }
 
 export function ActivitySummary({ args, name, output, status }: ToolActivityProps) {
+  const { formatMessage } = useIntl();
   const [expanded, setExpanded] = useState(false);
   if (isWebSearchTool(name))
     return <WebSearchActivity args={args} expanded={status === 'running' || expanded} onToggle={() => setExpanded(value => !value)} status={status} variant="summary" />;
@@ -77,11 +80,11 @@ export function ActivitySummary({ args, name, output, status }: ToolActivityProp
   const result = toolText(output);
   const hasDetails = command != null || result != null;
   const isExpanded = status === 'running' || expanded;
-  const label = activitySummaryLabel(name, status);
+  const label = activitySummaryLabel(name, status, formatMessage);
 
   return (
     <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-activity-summary-item w-[min(100%,44rem)]" role={status === 'running' ? 'status' : undefined}>
-      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="group flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
+      <button aria-expanded={isExpanded} aria-label={formatMessage({ id: 'conversation.tool.detailsToggle' }, { expanded: String(isExpanded), name })} className="group flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
         <ActivityIcon name={name} status={status} />
         <span>
           {label}
@@ -100,11 +103,12 @@ export function ActivitySummary({ args, name, output, status }: ToolActivityProp
 }
 
 function WebSearchActivity({ args, expanded, onToggle, status, variant }: { args?: unknown; expanded: boolean; onToggle: () => void; status: ToolStatus; variant: 'summary' | 'tool' }) {
+  const { formatMessage } = useIntl();
   const details = webSearchDetails(args);
   const hasDetails = details.length > 0;
-  const label = webSearchLabel(status);
+  const label = webSearchLabel(status, formatMessage);
   const disabled = !hasDetails || status === 'running';
-  const buttonLabel = `${expanded ? '隐藏' : '显示'}网页搜索详情`;
+  const buttonLabel = formatMessage({ id: 'conversation.webSearch.detailsToggle' }, { expanded: String(expanded) });
   const content = (
     <>
       <button aria-expanded={expanded} aria-label={buttonLabel} className="group flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={disabled} onClick={onToggle} type="button">
@@ -129,23 +133,51 @@ function WebSearchActivity({ args, expanded, onToggle, status, variant }: { args
     : <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-activity-summary-item w-[min(100%,44rem)]" role={status === 'running' ? 'status' : undefined}>{content}</div>;
 }
 
-function activitySummaryLabel(name: string, status: ToolStatus): string {
+function toolActivityLabel(name: string, status: ToolStatus, formatMessage: FormatMessage): string {
+  if (status === 'running')
+    return formatMessage({ id: 'conversation.tool.generic.running' }, { name });
+  if (status === 'failed')
+    return formatMessage({ id: 'conversation.tool.generic.failed' }, { name });
+  return formatMessage({ id: 'conversation.tool.generic.completed' }, { name });
+}
+
+function activitySummaryLabel(name: string, status: ToolStatus, formatMessage: FormatMessage): string {
   const isCommand = name === 'bash' || name === 'exec';
   const isRead = name === 'read';
   const isEdit = name === 'edit' || name === 'patch' || name === 'write';
-  if (status === 'running')
-    return isCommand ? '正在运行命令' : isRead ? '正在读取文件' : isEdit ? '正在编辑文件' : `正在使用工具 ${name}`;
-  if (status === 'failed')
-    return isCommand ? '命令执行失败' : isRead ? '读取文件失败' : isEdit ? '编辑文件失败' : `工具 ${name} 执行失败`;
-  return isCommand ? '运行了命令' : isRead ? '已读取文件' : isEdit ? '编辑了文件' : `已使用工具 ${name}`;
+  if (status === 'running') {
+    return isCommand
+      ? formatMessage({ id: 'conversation.tool.run.running' })
+      : isRead
+        ? formatMessage({ id: 'conversation.tool.read.running' })
+        : isEdit
+          ? formatMessage({ id: 'conversation.tool.edit.running' })
+          : formatMessage({ id: 'conversation.tool.generic.running' }, { name });
+  }
+  if (status === 'failed') {
+    return isCommand
+      ? formatMessage({ id: 'conversation.tool.run.failed' })
+      : isRead
+        ? formatMessage({ id: 'conversation.tool.read.failed' })
+        : isEdit
+          ? formatMessage({ id: 'conversation.tool.edit.failed' })
+          : formatMessage({ id: 'conversation.tool.generic.failed' }, { name });
+  }
+  return isCommand
+    ? formatMessage({ id: 'conversation.tool.run.completed' })
+    : isRead
+      ? formatMessage({ id: 'conversation.tool.read.completed' })
+      : isEdit
+        ? formatMessage({ id: 'conversation.tool.edit.completed' })
+        : formatMessage({ id: 'conversation.tool.generic.completed' }, { name });
 }
 
-function webSearchLabel(status: ToolStatus): string {
+function webSearchLabel(status: ToolStatus, formatMessage: FormatMessage): string {
   if (status === 'running')
-    return '正在搜索网页';
+    return formatMessage({ id: 'conversation.webSearch.running' });
   if (status === 'failed')
-    return '网页搜索失败';
-  return '已搜索网页';
+    return formatMessage({ id: 'conversation.webSearch.failed' });
+  return formatMessage({ id: 'conversation.webSearch.completed' });
 }
 
 function isWebSearchTool(name: string): boolean {
@@ -269,7 +301,7 @@ export function WorkedFor({ children, completedAtMs, done, expanded, onToggle, s
             </p>
           )
         : (
-            <button aria-expanded={expanded} aria-label={`${expanded ? '收起' : '展开'}工具活动`} className="group flex w-fit cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit" onClick={onToggle} type="button">
+            <button aria-expanded={expanded} aria-label={formatMessage({ id: 'conversation.tool.activityToggle' }, { expanded: String(Boolean(expanded)) })} className="group flex w-fit cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit" onClick={onToggle} type="button">
               <span className={labelClassName}>{visibleLabel}</span>
               <ChevronRight aria-hidden="true" className={collapseIconClass(expanded ?? false)} size={15} />
             </button>
@@ -281,15 +313,16 @@ export function WorkedFor({ children, completedAtMs, done, expanded, onToggle, s
 }
 
 export function UserMessageFooter({ canEdit, onEdit, text, timestamp }: UserMessageFooterProps) {
+  const { formatMessage } = useIntl();
   const time = formatMessageTime(timestamp);
   const hasText = text.trim().length > 0;
 
   return (
     <footer className="chat-message-user-footer">
       {time != null && <time dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
-      {canEdit && <button aria-label="Edit message" className="chat-message-user-copy grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary" onClick={onEdit} title="Edit message" type="button"><Pencil aria-hidden="true" size={14} /></button>}
+      {canEdit && <button aria-label={formatMessage({ id: 'conversation.messageActions.editMessage' })} className="chat-message-user-copy grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary" onClick={onEdit} title={formatMessage({ id: 'conversation.messageActions.editMessage' })} type="button"><Pencil aria-hidden="true" size={14} /></button>}
       {hasText && (
-        <button aria-label="Copy message" className="chat-message-user-copy grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button">
+        <button aria-label={formatMessage({ id: 'conversation.messageActions.copyMessage' })} className="chat-message-user-copy grid size-5 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary" onClick={() => void navigator.clipboard?.writeText(text)} title={formatMessage({ id: 'conversation.messageActions.copyMessage' })} type="button">
           <Copy aria-hidden="true" size={14} />
         </button>
       )}
@@ -298,11 +331,12 @@ export function UserMessageFooter({ canEdit, onEdit, text, timestamp }: UserMess
 }
 
 export function AssistantMessageFooter({ entryId, isLatest, isRunning, onFork, text, timestamp }: AssistantMessageFooterProps) {
+  const { formatMessage } = useIntl();
   const time = formatMessageTime(timestamp);
   return (
-    <footer aria-label="Assistant message actions" className={`chat-message-assistant-footer${isLatest ? ' is-latest' : ''}`} role="toolbar">
-      <button aria-label="Copy assistant message" className="chat-message-assistant-action grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void navigator.clipboard?.writeText(text)} title="Copy message" type="button"><Copy aria-hidden="true" size={16} /></button>
-      {entryId != null && !isRunning && <button aria-label="Fork conversation from this message" className="chat-message-assistant-action grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void onFork(entryId)} title="Fork conversation" type="button"><GitFork aria-hidden="true" size={16} /></button>}
+    <footer aria-label={formatMessage({ id: 'conversation.messageActions.assistant' })} className={`chat-message-assistant-footer${isLatest ? ' is-latest' : ''}`} role="toolbar">
+      <button aria-label={formatMessage({ id: 'conversation.messageActions.copyAssistant' })} className="chat-message-assistant-action grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void navigator.clipboard?.writeText(text)} title={formatMessage({ id: 'conversation.messageActions.copyMessage' })} type="button"><Copy aria-hidden="true" size={16} /></button>
+      {entryId != null && !isRunning && <button aria-label={formatMessage({ id: 'conversation.messageActions.forkFromMessage' })} className="chat-message-assistant-action grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent p-0 text-inherit hover:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] hover:text-text-secondary focus-visible:bg-[color-mix(in_srgb,var(--foreground)_8%,transparent)] focus-visible:text-text-secondary disabled:cursor-default disabled:opacity-45" onClick={() => void onFork(entryId)} title={formatMessage({ id: 'conversation.messageActions.forkFromMessage' })} type="button"><GitFork aria-hidden="true" size={16} /></button>}
       {time != null && <time className="chat-message-assistant-timestamp" dateTime={new Date(timestamp!).toISOString()}>{time}</time>}
     </footer>
   );

@@ -4,6 +4,7 @@ import type { ThreadLayout, ThreadTurn } from './thread-virtualizer';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { ArrowDown } from 'lucide-react';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { ThreadUserMessageNavigationRail } from '../thread-user-message-navigation-rail';
 import { buildThreadLayout, preserveAnchorDistance, visibleThreadRange } from './thread-virtualizer';
 import './style.css';
@@ -25,6 +26,7 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, nav
   navigation?: ThreadNavigation;
   turns: T[];
 }) {
+  const { formatMessage } = useIntl();
   const hasFooter = footer != null;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
@@ -206,13 +208,13 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, nav
   };
   const jumpToBottomButton = showJumpToBottom && (
     <button
-      aria-label="Jump to latest"
+      aria-label={formatMessage({ id: 'conversation.jumpToLatest' })}
       className={cn(
         jumpToBottomButtonClass,
         footer ? 'bottom-[calc(100%+24px)]' : 'bottom-[var(--thread-scroll-padding-bottom,32px)]',
       )}
       onClick={scrollToBottom}
-      title="Jump to latest"
+      title={formatMessage({ id: 'conversation.jumpToLatest' })}
       type="button"
     >
       <ArrowDown aria-hidden="true" size={16} />
