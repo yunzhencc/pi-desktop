@@ -5,6 +5,10 @@ import { createPortal } from 'react-dom';
 import { useIntl } from 'react-intl';
 import './style.css';
 
+const NAVIGATION_GUTTER_PX = 48;
+const NAVIGATION_CONTENT_SELECTOR = '[data-thread-user-message-navigation-content]';
+const USER_MESSAGE_TURN_SELECTOR = '[data-thread-user-message-id]';
+
 export interface UserMessageNavigationItem {
   entryId?: string;
   id: string;
@@ -23,56 +27,114 @@ interface ThreadUserMessageNavigationRailProps {
 
 export function ThreadUserMessageNavigationRail({ getScrollElement, items, onBookmarkChange, onNavigate }: ThreadUserMessageNavigationRailProps) {
   const { formatMessage } = useIntl();
-  const [mounted, setMounted] = useState(false);
-  const [visibleIds, setVisibleIds] = useState<Set<string>>(() => new Set());
+  const [hasNavigationGutter, setHasNavigationGutter] = useState(false);
+  const [visibleIds, setVisibleIds] = useState<Set<string>>(() => {
+    const lastId = items.at(-1)?.id;
+    return new Set(lastId == null ? [] : [lastId]);
+  });
   const [scrubbedId, setScrubbedId] = useState<string>();
   const scrubbingRef = useRef(false);
-
-  useEffect(() => {
-    if (items.length < 4)
-      return;
-    const idle = window.requestIdleCallback?.(() => setMounted(true), { timeout: 2000 });
-    const timeout = idle == null ? window.setTimeout(setMounted, 0, true) : undefined;
-    return () => {
-      if (idle != null)
-        window.cancelIdleCallback?.(idle);
-      if (timeout != null)
-        window.clearTimeout(timeout);
-    };
-  }, [items.length]);
+  const itemIds = items.map(item => item.id).join('\0');
 
   useEffect(() => {
     const element = getScrollElement();
-    if (!mounted || element == null || typeof IntersectionObserver === 'undefined')
+    const content = element?.querySelector<HTMLElement>(NAVIGATION_CONTENT_SELECTOR);
+    if (element == null || content == null)
       return;
-    const knownIds = new Set(items.map(item => item.id));
+    let frame: number | undefined;
+    const update = () => {
+      frame = undefined;
+      const scrollRect = element.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+      const scale = element.offsetWidth > 0 ? scrollRect.width / element.offsetWidth : 1;
+      const contentStartPx = (contentRect.left - scrollRect.left) / (scale > 0 ? scale : 1) + (Number.parseFloat(window.getComputedStyle(content).paddingLeft) || 0);
+      const nextHasNavigationGutter = contentStartPx >= NAVIGATION_GUTTER_PX;
+      setHasNavigationGutter(current => current === nextHasNavigationGutter ? current : nextHasNavigationGutter);
+    };
+    const scheduleUpdate = () => {
+      frame ??= window.requestAnimationFrame(update);
+    };
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(scheduleUpdate);
+    resizeObserver?.observe(element);
+    resizeObserver?.observe(content);
+    const mutationObserver = new MutationObserver(scheduleUpdate);
+    mutationObserver.observe(element.firstElementChild ?? element, { attributeFilter: ['style'], attributes: true });
+    window.addEventListener('resize', scheduleUpdate);
+    scheduleUpdate();
+    return () => {
+      if (frame != null)
+        window.cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      mutationObserver.disconnect();
+      window.removeEventListener('resize', scheduleUpdate);
+    };
+  }, [getScrollElement]);
+
+  useEffect(() => {
+    const element = getScrollElement();
+    if (!hasNavigationGutter || element == null || typeof IntersectionObserver === 'undefined')
+      return;
+    const orderedIds = itemIds === '' ? [] : itemIds.split('\0');
+    const knownIds = new Set(orderedIds);
     const intersecting = new Set<string>();
-    const apply = () => {
-      const ordered = items.map(item => item.id);
-      const first = ordered.findIndex(id => intersecting.has(id));
-      const last = ordered.findLastIndex(id => intersecting.has(id));
-      setVisibleIds(first < 0 || last < 0 ? new Set() : new Set(ordered.slice(first, last + 1)));
+    const itemIdByTarget = new Map<HTMLElement, string>();
+    const observedTargets = new Set<HTMLElement>();
+    const applySelection = () => {
+      const first = orderedIds.findIndex(id => intersecting.has(id));
+      const last = orderedIds.findLastIndex(id => intersecting.has(id));
+      if (first < 0 || last < 0)
+        return;
+      const next = new Set(orderedIds.slice(first, last + 1));
+      setVisibleIds(current => current.size === next.size && [...current].every(id => next.has(id)) ? current : next);
     };
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
-        const id = (entry.target as HTMLElement).dataset.threadUserMessageId;
-        if (id && knownIds.has(id))
+        const target = entry.target as HTMLElement;
+        const id = itemIdByTarget.get(target);
+        if (id != null)
           entry.isIntersecting ? intersecting.add(id) : intersecting.delete(id);
       }
-      apply();
+      applySelection();
     }, { root: element, rootMargin: '-16px 0px 0px 0px' });
-    const observe = () => element.querySelectorAll<HTMLElement>('[data-thread-user-message-id]').forEach((target) => {
-      if (target.dataset.threadUserMessageId && knownIds.has(target.dataset.threadUserMessageId))
-        observer.observe(target);
+    const observeTargets = () => {
+      const nextTargets = new Set<HTMLElement>();
+      for (const target of element.querySelectorAll<HTMLElement>(USER_MESSAGE_TURN_SELECTOR)) {
+        const id = target.dataset.threadUserMessageId;
+        if (id == null || !knownIds.has(id))
+          continue;
+        nextTargets.add(target);
+        const previousId = itemIdByTarget.get(target);
+        if (previousId != null && previousId !== id)
+          intersecting.delete(previousId);
+        itemIdByTarget.set(target, id);
+        if (!observedTargets.has(target)) {
+          observer.observe(target);
+          observedTargets.add(target);
+        }
+      }
+      for (const target of observedTargets) {
+        if (nextTargets.has(target))
+          continue;
+        const id = itemIdByTarget.get(target);
+        if (id != null)
+          intersecting.delete(id);
+        itemIdByTarget.delete(target);
+        observer.unobserve(target);
+        observedTargets.delete(target);
+      }
+      applySelection();
+    };
+    const mutations = new MutationObserver((records) => {
+      if (records.some(record => [...record.addedNodes, ...record.removedNodes].some(node => node instanceof HTMLElement && (node.matches(USER_MESSAGE_TURN_SELECTOR) || node.querySelector(USER_MESSAGE_TURN_SELECTOR) != null))))
+        observeTargets();
     });
-    const mutations = new MutationObserver(observe);
     mutations.observe(element, { childList: true, subtree: true });
-    observe();
+    observeTargets();
     return () => {
       mutations.disconnect();
       observer.disconnect();
     };
-  }, [getScrollElement, items, mounted]);
+  }, [getScrollElement, hasNavigationGutter, itemIds]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -90,7 +152,7 @@ export function ThreadUserMessageNavigationRail({ getScrollElement, items, onBoo
   }, [items, onNavigate, visibleIds]);
 
   const portalRoot = getScrollElement()?.parentElement ?? null;
-  if (!mounted || items.length < 4 || portalRoot == null)
+  if (!hasNavigationGutter || items.length < 4 || portalRoot == null)
     return null;
 
   const navigateAtPoint = (clientX: number, clientY: number) => {

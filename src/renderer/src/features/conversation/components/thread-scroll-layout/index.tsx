@@ -226,7 +226,7 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, nav
         role="log"
       >
         <div className="thread-scroll-surface flex min-h-full flex-col" data-thread-scroll-surface>
-          <div className={threadContentClass} style={footer ? { paddingBottom: footerHeightPx + 16 } : undefined}>
+          <div className={threadContentClass} data-thread-user-message-navigation-content style={footer ? { paddingBottom: footerHeightPx + 16 } : undefined}>
             <div aria-hidden="true" style={{ height: topSpacerPx }} />
             {visibleTurns.map((turn, index) => (
               <div data-thread-turn={turn.key} data-thread-user-message-id={navigationItemsByTurnKey.get(turn.key)?.id} key={turn.key} style={{ marginBottom: index === visibleTurns.length - 1 ? 0 : TURN_GAP }}>
