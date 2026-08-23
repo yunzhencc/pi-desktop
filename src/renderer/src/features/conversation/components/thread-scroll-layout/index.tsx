@@ -40,7 +40,6 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, nav
   const [measuredHeights, setMeasuredHeights] = useState<Map<string, number>>(() => new Map());
   const [footerHeightPx, setFooterHeightPx] = useState(0);
   const [scrollMetrics, setScrollMetrics] = useState({ distanceFromBottomPx: 0, viewportHeightPx: 0 });
-  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const setScrollRef = useCallback((element: HTMLDivElement | null) => {
     scrollRef.current = element;
     setScrollElement(current => current === element ? current : element);
@@ -54,13 +53,18 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, nav
   const navigationItemsByTurnKey = useMemo(() => new Map(navigation?.items.map(item => [item.turnKey, item])), [navigation?.items]);
   const topSpacerPx = range.startIndex === 0 ? 0 : layout.totalHeightPx - layout.bottomOffsetsPx[range.startIndex]! - layout.heightsPx[range.startIndex]!;
   const bottomSpacerPx = range.endIndex === 0 ? 0 : layout.bottomOffsetsPx[range.endIndex - 1]!;
+  const responseSpacerHeightPx = hasFooter ? footerHeightPx + 16 : null;
+  const showJumpToBottom = shouldShowJumpToBottom({
+    isScrolledFromBottom: scrollMetrics.distanceFromBottomPx > FOLLOW_THRESHOLD,
+    responseSpacerHeightPx,
+    scrollDistanceFromBottomPx: scrollMetrics.distanceFromBottomPx,
+  });
 
   const updateScrollState = useCallback((element: HTMLElement) => {
     const distance = distanceFromBottom(element);
     lastScrollDistanceFromBottomRef.current = distance;
     const followsBottom = distance <= FOLLOW_THRESHOLD;
     followsBottomRef.current = followsBottom;
-    setShowJumpToBottom(!followsBottom);
     setScrollMetrics(current => current.distanceFromBottomPx === distance && current.viewportHeightPx === element.clientHeight
       ? current
       : { distanceFromBottomPx: distance, viewportHeightPx: element.clientHeight });
@@ -170,7 +174,6 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, nav
       return;
     followsBottomRef.current = true;
     element.scrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
-    setShowJumpToBottom(false);
     setScrollMetrics({ distanceFromBottomPx: 0, viewportHeightPx: element.clientHeight });
   };
   const scrollToUserMessage = useCallback((item: UserMessageNavigationItem, behavior: ScrollBehavior) => {
@@ -253,4 +256,14 @@ function distanceFromBottom(element: HTMLElement | null) {
   if (element == null)
     return 0;
   return Math.max(0, element.scrollHeight - element.clientHeight - element.scrollTop);
+}
+
+function shouldShowJumpToBottom({ isScrolledFromBottom, responseSpacerHeightPx, scrollDistanceFromBottomPx }: {
+  isScrolledFromBottom: boolean;
+  responseSpacerHeightPx: null | number;
+  scrollDistanceFromBottomPx: number;
+}) {
+  return responseSpacerHeightPx == null
+    ? isScrolledFromBottom
+    : scrollDistanceFromBottomPx > responseSpacerHeightPx + FOLLOW_THRESHOLD;
 }

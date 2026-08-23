@@ -159,6 +159,30 @@ describe('thread scroll layout', () => {
     expect(button).toHaveClass('left-1/2', '-translate-x-1/2', 'bottom-[calc(100%+24px)]');
   });
 
+  it('hides the jump button when only the footer spacer is below the latest turn', () => {
+    let notifyFooter: ResizeObserverCallback | undefined;
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(callback: ResizeObserverCallback) {
+        notifyFooter = callback;
+      }
+
+      disconnect() {}
+      observe() {}
+      unobserve() {}
+    });
+    render(<Transcript footer={<div>Composer</div>} turns={[{ key: 'first' }, { key: 'second' }]} />);
+    const transcript = transcriptViewport();
+    setScrollMetrics(transcript, 260);
+    transcript.scrollTop = 20;
+    fireEvent.scroll(transcript);
+
+    expect(screen.getByRole('button', { name: 'Jump to latest' })).not.toBeNull();
+
+    act(() => notifyFooter?.([{ contentRect: { height: 120 } } as ResizeObserverEntry], {} as ResizeObserver));
+
+    expect(screen.queryByRole('button', { name: 'Jump to latest' })).toBeNull();
+  });
+
   it('renders the turns reached after scrolling away from the bottom', () => {
     const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
     const originalScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
