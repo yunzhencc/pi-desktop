@@ -162,6 +162,7 @@ describe('settings view', () => {
     );
 
     expect(screen.getByText('个人')).not.toBeNull();
+    expect(screen.getByText('集成')).not.toBeNull();
     expect(screen.getByRole('button', { name: '个人资料' })).not.toBeNull();
     expect(screen.getByRole('button', { name: '模型提供商' })).not.toBeNull();
     expect(container.querySelector('svg.lucide-settings')).not.toBeNull();

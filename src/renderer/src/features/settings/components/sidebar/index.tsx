@@ -129,9 +129,10 @@ export function SettingsSidebar({ activePath, onClose, onNavigate }: SettingsSid
                 <Keyboard aria-hidden="true" size={16} strokeWidth={1.75} />
                 {formatMessage({ id: 'shortcuts.title' })}
               </button>
+              <div className="px-2 pt-4 pb-2 text-sm font-normal text-text-tertiary">{formatMessage({ id: 'settings.integrations' })}</div>
               <button
                 aria-current={activePath === '/settings/providers' ? 'page' : undefined}
-                className={cn(navigationButtonClass, 'mt-px')}
+                className={navigationButtonClass}
                 onClick={() => onNavigate('/settings/providers')}
                 type="button"
               >
