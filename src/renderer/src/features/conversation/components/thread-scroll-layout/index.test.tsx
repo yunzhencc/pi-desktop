@@ -154,7 +154,9 @@ describe('thread scroll layout', () => {
     transcript.scrollTop = 20;
     fireEvent.scroll(transcript);
 
-    expect(container.querySelector('.thread-scroll-footer')?.contains(screen.getByRole('button', { name: 'Jump to latest' }))).toBe(true);
+    const button = screen.getByRole('button', { name: 'Jump to latest' });
+    expect(container.querySelector('.thread-scroll-footer')?.contains(button)).toBe(true);
+    expect(button).toHaveClass('left-1/2', '-translate-x-1/2', 'bottom-[calc(100%+24px)]');
   });
 
   it('renders the turns reached after scrolling away from the bottom', () => {

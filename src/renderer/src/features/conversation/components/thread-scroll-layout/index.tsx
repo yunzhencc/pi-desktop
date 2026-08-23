@@ -9,7 +9,7 @@ import './style.css';
 const DEFAULT_TURN_HEIGHT = 72;
 const FOLLOW_THRESHOLD = 24;
 const TURN_GAP = 16;
-const jumpToBottomButtonClass = 'thread-scroll-to-bottom absolute right-[max(16px,calc((100%_-_720px)/2))] z-[2] grid size-8 place-items-center rounded-full border border-border-subtle bg-surface-elevated text-foreground shadow-[0_4px_12px_color-mix(in_srgb,var(--foreground)_12%,transparent)]';
+const jumpToBottomButtonClass = 'thread-scroll-to-bottom absolute left-1/2 z-[2] grid size-8 -translate-x-1/2 place-items-center rounded-full border border-border-subtle bg-surface text-text-secondary';
 const threadContentClass = 'thread-scroll-content flex-[1_0_auto] px-[max(16px,calc((100%_-_720px)/2))] pt-4 pb-4 [&>[data-thread-turn]]:flex';
 
 export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, turns }: {
@@ -170,7 +170,7 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
       aria-label="Jump to latest"
       className={cn(
         jumpToBottomButtonClass,
-        footer ? 'bottom-[calc(100%+8px)]' : 'bottom-[var(--thread-scroll-padding-bottom,32px)]',
+        footer ? 'bottom-[calc(100%+24px)]' : 'bottom-[var(--thread-scroll-padding-bottom,32px)]',
       )}
       onClick={scrollToBottom}
       title="Jump to latest"
