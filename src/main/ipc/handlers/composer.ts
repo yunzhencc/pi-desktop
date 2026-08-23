@@ -57,6 +57,11 @@ export function registerComposerHandlers({ attachmentStore, piRuntime }: Compose
       throw new TypeError('无效的回复');
     return piRuntime.forkAssistantMessage(entryId);
   });
+  registerHandler(IPC_CHANNELS.ComposerSetUserMessageBookmarked, (_event, entryId: unknown, bookmarked: unknown) => {
+    if (typeof entryId !== 'string' || !entryId || typeof bookmarked !== 'boolean')
+      throw new TypeError('无效的用户消息书签');
+    return piRuntime.setUserMessageBookmarked(entryId, bookmarked);
+  });
   registerHandler(IPC_CHANNELS.ComposerNewConversation, () => composer.startNewConversation());
   registerHandler(IPC_CHANNELS.ComposerStop, () => piRuntime.abort());
   piRuntime.subscribe((update) => {

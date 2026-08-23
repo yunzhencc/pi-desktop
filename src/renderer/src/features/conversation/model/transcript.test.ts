@@ -90,4 +90,12 @@ describe('conversation transcript model', () => {
       { id: 2_000, role: 'error', text: 'Nope' },
     ]);
   });
+
+  it('assigns the persisted entry ID to the newest pending user message', () => {
+    const messages = appendSubmittedUserMessage([], 'Build it', 1_000);
+
+    expect(applyComposerUpdate(messages, { entryId: 'user-1', type: 'user' })).toMatchObject([
+      { entryId: 'user-1', role: 'user', text: 'Build it' },
+    ]);
+  });
 });

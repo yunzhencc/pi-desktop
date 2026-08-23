@@ -41,6 +41,7 @@ export const IPC_CHANNELS = Enum({
   ComposerSend: 'composer:send',
   ComposerEditLastUserMessage: 'composer:edit-last-user-message',
   ComposerForkAssistantMessage: 'composer:fork-assistant-message',
+  ComposerSetUserMessageBookmarked: 'composer:set-user-message-bookmarked',
   ComposerNewConversation: 'composer:new-conversation',
   ComposerStop: 'composer:stop',
   ComposerUpdate: 'composer:update',

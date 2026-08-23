@@ -1,0 +1,95 @@
+.thread-user-message-navigation-rail {
+  position: absolute;
+  top: calc(46px + (100% - 46px) / 2);
+  left: 16px;
+  z-index: 20;
+  transform: translateY(-50%);
+}
+
+.thread-user-message-navigation-list {
+  --edge-fade-distance: 2.5rem;
+  display: flex;
+  max-height: min(70vh, 40rem);
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.thread-user-message-navigation-list::-webkit-scrollbar { display: none; }
+
+.thread-user-message-navigation-button {
+  display: flex;
+  width: 100%;
+  cursor: pointer;
+  align-items: center;
+  outline: none;
+}
+
+.thread-user-message-navigation-marker {
+  --marker-progress: 0;
+  position: relative;
+  display: flex;
+  width: 26px;
+  height: 2px;
+  color: var(--text-secondary);
+  opacity: var(--bookmarked-opacity, .4);
+}
+
+.thread-user-message-navigation-marker-line,
+.thread-user-message-navigation-bookmark-dot {
+  background-color: currentcolor;
+  transition-duration: 160ms;
+  transition-timing-function: linear(0, .398 10%, .682 20%, .843 30%, .925 40%, .972 50%, 1.004 60%, 1.008 70%, 1.003 80%, 1);
+}
+
+.thread-user-message-navigation-marker-line {
+  width: 100%;
+  height: 100%;
+  transform: scaleX(calc(.2308 + .7692 * var(--marker-progress)));
+  transform-origin: 0;
+  transition-property: transform;
+}
+
+.thread-user-message-navigation-bookmark-dot {
+  position: absolute;
+  left: calc(100% * (.2308 + .7692 * var(--marker-progress)) + 2px);
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  transition-property: left;
+}
+
+.thread-user-message-navigation-marker:has(.thread-user-message-navigation-bookmark-dot) { --bookmarked-opacity: 1; }
+.thread-user-message-navigation-item[data-current] .thread-user-message-navigation-marker { color: var(--foreground); opacity: var(--bookmarked-opacity, .6); }
+.thread-user-message-navigation-item:has(+ .thread-user-message-navigation-item[data-scrub-target]),
+.thread-user-message-navigation-item[data-scrub-target] + .thread-user-message-navigation-item { --marker-progress: .7; }
+.thread-user-message-navigation-item:has(+ .thread-user-message-navigation-item + .thread-user-message-navigation-item[data-scrub-target]),
+.thread-user-message-navigation-item[data-scrub-target] + .thread-user-message-navigation-item + .thread-user-message-navigation-item { --marker-progress: .4; }
+.thread-user-message-navigation-item:has(+ .thread-user-message-navigation-item + .thread-user-message-navigation-item + .thread-user-message-navigation-item[data-scrub-target]),
+.thread-user-message-navigation-item[data-scrub-target] + .thread-user-message-navigation-item + .thread-user-message-navigation-item + .thread-user-message-navigation-item { --marker-progress: .2; }
+.thread-user-message-navigation-button:focus-visible .thread-user-message-navigation-marker,
+.thread-user-message-navigation-button[data-scrub-target] .thread-user-message-navigation-marker { --marker-progress: 1; color: var(--foreground); opacity: 1; }
+
+@media (hover: hover) {
+  .thread-user-message-navigation-list:hover .thread-user-message-navigation-item[data-current]:not(:hover):not(:focus-within) .thread-user-message-navigation-marker { color: var(--text-secondary); opacity: var(--bookmarked-opacity, .4); }
+  .thread-user-message-navigation-list:hover .thread-user-message-navigation-item:has(+ .thread-user-message-navigation-item:hover) .thread-user-message-navigation-marker,
+  .thread-user-message-navigation-list:hover .thread-user-message-navigation-item:hover + .thread-user-message-navigation-item .thread-user-message-navigation-marker { --marker-progress: .7; }
+  .thread-user-message-navigation-list:hover .thread-user-message-navigation-item:has(+ .thread-user-message-navigation-item + .thread-user-message-navigation-item:hover) .thread-user-message-navigation-marker,
+  .thread-user-message-navigation-list:hover .thread-user-message-navigation-item:hover + .thread-user-message-navigation-item + .thread-user-message-navigation-item .thread-user-message-navigation-marker { --marker-progress: .4; }
+  .thread-user-message-navigation-list:hover .thread-user-message-navigation-item:has(+ .thread-user-message-navigation-item + .thread-user-message-navigation-item + .thread-user-message-navigation-item:hover) .thread-user-message-navigation-marker,
+  .thread-user-message-navigation-list:hover .thread-user-message-navigation-item:hover + .thread-user-message-navigation-item + .thread-user-message-navigation-item + .thread-user-message-navigation-item .thread-user-message-navigation-marker { --marker-progress: .2; }
+  .thread-user-message-navigation-list:hover .thread-user-message-navigation-item:hover .thread-user-message-navigation-marker { --marker-progress: 1; color: var(--foreground); opacity: 1; }
+}
+
+.thread-user-message-navigation-preview {
+  width: min(20rem, calc(100vw - 16px));
+  padding: 8px;
+  color: var(--foreground);
+  line-height: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread-user-message-navigation-marker-line,
+  .thread-user-message-navigation-bookmark-dot { transition-duration: 0s; }
+}

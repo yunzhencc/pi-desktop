@@ -3,6 +3,7 @@ import type { AttachmentStore } from './attachments';
 import { join, resolve } from 'node:path';
 
 const workedForEntryType = 'pi-desktop-worked-for';
+const turnBookmarkEntryType = 'pi-desktop-turn-bookmark';
 
 type WorkStatus = PiWorkStatus;
 
@@ -11,10 +12,12 @@ interface PiSession {
   editLastUserMessage?: () => Promise<{ cancelled: boolean; editorText?: string }>;
   forkAssistantMessage?: (entryId: string) => string | undefined;
   getLastAssistantEntryId?: () => string | undefined;
+  getLastUserEntryId?: () => string | undefined;
   getSessionPath?: () => string | undefined;
   isStreaming?: boolean;
   prompt: (text: string, options?: { images?: Array<{ type: 'image'; data: string; mimeType: string }>; streamingBehavior?: 'steer' }) => Promise<void>;
   recordWorkDuration?: (duration: { completedAtMs: number; startedAtMs: number; status: WorkStatus }) => void;
+  setUserMessageBookmarked?: (userEntryId: string, bookmarked: boolean) => string[];
   subscribe: (listener: (event: unknown) => void) => () => void;
   dispose?: () => void;
 }
@@ -111,9 +114,26 @@ export class PiRuntime {
     this.#sessionPath = path;
     this.#resetSession();
     return {
+      bookmarkedUserEntryIds: toPiBookmarkedUserEntryIds(session.getBranch()),
       messages: toPiSessionMessages(session.getBranch()),
       path,
     };
+  }
+
+  async setUserMessageBookmarked(userEntryId: string, bookmarked: boolean): Promise<string[]> {
+    if (!userEntryId)
+      throw new TypeError('用户消息不能为空');
+    if (!this.#sessionPath)
+      throw new Error('当前没有可保存书签的会话');
+    if (this.#session?.setUserMessageBookmarked)
+      return this.#session.setUserMessageBookmarked(userEntryId, bookmarked);
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const session = SessionManager.open(this.#sessionPath);
+    const entries = session.getBranch();
+    if (!entries.some(entry => isUserMessageEntry(entry, userEntryId)))
+      throw new Error('找不到用户消息');
+    session.appendCustomEntry(turnBookmarkEntryType, { bookmarked, userEntryId });
+    return toPiBookmarkedUserEntryIds(session.getBranch());
   }
 
   async forkAssistantMessage(entryId: string): Promise<PiSessionSnapshot> {
@@ -233,6 +253,9 @@ export class PiRuntime {
   #handleEvent(event: unknown): void {
     if (isUserMessageEndEvent(event)) {
       const sessionPath = this.#sessionPath;
+      const entryId = this.#session?.getLastUserEntryId?.();
+      if (entryId)
+        this.#emit({ entryId, type: 'user' });
       if (sessionPath)
         queueMicrotask(() => this.#emit({ sessionPath, type: 'session' }));
       return;
@@ -323,6 +346,7 @@ async function createDefaultSession(agentDir?: string, workspacePath?: string, s
     },
     forkAssistantMessage: entryId => session.sessionManager.createBranchedSession(entryId),
     getLastAssistantEntryId: () => session.sessionManager.getBranch().findLast(entry => entry.type === 'message' && entry.message.role === 'assistant')?.id,
+    getLastUserEntryId: () => session.sessionManager.getBranch().findLast(entry => entry.type === 'message' && entry.message.role === 'user')?.id,
     getSessionPath: () => session.sessionManager.getSessionFile(),
     get isStreaming() {
       return session.isStreaming;
@@ -331,6 +355,13 @@ async function createDefaultSession(agentDir?: string, workspacePath?: string, s
     recordWorkDuration: (duration) => {
       const assistantEntry = session.sessionManager.getBranch().findLast(entry => entry.type === 'message' && entry.message.role === 'assistant');
       session.sessionManager.appendCustomEntry(workedForEntryType, { ...duration, assistantEntryId: assistantEntry?.id });
+    },
+    setUserMessageBookmarked: (userEntryId, bookmarked) => {
+      const entries = session.sessionManager.getBranch();
+      if (!entries.some(entry => isUserMessageEntry(entry, userEntryId)))
+        throw new Error('找不到用户消息');
+      session.sessionManager.appendCustomEntry(turnBookmarkEntryType, { bookmarked, userEntryId });
+      return toPiBookmarkedUserEntryIds(session.sessionManager.getBranch());
     },
     subscribe: listener => session.subscribe(event => listener(event)),
   };
@@ -508,6 +539,27 @@ function toPiWorkDuration(entry: unknown): (Extract<PiSessionSnapshot['messages'
     startedAtMs,
     status,
   };
+}
+
+function toPiBookmarkedUserEntryIds(entries: unknown[]): string[] {
+  const userEntryIds = new Set(entries.flatMap(entry => isRecord(entry) && entry.type === 'message' && isRecord(entry.message) && entry.message.role === 'user' && typeof entry.id === 'string' ? [entry.id] : []));
+  const bookmarked = new Map<string, boolean>();
+  for (const entry of entries) {
+    if (!isRecord(entry) || entry.type !== 'custom' || entry.customType !== turnBookmarkEntryType || !isRecord(entry.data))
+      continue;
+    const { bookmarked: isBookmarked, userEntryId } = entry.data;
+    if (typeof userEntryId === 'string' && typeof isBookmarked === 'boolean' && userEntryIds.has(userEntryId))
+      bookmarked.set(userEntryId, isBookmarked);
+  }
+  return [...bookmarked].flatMap(([userEntryId, isBookmarked]) => isBookmarked ? [userEntryId] : []);
+}
+
+function isUserMessageEntry(entry: unknown, entryId: string): boolean {
+  return isRecord(entry)
+    && entry.id === entryId
+    && entry.type === 'message'
+    && isRecord(entry.message)
+    && entry.message.role === 'user';
 }
 
 function buildUsageStats(sessionEntries: unknown[][]): PiUsageStats {

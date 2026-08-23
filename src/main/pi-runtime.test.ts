@@ -103,6 +103,7 @@ describe('pi runtime', () => {
     const runtime = new PiRuntime(new AttachmentStore(), { agentDir });
 
     await expect(runtime.openSession(session.getSessionFile()!)).resolves.toEqual({
+      bookmarkedUserEntryIds: [],
       messages: [
         { entryId: 'message-1', role: 'user', text: 'Earlier request', timestamp: 1000 },
         { completedAtMs: 2000, role: 'work', startedAtMs: 1000, status: 'worked' },
@@ -110,6 +111,25 @@ describe('pi runtime', () => {
       ],
       path: session.getSessionFile(),
     });
+  });
+
+  it('persists the latest bookmark state for a user entry', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pi-desktop-session-bookmarks-'));
+    directories.push(root);
+    const workspace = join(root, 'workspace');
+    const agentDir = join(root, 'agent');
+    await mkdir(workspace);
+    const { SessionManager } = await import('@earendil-works/pi-coding-agent');
+    const sessionDir = join(agentDir, 'sessions', `--${workspace.slice(1).replace(/[/:]/g, '-')}--`);
+    const session = SessionManager.create(workspace, sessionDir);
+    const path = session.getSessionFile()!;
+    await writeFile(path, `${JSON.stringify(session.getHeader())}\n${JSON.stringify({ id: 'user-1', message: { content: 'Bookmark me', role: 'user', timestamp: 1000 }, parentId: null, timestamp: new Date().toISOString(), type: 'message' })}\n`);
+    const runtime = new PiRuntime(new AttachmentStore(), { agentDir });
+
+    await runtime.openSession(path);
+    await expect(runtime.setUserMessageBookmarked('user-1', true)).resolves.toEqual(['user-1']);
+    await expect(runtime.setUserMessageBookmarked('user-1', false)).resolves.toEqual([]);
+    await expect(runtime.openSession(path)).resolves.toMatchObject({ bookmarkedUserEntryIds: [] });
   });
 
   it('restores tool commands and results from a persisted session', async () => {
@@ -398,5 +418,26 @@ describe('pi runtime', () => {
     await new Promise<void>(resolve => queueMicrotask(resolve));
 
     expect(update).toHaveBeenLastCalledWith({ sessionPath: '/sessions/new.jsonl', type: 'session' });
+  });
+
+  it('announces the persisted user entry ID', async () => {
+    let listener: ((event: unknown) => void) | undefined;
+    const runtime = new PiRuntime(new AttachmentStore(), async () => ({
+      getLastUserEntryId: () => 'user-1',
+      getSessionPath: () => '/sessions/new.jsonl',
+      prompt: vi.fn(),
+      subscribe: (callback: (event: unknown) => void) => {
+        listener = callback;
+        return () => {};
+      },
+    }));
+    const update = vi.fn();
+    runtime.subscribe(update);
+    runtime.setWorkspace('/tmp/project');
+
+    await runtime.send('Start a new task', []);
+    listener?.({ message: { content: [{ text: 'Start a new task', type: 'text' }], role: 'user' }, type: 'message_end' });
+
+    expect(update).toHaveBeenCalledWith({ entryId: 'user-1', type: 'user' });
   });
 });

@@ -32,6 +32,7 @@ export type TranscriptUpdate
   = | { done?: boolean; entryId?: string; text: string; timestamp?: number; type: 'assistant' }
     | { text: string; type: 'error' }
     | { sessionPath: string; type: 'session' }
+    | { entryId: string; type: 'user' }
     | { completedAtMs?: number; sessionPath?: string; startedAtMs?: number; status: 'running' | 'settled'; type: 'status'; workStatus?: PiWorkStatus }
     | { args?: unknown; output?: unknown; sessionPath?: string; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string; type: 'tool' };
 
@@ -52,6 +53,7 @@ export interface PiUsageStats {
 }
 
 export interface PiSessionSnapshot {
+  bookmarkedUserEntryIds?: string[];
   messages: Array<
     | { entryId: string; role: 'assistant' | 'user'; text: string; timestamp: number }
     | { args?: unknown; output?: unknown; role: 'tool'; status: 'completed' | 'failed' | 'running'; toolCallId: string; toolName: string }

@@ -1,5 +1,6 @@
 import type { AttachmentMetadata } from '@shared/types';
 import type { CSSProperties, ReactNode } from 'react';
+import type { ThreadNavigation, UserMessageNavigationItem } from './components';
 import type { Message, PiSessionSnapshot } from './model/transcript';
 import logo from '@renderer/assets/icon.svg';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -23,6 +24,7 @@ type ConversationTurn
 export function ConversationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [collapsedActivityTurns, setCollapsedActivityTurns] = useState<Set<number>>(() => new Set());
+  const [bookmarkedUserEntryIds, setBookmarkedUserEntryIds] = useState<Set<string>>(() => new Set());
   const [editingMessage, setEditingMessage] = useState<{ id: number; text: string }>();
   const [isRunning, setIsRunning] = useState(false);
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>();
@@ -52,6 +54,7 @@ export function ConversationPage() {
         sessionPathRef.current = undefined;
         setMessages([]);
         setCollapsedActivityTurns(new Set());
+        setBookmarkedUserEntryIds(new Set());
       }
       workspaceRef.current = next;
       setWorkspace(next);
@@ -68,6 +71,7 @@ export function ConversationPage() {
       sessionPathRef.current = undefined;
       setMessages([]);
       setCollapsedActivityTurns(new Set());
+      setBookmarkedUserEntryIds(new Set());
       void window.piApp.composer.newConversation();
     };
     const openSession = (event: Event) => {
@@ -80,6 +84,7 @@ export function ConversationPage() {
       sessionPathRef.current = session.path;
       setMessages(restoreSessionMessages(session, readSessionAttachments(session.path)));
       setCollapsedActivityTurns(new Set());
+      setBookmarkedUserEntryIds(new Set(session.bookmarkedUserEntryIds));
     };
     window.addEventListener('new-conversation', startNewConversation);
     window.addEventListener('session-changed', openSession);
@@ -218,12 +223,21 @@ export function ConversationPage() {
   const selectedWorkspace = workspace?.workspaces.find(item => item.path === workspace.selectedWorkspacePath);
   const lastUserMessageId = messages.findLast(message => message.role === 'user')?.id;
   const turns = groupConversationTurns(messages);
+  const userNavigationItems = buildUserMessageNavigationItems(messages, bookmarkedUserEntryIds);
+  const navigation: ThreadNavigation = {
+    items: userNavigationItems,
+    onBookmarkChange: (item, bookmarked) => {
+      if (!item.entryId)
+        return;
+      void window.piApp.composer.setUserMessageBookmarked(item.entryId, bookmarked).then(ids => setBookmarkedUserEntryIds(new Set(ids))).catch(() => {});
+    },
+  };
   const renderUserMessage = (message: Message) => {
     const visibleText = visibleUserMessageText(message);
     return editingMessage?.id === message.id
       ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
       : (
-          <div className="chat-message-user-stack">
+          <div className="chat-message-user-stack" data-user-message-bubble>
             {message.attachments?.length ? <AttachmentList attachments={message.attachments} variant="message" /> : null}
             {visibleText.trim()
               ? (
@@ -328,6 +342,7 @@ export function ConversationPage() {
         : (
             <ThreadScrollLayout
               footer={<div className="chat-composer-wrap mx-auto w-[min(100%_-_32px,720px)]" ref={composerFooterRef}>{composer}</div>}
+              navigation={navigation}
               turns={turns}
             >
               {renderTurn}
@@ -392,6 +407,23 @@ function groupConversationTurns(messages: Message[]): ConversationTurn[] {
   flushActivities();
   flushActivityTurn();
   return turns;
+}
+
+function buildUserMessageNavigationItems(messages: Message[], bookmarkedUserEntryIds: ReadonlySet<string>): UserMessageNavigationItem[] {
+  return messages.flatMap((message, index) => {
+    if (message.role !== 'user')
+      return [];
+    const response = messages.slice(index + 1).find(candidate => candidate.role === 'assistant' || candidate.role === 'user');
+    const entryId = message.entryId;
+    return [{
+      ...(entryId ? { entryId } : {}),
+      id: entryId ?? `message:${message.id}`,
+      isBookmarked: entryId != null && bookmarkedUserEntryIds.has(entryId),
+      label: visibleUserMessageText(message) || message.attachments?.map(attachment => attachment.name).join(', ') || '',
+      response: response?.role === 'assistant' ? response.text : '',
+      turnKey: String(message.id),
+    }];
+  });
 }
 
 function ActivityTurn({ activities, assistant, collapsed, onToggle, renderAssistant, work }: Extract<ConversationTurn, { type: 'activity-turn' }> & { collapsed: boolean; onToggle: () => void; renderAssistant: (message: Message) => ReactNode }) {

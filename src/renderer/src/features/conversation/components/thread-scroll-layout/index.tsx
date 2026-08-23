@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
+import type { UserMessageNavigationItem } from '../thread-user-message-navigation-rail';
 import type { ThreadLayout, ThreadTurn } from './thread-virtualizer';
 import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
 import { ArrowDown } from 'lucide-react';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ThreadUserMessageNavigationRail } from '../thread-user-message-navigation-rail';
 import { buildThreadLayout, preserveAnchorDistance, visibleThreadRange } from './thread-virtualizer';
 import './style.css';
 
@@ -12,13 +14,20 @@ const TURN_GAP = 16;
 const jumpToBottomButtonClass = 'thread-scroll-to-bottom absolute left-1/2 z-[2] grid size-8 -translate-x-1/2 place-items-center rounded-full border border-border-subtle bg-surface text-text-secondary';
 const threadContentClass = 'thread-scroll-content flex-[1_0_auto] px-[max(16px,calc((100%_-_720px)/2))] pt-4 pb-4 [&>[data-thread-turn]]:flex';
 
-export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, turns }: {
+export interface ThreadNavigation {
+  items: UserMessageNavigationItem[];
+  onBookmarkChange: (item: UserMessageNavigationItem, bookmarked: boolean) => void;
+}
+
+export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, navigation, turns }: {
   children: (turn: T) => ReactNode;
   footer?: ReactNode;
+  navigation?: ThreadNavigation;
   turns: T[];
 }) {
   const hasFooter = footer != null;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
   const previousLayoutRef = useRef<ThreadLayout | null>(null);
   const previousTurnKeysRef = useRef<string[]>([]);
   const anchorKeyRef = useRef<string | null>(null);
@@ -32,11 +41,17 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
   const [footerHeightPx, setFooterHeightPx] = useState(0);
   const [scrollMetrics, setScrollMetrics] = useState({ distanceFromBottomPx: 0, viewportHeightPx: 0 });
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
+  const setScrollRef = useCallback((element: HTMLDivElement | null) => {
+    scrollRef.current = element;
+    setScrollElement(current => current === element ? current : element);
+  }, []);
+  const getScrollElement = useCallback(() => scrollElement, [scrollElement]);
   const layout = useMemo(() => buildThreadLayout(turns, measuredHeights, TURN_GAP, DEFAULT_TURN_HEIGHT), [measuredHeights, turns]);
   const range = scrollMetrics.viewportHeightPx > 0
     ? visibleThreadRange({ distanceFromBottomPx: scrollMetrics.distanceFromBottomPx, layout, overscanCount: 2, viewportHeightPx: scrollMetrics.viewportHeightPx })
     : { endIndex: turns.length, startIndex: 0 };
   const visibleTurns = turns.slice(range.startIndex, range.endIndex);
+  const navigationItemsByTurnKey = useMemo(() => new Map(navigation?.items.map(item => [item.turnKey, item])), [navigation?.items]);
   const topSpacerPx = range.startIndex === 0 ? 0 : layout.totalHeightPx - layout.bottomOffsetsPx[range.startIndex]! - layout.heightsPx[range.startIndex]!;
   const bottomSpacerPx = range.endIndex === 0 ? 0 : layout.bottomOffsetsPx[range.endIndex - 1]!;
 
@@ -158,6 +173,27 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
     setShowJumpToBottom(false);
     setScrollMetrics({ distanceFromBottomPx: 0, viewportHeightPx: element.clientHeight });
   };
+  const scrollToUserMessage = useCallback((item: UserMessageNavigationItem, behavior: ScrollBehavior) => {
+    const element = scrollRef.current;
+    const index = layout.turnIndexByKey.get(item.turnKey);
+    if (element == null || index == null)
+      return;
+    const reveal = () => {
+      const turn = [...element.querySelectorAll<HTMLElement>('[data-thread-user-message-id]')].find(target => target.dataset.threadUserMessageId === item.id);
+      if (turn == null)
+        return;
+      turn.scrollIntoView({ behavior, block: 'start' });
+      if (behavior === 'smooth' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+        turn.querySelector<HTMLElement>('[data-user-message-bubble]')?.animate?.([{ backgroundColor: 'color-mix(in srgb, var(--foreground) 14%, transparent)' }, { backgroundColor: 'color-mix(in srgb, var(--foreground) 14%, transparent)', offset: 0.35 }, { backgroundColor: 'transparent' }], { duration: 1400, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+    };
+    const isMounted = [...element.querySelectorAll<HTMLElement>('[data-thread-user-message-id]')].some(target => target.dataset.threadUserMessageId === item.id);
+    if (!isMounted) {
+      const topOffsetPx = layout.totalHeightPx - layout.bottomOffsetsPx[index]! - layout.heightsPx[index]!;
+      element.scrollTop = Math.max(0, Math.min(element.scrollHeight - element.clientHeight, topOffsetPx));
+      updateScrollState(element);
+    }
+    window.requestAnimationFrame(reveal);
+  }, [layout, updateScrollState]);
   const handleScroll = (element: HTMLElement) => {
     scrollRef.current = element;
     const distance = distanceFromBottom(element);
@@ -186,14 +222,14 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
         aria-live="polite"
         className="thread-scroll-layout scroll-pb-[var(--thread-scroll-padding-bottom,32px)]"
         onScroll={event => handleScroll(event.currentTarget)}
-        ref={scrollRef}
+        ref={setScrollRef}
         role="log"
       >
         <div className="thread-scroll-surface flex min-h-full flex-col" data-thread-scroll-surface>
           <div className={threadContentClass} style={footer ? { paddingBottom: footerHeightPx + 16 } : undefined}>
             <div aria-hidden="true" style={{ height: topSpacerPx }} />
             {visibleTurns.map((turn, index) => (
-              <div data-thread-turn={turn.key} key={turn.key} style={{ marginBottom: index === visibleTurns.length - 1 ? 0 : TURN_GAP }}>
+              <div data-thread-turn={turn.key} data-thread-user-message-id={navigationItemsByTurnKey.get(turn.key)?.id} key={turn.key} style={{ marginBottom: index === visibleTurns.length - 1 ? 0 : TURN_GAP }}>
                 {children(turn)}
               </div>
             ))}
@@ -207,6 +243,7 @@ export function ThreadScrollLayout<T extends ThreadTurn>({ children, footer, tur
           )}
         </div>
       </div>
+      {navigation && <ThreadUserMessageNavigationRail getScrollElement={getScrollElement} items={navigation.items} onBookmarkChange={navigation.onBookmarkChange} onNavigate={scrollToUserMessage} />}
       {!footer && jumpToBottomButton}
     </>
   );

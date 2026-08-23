@@ -24,6 +24,7 @@ type SessionMessage
     | { entryId?: string; role: 'assistant' | 'user'; text: string; timestamp?: number };
 
 export interface PiSessionSnapshot {
+  bookmarkedUserEntryIds?: string[];
   path?: string;
   messages: SessionMessage[];
 }
@@ -46,6 +47,7 @@ interface ToolSnapshot {
 type ComposerUpdate
   = | ({ type: 'assistant' } & AssistantSnapshot)
     | ({ type: 'error'; text: string })
+    | { entryId: string; type: 'user' }
     | ({ completedAtMs?: number; startedAtMs?: number; status: 'running' | 'settled'; type: 'status'; workStatus?: Message['workStatus'] })
     | ({ type: 'tool' } & ToolSnapshot)
     | { type: 'session' };
@@ -108,11 +110,18 @@ export function applyComposerUpdate(current: Message[], update: ComposerUpdate, 
   }
   if (update.type === 'error')
     return appendErrorMessage(current, update.text, now);
+  if (update.type === 'user')
+    return assignLatestUserEntryId(current, update.entryId);
   if (update.type === 'tool')
     return upsertToolActivity(current, update, now);
   if (update.type === 'assistant' && update.done)
     return appendAssistantMessage(current, update, now);
   return current;
+}
+
+export function assignLatestUserEntryId(current: Message[], entryId: string): Message[] {
+  const index = current.findLastIndex(message => message.role === 'user' && message.entryId == null);
+  return index < 0 ? current : [...current.slice(0, index), { ...current[index]!, entryId }, ...current.slice(index + 1)];
 }
 
 export function upsertToolActivity(current: Message[], update: ToolSnapshot, now = Date.now()): Message[] {

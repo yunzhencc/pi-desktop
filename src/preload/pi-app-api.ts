@@ -50,6 +50,7 @@ export function createPiAppAPI(ipc: PiAppIpc) {
       revealAttachment: (id: string): Promise<void> => ipc.invoke(IPC_CHANNELS.ComposerRevealAttachment, id),
       removeAttachment: (id: string): Promise<void> => ipc.invoke(IPC_CHANNELS.ComposerRemoveAttachment, id),
       send: (prompt: string, attachmentIds: string[]): Promise<void> => ipc.invoke(IPC_CHANNELS.ComposerSend, prompt, attachmentIds),
+      setUserMessageBookmarked: (entryId: string, bookmarked: boolean): Promise<string[]> => ipc.invoke(IPC_CHANNELS.ComposerSetUserMessageBookmarked, entryId, bookmarked),
       stop: (): Promise<void> => ipc.invoke(IPC_CHANNELS.ComposerStop),
       onUpdate: (callback: (update: TranscriptUpdate) => void) => onValue(ipc, IPC_CHANNELS.ComposerUpdate, callback),
     },
