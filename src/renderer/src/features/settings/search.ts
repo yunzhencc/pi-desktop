@@ -31,7 +31,7 @@ const settingsSearchTargets: SettingsSearchTarget[] = [
     path: '/settings/appearance',
   },
   {
-    messages: ['shortcuts.title', 'shortcut.newConversation.title', 'shortcut.toggleSidebar.title', 'shortcut.openSettings.title', 'shortcut.toggleSessionPin.title'],
+    messages: ['shortcuts.title', 'shortcut.newConversation.title', 'shortcut.toggleSidebar.title', 'shortcut.openSettings.title', 'shortcut.focusSettingsSearch.title', 'shortcut.toggleSessionPin.title', 'shortcut.goBack.title', 'shortcut.goForward.title'],
     panel: 'shortcuts.title',
     path: '/settings/keyboard-shortcuts',
   },

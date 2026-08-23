@@ -8,6 +8,8 @@ export const shortcutDefinitions = [
   { description: 'shortcut.openSettings.description', id: 'openSettings', title: 'shortcut.openSettings.title' },
   { description: 'shortcut.focusSettingsSearch.description', id: 'focusSettingsSearch', title: 'shortcut.focusSettingsSearch.title' },
   { description: 'shortcut.toggleSessionPin.description', id: 'toggleSessionPin', title: 'shortcut.toggleSessionPin.title' },
+  { description: 'shortcut.goBack.description', id: 'goBack', title: 'shortcut.goBack.title' },
+  { description: 'shortcut.goForward.description', id: 'goForward', title: 'shortcut.goForward.title' },
 ] as const;
 
 export type ShortcutId = (typeof shortcutDefinitions)[number]['id'];
@@ -15,6 +17,8 @@ export type ShortcutBindings = Record<ShortcutId, string[]>;
 
 const defaultShortcutBindings: ShortcutBindings = {
   focusSettingsSearch: ['Mod+F'],
+  goBack: ['Mod+['],
+  goForward: ['Mod+]'],
   newConversation: ['Mod+N', 'Mod+Shift+O'],
   openSettings: ['Mod+,'],
   toggleSessionPin: ['Mod+Shift+P'],
@@ -27,11 +31,11 @@ export function readShortcutBindings(value: string | null): ShortcutBindings {
 
   try {
     const parsed = JSON.parse(value) as Partial<ShortcutBindings>;
-    if (!parsed || typeof parsed !== 'object' || !shortcutDefinitions.every(({ id }) => isValidBindingList(parsed[id]))) {
+    if (!parsed || typeof parsed !== 'object' || !shortcutDefinitions.every(({ id }) => parsed[id] === undefined || isValidBindingList(parsed[id]))) {
       return cloneDefaults();
     }
 
-    return Object.fromEntries(shortcutDefinitions.map(({ id }) => [id, parsed[id]!.map(normalizeHotkey)])) as ShortcutBindings;
+    return Object.fromEntries(shortcutDefinitions.map(({ id }) => [id, parsed[id]?.map(normalizeHotkey) ?? [...defaultShortcutBindings[id]]])) as ShortcutBindings;
   }
   catch {
     return cloneDefaults();
@@ -44,11 +48,15 @@ export function writeShortcutBindings(bindings: ShortcutBindings) {
 
 export function findShortcutConflict(bindings: ShortcutBindings, commandId: ShortcutId, hotkey: string) {
   const normalized = normalizeHotkey(hotkey);
-  return shortcutDefinitions.find(({ id }) => bindings[id].some(binding => normalizeHotkey(binding) === normalized))?.id;
+  return shortcutDefinitions.find(({ id }) => id !== commandId && bindings[id].some(binding => normalizeHotkey(binding) === normalized))?.id;
 }
 
 export function hasCustomShortcutBindings(bindings: ShortcutBindings) {
   return writeShortcutBindings(bindings) !== writeShortcutBindings(defaultShortcutBindings);
+}
+
+export function hasCustomShortcutBinding(bindings: ShortcutBindings, commandId: ShortcutId) {
+  return writeShortcutBindings(bindings[commandId]) !== writeShortcutBindings(defaultShortcutBindings[commandId]);
 }
 
 export function isShortcutAllowed(hotkey: string) {

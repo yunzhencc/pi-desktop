@@ -1,13 +1,19 @@
 import type { ShortcutBindings, ShortcutId } from '@renderer/features/app/shortcuts';
+import { Button } from '@pi-desktop/shadcn-ui/components/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from '@pi-desktop/shadcn-ui/components/dialog';
-import { Input } from '@pi-desktop/shadcn-ui/components/input';
-import { cn } from '@pi-desktop/shadcn-ui/lib/utils';
+import { Empty, EmptyHeader, EmptyTitle } from '@pi-desktop/shadcn-ui/components/empty';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@pi-desktop/shadcn-ui/components/input-group';
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemTitle } from '@pi-desktop/shadcn-ui/components/item';
 import {
   findShortcutConflict,
+  hasCustomShortcutBinding,
   hasCustomShortcutBindings,
   isShortcutAllowed,
   shortcutDefinitions,
@@ -25,8 +31,6 @@ interface KeyboardShortcutsViewProps {
   onResetAll?: () => void;
   onUpdate: (commandId: ShortcutId, index: number, hotkey: string) => void;
 }
-
-const shortcutButtonClass = 'min-h-7 rounded-md border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] px-2 py-1 text-xs text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)]';
 
 export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, onResetAll, onUpdate }: KeyboardShortcutsViewProps) {
   const { formatMessage } = useIntl();
@@ -47,103 +51,115 @@ export function KeyboardShortcutsView({ bindings, onAppend, onRemove, onReset, o
         <div className="flex items-start justify-between gap-5">
           <h1 className="text-xl font-semibold tracking-normal" id="keyboard-shortcuts-title">{formatMessage({ id: 'shortcuts.title' })}</h1>
           {onResetAll && hasCustomShortcutBindings(bindings) && (
-            <button className={shortcutButtonClass} onClick={() => setIsConfirmingReset(true)} type="button">
+            <Button onClick={() => setIsConfirmingReset(true)} size="sm" variant="secondary">
               {formatMessage({ id: 'shortcuts.resetAll' })}
-            </button>
+            </Button>
           )}
         </div>
-        <div className="relative mt-6 flex items-center">
-          <Search aria-hidden="true" className="pointer-events-none absolute left-[9px] z-[1] text-text-tertiary" size={16} strokeWidth={1.75} />
-          <Input
-            aria-label={formatMessage({ id: 'shortcuts.search' })}
-            className="h-8 border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)] pl-[30px] shadow-none"
-            onChange={event => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (!isSearchingByKeystrokes)
-                return;
-              event.preventDefault();
-              event.stopPropagation();
-              if (event.key === 'Escape') {
-                setIsSearchingByKeystrokes(false);
-                setKeystrokeQuery('');
-                return;
-              }
-              const hotkey = normalizeHotkeyFromEvent(event.nativeEvent);
-              if (hasNonModifierKey(hotkey))
-                setKeystrokeQuery(hotkey);
-            }}
-            placeholder={formatMessage({ id: 'shortcuts.search.placeholder' })}
-            readOnly={isSearchingByKeystrokes}
-            type="search"
-            value={isSearchingByKeystrokes ? formatForDisplay(keystrokeQuery || '') : query}
-          />
-          <button
-            aria-label={formatMessage({ id: 'shortcuts.searchByKeystrokes' })}
-            aria-pressed={isSearchingByKeystrokes}
-            className="absolute right-1 grid size-6 place-items-center rounded-sm text-text-tertiary hover:bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)] hover:text-foreground aria-pressed:bg-[color-mix(in_srgb,var(--foreground)_9%,transparent)] aria-pressed:text-foreground"
-            onClick={() => {
-              setIsSearchingByKeystrokes(searching => !searching);
-              setKeystrokeQuery('');
-            }}
-            type="button"
-          >
-            <Keyboard aria-hidden="true" size={15} />
-          </button>
+        <div className="sticky top-0 z-10 -mx-8 bg-surface px-8 pt-6 pb-4">
+          <InputGroup>
+            <InputGroupAddon>
+              <Search aria-hidden="true" />
+            </InputGroupAddon>
+            <InputGroupInput
+              aria-label={formatMessage({ id: 'shortcuts.search' })}
+              onChange={event => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (!isSearchingByKeystrokes)
+                  return;
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.key === 'Escape') {
+                  setIsSearchingByKeystrokes(false);
+                  setKeystrokeQuery('');
+                  return;
+                }
+                const hotkey = normalizeHotkeyFromEvent(event.nativeEvent);
+                if (hasNonModifierKey(hotkey))
+                  setKeystrokeQuery(hotkey);
+              }}
+              placeholder={formatMessage({ id: 'shortcuts.search.placeholder' })}
+              readOnly={isSearchingByKeystrokes}
+              type="search"
+              value={isSearchingByKeystrokes ? formatForDisplay(keystrokeQuery || '') : query}
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                aria-label={formatMessage({ id: 'shortcuts.searchByKeystrokes' })}
+                aria-pressed={isSearchingByKeystrokes}
+                onClick={() => {
+                  setIsSearchingByKeystrokes(searching => !searching);
+                  setKeystrokeQuery('');
+                }}
+                size="icon-xs"
+              >
+                <Keyboard aria-hidden="true" />
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
         </div>
-        <div className="mt-6 flex flex-col border-t border-border-subtle">
-          {definitions.map(definition => (
-            <article className="flex min-h-[72px] items-start justify-between gap-5 border-b border-border-subtle py-4" key={definition.id}>
-              <div>
-                <h2 className="m-0 text-sm font-medium">{formatMessage({ id: definition.title })}</h2>
-                <p className="m-0 mt-1 text-[13px] text-text-tertiary">{formatMessage({ id: definition.description })}</p>
-              </div>
-              <div className="flex flex-[0_1_24rem] flex-wrap justify-end gap-1.5">
-                {bindings[definition.id].map((binding, index) => (
-                  <ShortcutBindingButton
-                    bindings={bindings}
-                    commandId={definition.id}
-                    index={index}
-                    key={binding}
-                    onClear={() => onRemove?.(definition.id, index)}
-                    onRecord={hotkey => onUpdate(definition.id, index, hotkey)}
-                    value={binding}
-                  />
+        {definitions.length === 0
+          ? (
+              <Empty className="border-0 py-12">
+                <EmptyHeader>
+                  <EmptyTitle>{formatMessage({ id: 'shortcuts.noMatches' })}</EmptyTitle>
+                </EmptyHeader>
+              </Empty>
+            )
+          : (
+              <ItemGroup className="gap-0">
+                {definitions.map(definition => (
+                  <Item className="rounded-none border-x-0 border-t-0 border-b border-border-subtle px-0 py-4" key={definition.id}>
+                    <ItemContent>
+                      <ItemTitle>{formatMessage({ id: definition.title })}</ItemTitle>
+                      <ItemDescription>{formatMessage({ id: definition.description })}</ItemDescription>
+                    </ItemContent>
+                    <ItemActions className="w-96 max-w-full flex-wrap justify-end">
+                      {bindings[definition.id].map((binding, index) => (
+                        <ShortcutBindingButton
+                          bindings={bindings}
+                          commandId={definition.id}
+                          index={index}
+                          key={binding}
+                          onClear={() => onRemove?.(definition.id, index)}
+                          onRecord={hotkey => onUpdate(definition.id, index, hotkey)}
+                          value={binding}
+                        />
+                      ))}
+                      {onAppend && (
+                        <ShortcutBindingButton
+                          bindings={bindings}
+                          commandId={definition.id}
+                          index={bindings[definition.id].length}
+                          isAddButton
+                          onClear={() => {}}
+                          onRecord={hotkey => onAppend(definition.id, hotkey)}
+                        />
+                      )}
+                      {onReset && hasCustomShortcutBinding(bindings, definition.id) && <Button onClick={() => onReset(definition.id)} size="xs" variant="ghost">{formatMessage({ id: 'shortcuts.reset' })}</Button>}
+                    </ItemActions>
+                  </Item>
                 ))}
-                {onAppend && (
-                  <ShortcutBindingButton
-                    bindings={bindings}
-                    commandId={definition.id}
-                    index={bindings[definition.id].length}
-                    isAddButton
-                    onClear={() => {}}
-                    onRecord={hotkey => onAppend(definition.id, hotkey)}
-                  />
-                )}
-                {onReset && <button className={shortcutButtonClass} onClick={() => onReset(definition.id)} type="button">{formatMessage({ id: 'shortcuts.reset' })}</button>}
-              </div>
-            </article>
-          ))}
-        </div>
+              </ItemGroup>
+            )}
       </section>
       <Dialog onOpenChange={setIsConfirmingReset} open={isConfirmingReset}>
-        <DialogContent className="block w-[min(24rem,calc(100vw-32px))] rounded-lg border border-border-subtle bg-surface p-5 shadow-[0_18px_50px_color-mix(in_srgb,#000_26%,transparent)] ring-0" showCloseButton={false}>
-          <div>
-            <DialogTitle className="m-0 text-sm font-medium">{formatMessage({ id: 'shortcuts.resetAll.title' })}</DialogTitle>
-            <p className="m-0 mt-1 text-[13px] text-text-tertiary">{formatMessage({ id: 'shortcuts.resetAll.description' })}</p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button className={shortcutButtonClass} onClick={() => setIsConfirmingReset(false)} type="button">{formatMessage({ id: 'shortcuts.cancel' })}</button>
-              <button
-                className={cn(shortcutButtonClass, 'bg-foreground text-background hover:bg-foreground')}
-                onClick={() => {
-                  onResetAll?.();
-                  setIsConfirmingReset(false);
-                }}
-                type="button"
-              >
-                {formatMessage({ id: 'shortcuts.resetAll' })}
-              </button>
-            </div>
-          </div>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>{formatMessage({ id: 'shortcuts.resetAll.title' })}</DialogTitle>
+            <DialogDescription>{formatMessage({ id: 'shortcuts.resetAll.description' })}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setIsConfirmingReset(false)} variant="outline">{formatMessage({ id: 'shortcuts.cancel' })}</Button>
+            <Button
+              onClick={() => {
+                onResetAll?.();
+                setIsConfirmingReset(false);
+              }}
+            >
+              {formatMessage({ id: 'shortcuts.resetAll' })}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -183,19 +199,19 @@ function ShortcutBindingButton({ bindings, commandId, index, isAddButton = false
   const command = formatMessage({ id: shortcutDefinitions.find(definition => definition.id === commandId)!.title });
 
   if (recorder.isRecording) {
-    return <span className={cn(shortcutButtonClass, 'text-text-secondary hover:bg-[color-mix(in_srgb,var(--foreground)_4%,transparent)]')}>{formatMessage({ id: 'shortcuts.recording' })}</span>;
+    return <Button disabled size="xs" variant="outline">{formatMessage({ id: 'shortcuts.recording' })}</Button>;
   }
 
   return (
     <span className="relative">
-      <button
+      <Button
         aria-label={isAddButton ? formatMessage({ id: 'shortcuts.add' }) : formatMessage({ id: 'shortcuts.edit' }, { command, index: index + 1 })}
-        className={shortcutButtonClass}
         onClick={() => recorder.startRecording()}
-        type="button"
+        size="xs"
+        variant="outline"
       >
         {isAddButton ? formatMessage({ id: 'shortcuts.add' }) : formatForDisplay(value!)}
-      </button>
+      </Button>
       {error && <span className="absolute right-0 top-[calc(100%+4px)] z-[1] w-max max-w-[220px] text-xs text-destructive">{error}</span>}
     </span>
   );

@@ -23,6 +23,8 @@ vi.mock('@renderer/features/app/shortcuts', () => ({
   useShortcutSettings: () => ({
     bindings: {
       focusSettingsSearch: ['Mod+F'],
+      goBack: ['Mod+['],
+      goForward: ['Mod+]'],
       newConversation: ['Mod+N', 'Mod+Shift+O'],
       openSettings: ['Mod+,'],
       toggleSidebar: ['Mod+B'],

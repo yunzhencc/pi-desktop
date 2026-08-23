@@ -167,8 +167,8 @@ export function BasicLayout() {
       ...bindings.toggleSidebar.map(hotkey => ({ callback: toggleSidebar, hotkey })),
       ...bindings.openSettings.map(hotkey => ({ callback: openSettings, hotkey })),
       ...bindings.toggleSessionPin.map(hotkey => ({ callback: toggleCurrentSessionPin, hotkey })),
-      { callback: () => void navigateHistory(-1), hotkey: 'Mod+[' },
-      { callback: () => void navigateHistory(1), hotkey: 'Mod+]' },
+      ...bindings.goBack.map(hotkey => ({ callback: () => void navigateHistory(-1), hotkey })),
+      ...bindings.goForward.map(hotkey => ({ callback: () => void navigateHistory(1), hotkey })),
     ],
     { ignoreInputs: true, preventDefault: true, stopPropagation: false },
   );

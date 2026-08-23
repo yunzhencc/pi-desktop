@@ -9,6 +9,10 @@ import { KeyboardShortcutsView } from './keyboard-shortcuts-settings';
 const messages = {
   'shortcut.focusSettingsSearch.description': 'Focus the settings search field',
   'shortcut.focusSettingsSearch.title': 'Find settings',
+  'shortcut.goBack.description': 'Go back to the previous location',
+  'shortcut.goBack.title': 'Go back',
+  'shortcut.goForward.description': 'Go forward to the next location',
+  'shortcut.goForward.title': 'Go forward',
   'shortcut.newConversation.description': 'Start a new conversation',
   'shortcut.newConversation.title': 'New conversation',
   'shortcut.openSettings.description': 'Open settings',
@@ -18,9 +22,11 @@ const messages = {
   'shortcut.toggleSidebar.description': 'Show or hide the sidebar',
   'shortcut.toggleSidebar.title': 'Toggle sidebar',
   'shortcuts.add': 'Add shortcut',
+  'shortcuts.cancel': 'Cancel',
   'shortcuts.conflict': '{command} already uses this shortcut',
   'shortcuts.edit': 'Edit {command} shortcut {index}',
   'shortcuts.invalid': 'Shortcut must include Command, Control, or Alt',
+  'shortcuts.noMatches': 'No matching shortcuts',
   'shortcuts.recording': 'Press a shortcut',
   'shortcuts.reset': 'Reset',
   'shortcuts.resetAll': 'Reset all',
@@ -51,6 +57,30 @@ describe('keyboard shortcuts settings', () => {
 
     expect(screen.getByText('Toggle sidebar')).not.toBeNull();
     expect(screen.queryByText('New conversation')).toBeNull();
+  });
+
+  it('shows an empty state when no shortcuts match', () => {
+    renderView();
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search shortcuts' }), { target: { value: 'missing' } });
+
+    expect(screen.getByText('No matching shortcuts')).not.toBeNull();
+  });
+
+  it('shows reset only for customized shortcuts', () => {
+    const onReset = vi.fn();
+    const bindings = {
+      ...getDefaultShortcutBindings(),
+      newConversation: ['Mod+J'],
+    };
+
+    render(
+      <IntlProvider locale="en" messages={messages}>
+        <KeyboardShortcutsView bindings={bindings} onReset={onReset} onUpdate={vi.fn()} />
+      </IntlProvider>,
+    );
+
+    expect(screen.getAllByRole('button', { name: 'Reset' })).toHaveLength(1);
   });
 
   it('filters commands by a recorded keystroke', () => {
