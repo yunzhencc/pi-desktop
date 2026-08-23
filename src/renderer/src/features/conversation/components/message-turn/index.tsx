@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { BookOpen, ChevronDown, CircleAlert, Copy, FilePenLine, GitFork, Globe, LoaderCircle, Pencil, Terminal, Wrench } from 'lucide-react';
+import { BookOpen, ChevronRight, CircleAlert, Copy, FilePenLine, GitFork, Globe, LoaderCircle, Pencil, Terminal, Wrench } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -56,7 +56,7 @@ export function ToolActivity({ args, name, output, status }: ToolActivityProps) 
           {label}
           {status === 'running' ? '…' : ''}
         </span>
-        {hasDetails && status !== 'running' && <span aria-hidden="true" className={collapseIconClass(isExpanded)}>{isExpanded ? '⌃' : '⌄'}</span>}
+        {hasDetails && status !== 'running' && <ChevronRight aria-hidden="true" className={collapseIconClass(isExpanded)} size={14} />}
       </button>
       {isExpanded && hasDetails && (
         <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-x-hidden overflow-y-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal [overflow-wrap:anywhere] text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
@@ -87,7 +87,7 @@ export function ActivitySummary({ args, name, output, status }: ToolActivityProp
           {label}
           {status === 'running' ? '…' : ''}
         </span>
-        {hasDetails && status !== 'running' && <ChevronDown aria-hidden="true" className={collapseIconClass(isExpanded)} size={14} />}
+        {hasDetails && status !== 'running' && <ChevronRight aria-hidden="true" className={collapseIconClass(isExpanded)} size={14} />}
       </button>
       {isExpanded && hasDetails && (
         <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-x-hidden overflow-y-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal [overflow-wrap:anywhere] text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
@@ -110,7 +110,7 @@ function WebSearchActivity({ args, expanded, onToggle, status, variant }: { args
       <button aria-expanded={expanded} aria-label={buttonLabel} className="group flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={disabled} onClick={onToggle} type="button">
         <Globe aria-hidden="true" size={16} />
         <span>{label}</span>
-        {hasDetails && status !== 'running' && <ChevronDown aria-hidden="true" className={collapseIconClass(expanded)} size={14} />}
+        {hasDetails && status !== 'running' && <ChevronRight aria-hidden="true" className={collapseIconClass(expanded)} size={14} />}
       </button>
       {expanded && hasDetails && (
         <div className="mt-1.5 ml-6 grid gap-2 text-[13px] leading-5 text-text-tertiary">
@@ -187,7 +187,7 @@ function ActivityIcon({ name, status }: Pick<ToolActivityProps, 'name' | 'status
 }
 
 function collapseIconClass(expanded: boolean): string {
-  return `transition-[opacity,transform] group-hover:opacity-100 group-focus-visible:opacity-100 ${expanded ? 'rotate-180 opacity-100' : 'opacity-0'}`;
+  return `transition-[opacity,transform] group-hover:opacity-100 group-focus-visible:opacity-100 ${expanded ? 'rotate-90 opacity-100' : 'opacity-0'}`;
 }
 
 function stringValue(value: unknown): string | undefined {
@@ -271,7 +271,7 @@ export function WorkedFor({ children, completedAtMs, done, expanded, onToggle, s
         : (
             <button aria-expanded={expanded} aria-label={`${expanded ? '收起' : '展开'}工具活动`} className="group flex w-fit cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit" onClick={onToggle} type="button">
               <span className={labelClassName}>{visibleLabel}</span>
-              <ChevronDown aria-hidden="true" className={collapseIconClass(expanded ?? false)} size={15} />
+              <ChevronRight aria-hidden="true" className={collapseIconClass(expanded ?? false)} size={15} />
             </button>
           )}
       <div aria-hidden="true" className="chat-worked-for-rule w-full border-t border-border-subtle" />

@@ -395,8 +395,8 @@ describe('conversation page', () => {
 
     expect(container.querySelectorAll('[data-activity-turn]')).toHaveLength(1);
     expect(screen.getByRole('button', { name: '收起工具活动' })).not.toBeNull();
-    expect(container.querySelector('.chat-worked-for .rotate-180')).not.toBeNull();
-    expect(container.querySelector('.chat-worked-for .rotate-180')).toHaveClass('opacity-100');
+    expect(container.querySelector('.chat-worked-for .rotate-90')).not.toBeNull();
+    expect(container.querySelector('.chat-worked-for .rotate-90')).toHaveClass('opacity-100');
     expect(screen.getByText('运行了命令')).not.toBeNull();
     expect(screen.getByText('读取文件失败')).not.toBeNull();
     expect(container.querySelector('.chat-activity-turn-content')?.parentElement?.classList.contains('chat-worked-for')).toBe(true);
@@ -412,7 +412,7 @@ describe('conversation page', () => {
     expect(screen.getByText('Assistant text stays visible')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '展开工具活动' }));
     fireEvent.click(screen.getByRole('button', { name: '显示工具 bash 详情' }));
-    expect(screen.getByRole('button', { name: '隐藏工具 bash 详情' }).querySelectorAll('svg')[1]).toHaveClass('rotate-180', 'opacity-100');
+    expect(screen.getByRole('button', { name: '隐藏工具 bash 详情' }).querySelectorAll('svg')[1]).toHaveClass('rotate-90', 'opacity-100');
     expect(container.querySelector('.chat-tool-activity-details')).toHaveClass('overflow-x-hidden', 'overflow-y-auto', '[overflow-wrap:anywhere]');
     expect(screen.getByText('git status --short')).not.toBeNull();
   });
@@ -439,7 +439,7 @@ describe('conversation page', () => {
     expect(screen.getByRole('button', { name: '显示网页搜索详情' }).querySelector('svg:last-child')).toHaveClass('opacity-0');
     expect(screen.getByText('已搜索网页')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '显示网页搜索详情' }));
-    expect(screen.getByRole('button', { name: '隐藏网页搜索详情' }).querySelector('svg:last-child')).toHaveClass('rotate-180', 'opacity-100');
+    expect(screen.getByRole('button', { name: '隐藏网页搜索详情' }).querySelector('svg:last-child')).toHaveClass('rotate-90', 'opacity-100');
     expect(screen.getByText('已搜索网页：企业章程 法条 公司法 章程 中国人大网')).not.toBeNull();
     expect(screen.getByText('已搜索网页：https://www.npc.gov.cn/c2/c30834/202312/t20231229_433999.html')).not.toBeNull();
     expect(container.textContent).not.toContain('## Query');
