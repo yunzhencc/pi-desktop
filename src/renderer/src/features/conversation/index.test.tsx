@@ -88,6 +88,9 @@ describe('conversation page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
 
     expect(screen.getByText('Build this')).not.toBeNull();
+    const bubble = screen.getByText('Build this').closest('.chat-message-user-content');
+    expect(bubble?.hasAttribute('data-user-message-bubble')).toBe(true);
+    expect(bubble?.closest('.chat-message-user-stack')?.hasAttribute('data-user-message-bubble')).toBe(false);
   });
 
   it('shows a user message timestamp and copies its text', async () => {
@@ -130,6 +133,7 @@ describe('conversation page', () => {
     expect(screen.getByText('brief.pdf')).not.toBeNull();
     expect(document.querySelector('.chat-message-file-pill')).not.toBeNull();
     expect(document.querySelector('.chat-message-user-content')).toBeNull();
+    expect(screen.getByLabelText('Attachments').hasAttribute('data-user-message-bubble')).toBe(true);
     expect(screen.queryByRole('button', { name: 'Copy message' })).toBeNull();
   });
 

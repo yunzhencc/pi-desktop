@@ -234,14 +234,15 @@ export function ConversationPage() {
   };
   const renderUserMessage = (message: Message) => {
     const visibleText = visibleUserMessageText(message);
+    const hasVisibleText = visibleText.trim().length > 0;
     return editingMessage?.id === message.id
       ? <ChatComposer inlineEdit={{ initialText: editingMessage.text, onCancel: () => setEditingMessage(undefined), onSubmit: submitEditedLastUserMessage }} onSubmitted={() => {}} />
       : (
-          <div className="chat-message-user-stack" data-user-message-bubble>
-            {message.attachments?.length ? <AttachmentList attachments={message.attachments} variant="message" /> : null}
-            {visibleText.trim()
+          <div className="chat-message-user-stack">
+            {message.attachments?.length ? <AttachmentList animationTarget={!hasVisibleText} attachments={message.attachments} variant="message" /> : null}
+            {hasVisibleText
               ? (
-                  <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>
+                  <div className="chat-message-user-content overflow-hidden rounded-2xl bg-[color-mix(in_srgb,var(--foreground)_5%,transparent)] px-3 py-2 whitespace-pre-wrap [overflow-wrap:anywhere]" data-user-message-bubble onDoubleClick={!isRunning && message.id === lastUserMessageId ? () => setEditingMessage({ id: message.id, text: message.text }) : undefined}>
                     {visibleText}
                   </div>
                 )

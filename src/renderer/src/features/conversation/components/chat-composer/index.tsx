@@ -438,13 +438,13 @@ export function NewConversationToolbar({ onClearProject, onCreateProject, onSele
   );
 }
 
-export function AttachmentList({ attachments, onRemove, onReveal, variant = 'composer' }: { attachments: AttachmentMetadata[]; onRemove?: (id: string) => Promise<void> | void; onReveal?: (id: string) => Promise<void> | void; variant?: 'composer' | 'message' }) {
+export function AttachmentList({ animationTarget, attachments, onRemove, onReveal, variant = 'composer' }: { animationTarget?: boolean; attachments: AttachmentMetadata[]; onRemove?: (id: string) => Promise<void> | void; onReveal?: (id: string) => Promise<void> | void; variant?: 'composer' | 'message' }) {
   const hasNonImageAttachment = attachments.some(attachment => attachment.kind !== 'image');
   const canRemove = Boolean(onRemove);
 
   if (variant === 'message') {
     return (
-      <div aria-label="Attachments" className="chat-message-attachments" data-variant="message">
+      <div aria-label="Attachments" className="chat-message-attachments" data-user-message-bubble={animationTarget || undefined} data-variant="message">
         {attachments.map(attachment => attachment.kind === 'image'
           ? (
               <Image.PreviewGroup
