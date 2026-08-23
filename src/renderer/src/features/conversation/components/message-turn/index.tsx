@@ -50,13 +50,13 @@ export function ToolActivity({ args, name, output, status }: ToolActivityProps) 
   const isExpanded = status === 'running' || expanded;
   return (
     <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-tool-activity w-[min(100%,44rem)]" role={status === 'running' ? 'status' : undefined}>
-      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="chat-tool-activity-header flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit disabled:cursor-default [&>span:last-child]:ml-auto" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
+      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="chat-tool-activity-header group flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit disabled:cursor-default" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
         {status === 'running' && <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" size={16} />}
         <span>
           {label}
           {status === 'running' ? '…' : ''}
         </span>
-        {hasDetails && status !== 'running' && <span aria-hidden="true">{isExpanded ? '⌃' : '⌄'}</span>}
+        {hasDetails && status !== 'running' && <span aria-hidden="true" className={collapseIconClass(isExpanded)}>{isExpanded ? '⌃' : '⌄'}</span>}
       </button>
       {isExpanded && hasDetails && (
         <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-x-hidden overflow-y-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal [overflow-wrap:anywhere] text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
@@ -81,13 +81,13 @@ export function ActivitySummary({ args, name, output, status }: ToolActivityProp
 
   return (
     <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-activity-summary-item w-[min(100%,44rem)]" role={status === 'running' ? 'status' : undefined}>
-      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
+      <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="group flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
         <ActivityIcon name={name} status={status} />
         <span>
           {label}
           {status === 'running' ? '…' : ''}
         </span>
-        {hasDetails && status !== 'running' && <ChevronDown aria-hidden="true" className={`ml-auto transition-transform ${isExpanded ? 'rotate-180' : ''}`} size={14} />}
+        {hasDetails && status !== 'running' && <ChevronDown aria-hidden="true" className={collapseIconClass(isExpanded)} size={14} />}
       </button>
       {isExpanded && hasDetails && (
         <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-x-hidden overflow-y-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal [overflow-wrap:anywhere] text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
@@ -107,10 +107,10 @@ function WebSearchActivity({ args, expanded, onToggle, status, variant }: { args
   const buttonLabel = `${expanded ? '隐藏' : '显示'}网页搜索详情`;
   const content = (
     <>
-      <button aria-expanded={expanded} aria-label={buttonLabel} className="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={disabled} onClick={onToggle} type="button">
+      <button aria-expanded={expanded} aria-label={buttonLabel} className="group flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={disabled} onClick={onToggle} type="button">
         <Globe aria-hidden="true" size={16} />
         <span>{label}</span>
-        {hasDetails && status !== 'running' && <ChevronDown aria-hidden="true" className={`transition-transform ${expanded ? 'rotate-180' : ''}`} size={14} />}
+        {hasDetails && status !== 'running' && <ChevronDown aria-hidden="true" className={collapseIconClass(expanded)} size={14} />}
       </button>
       {expanded && hasDetails && (
         <div className="mt-1.5 ml-6 grid gap-2 text-[13px] leading-5 text-text-tertiary">
@@ -184,6 +184,10 @@ function ActivityIcon({ name, status }: Pick<ToolActivityProps, 'name' | 'status
   if (name === 'edit' || name === 'patch' || name === 'write')
     return <FilePenLine aria-hidden="true" size={16} />;
   return <Wrench aria-hidden="true" size={16} />;
+}
+
+function collapseIconClass(expanded: boolean): string {
+  return `transition-[opacity,transform] group-hover:opacity-100 group-focus-visible:opacity-100 ${expanded ? 'rotate-180 opacity-100' : 'opacity-0'}`;
 }
 
 function stringValue(value: unknown): string | undefined {
@@ -265,9 +269,9 @@ export function WorkedFor({ children, completedAtMs, done, expanded, onToggle, s
             </p>
           )
         : (
-            <button aria-expanded={expanded} aria-label={`${expanded ? '收起' : '展开'}工具活动`} className="flex w-fit cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit" onClick={onToggle} type="button">
+            <button aria-expanded={expanded} aria-label={`${expanded ? '收起' : '展开'}工具活动`} className="group flex w-fit cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-inherit" onClick={onToggle} type="button">
               <span className={labelClassName}>{visibleLabel}</span>
-              <ChevronDown aria-hidden="true" className={`transition-transform ${expanded ? 'rotate-180' : ''}`} size={15} />
+              <ChevronDown aria-hidden="true" className={collapseIconClass(expanded ?? false)} size={15} />
             </button>
           )}
       <div aria-hidden="true" className="chat-worked-for-rule w-full border-t border-border-subtle" />
