@@ -399,6 +399,7 @@ describe('conversation page', () => {
     expect(screen.getByText('运行了命令')).not.toBeNull();
     expect(screen.getByText('读取文件失败')).not.toBeNull();
     expect(container.querySelector('.chat-activity-turn-content')?.parentElement?.classList.contains('chat-worked-for')).toBe(true);
+    expect(container.querySelector('.chat-activity-summary-item')).toHaveClass('w-[min(100%,44rem)]');
     expect(container.querySelectorAll('.chat-tool-activity')).toHaveLength(0);
 
     const activityTurn = document.querySelector('[data-activity-turn]')!;
@@ -407,7 +408,36 @@ describe('conversation page', () => {
     expect(screen.getByText('Assistant text stays visible')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '展开工具活动' }));
     fireEvent.click(screen.getByRole('button', { name: '显示工具 bash 详情' }));
+    expect(container.querySelector('.chat-tool-activity-details')).toHaveClass('overflow-x-hidden', 'overflow-y-auto', '[overflow-wrap:anywhere]');
     expect(screen.getByText('git status --short')).not.toBeNull();
+  });
+
+  it('renders web search activity as summaries without raw Markdown output', () => {
+    const onUpdate = vi.fn(() => () => {});
+    vi.stubGlobal('piApp', { composer: { newConversation: vi.fn(), onUpdate }, workspaces });
+    const { container } = render(<ConversationPage />);
+
+    act(() => {
+      onUpdate.mock.calls[0]![0]({ startedAtMs: 1_000, status: 'running', type: 'status' });
+      onUpdate.mock.calls[0]![0]({
+        args: { queries: ['企业章程 法条 公司法 章程 中国人大网', 'https://www.npc.gov.cn/c2/c30834/202312/t20231229_433999.html'] },
+        output: '## Query: "企业章程 法条 公司法 章程 中国人大网"\n\nRaw search result\nSource: 中国人大网',
+        status: 'completed',
+        toolCallId: 'tool-search',
+        toolName: 'web_search',
+        type: 'tool',
+      });
+      onUpdate.mock.calls[0]![0]({ completedAtMs: 2_000, status: 'settled', type: 'status' });
+    });
+
+    expect(screen.getByRole('button', { name: '显示网页搜索详情' })).not.toHaveClass('w-full');
+    expect(screen.getByText('已搜索网页')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '显示网页搜索详情' }));
+    expect(screen.getByText('已搜索网页：企业章程 法条 公司法 章程 中国人大网')).not.toBeNull();
+    expect(screen.getByText('已搜索网页：https://www.npc.gov.cn/c2/c30834/202312/t20231229_433999.html')).not.toBeNull();
+    expect(container.textContent).not.toContain('## Query');
+    expect(container.textContent).not.toContain('Source: 中国人大网');
+    expect(container.querySelector('.chat-tool-activity-details')).toBeNull();
   });
 
   it('keeps an active activity expanded until its work duration settles', () => {

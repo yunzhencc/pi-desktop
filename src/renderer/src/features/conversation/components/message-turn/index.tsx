@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { BookOpen, ChevronDown, CircleAlert, Copy, FilePenLine, GitFork, LoaderCircle, Pencil, Terminal, Wrench } from 'lucide-react';
+import { BookOpen, ChevronDown, CircleAlert, Copy, FilePenLine, GitFork, Globe, LoaderCircle, Pencil, Terminal, Wrench } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 
@@ -40,6 +40,9 @@ interface AssistantMessageFooterProps {
 
 export function ToolActivity({ args, name, output, status }: ToolActivityProps) {
   const [expanded, setExpanded] = useState(false);
+  if (isWebSearchTool(name))
+    return <WebSearchActivity args={args} expanded={status === 'running' || expanded} onToggle={() => setExpanded(value => !value)} status={status} variant="tool" />;
+
   const label = status === 'running' ? `正在使用工具 ${name}` : status === 'completed' ? `已完成工具 ${name}` : `工具 ${name} 执行失败`;
   const command = toolSummary(args);
   const result = toolText(output);
@@ -56,7 +59,7 @@ export function ToolActivity({ args, name, output, status }: ToolActivityProps) 
         {hasDetails && status !== 'running' && <span aria-hidden="true">{isExpanded ? '⌃' : '⌄'}</span>}
       </button>
       {isExpanded && hasDetails && (
-        <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
+        <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-x-hidden overflow-y-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal [overflow-wrap:anywhere] text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
           {command != null && <code>{command}</code>}
           {result != null && <pre>{result}</pre>}
         </div>
@@ -67,6 +70,9 @@ export function ToolActivity({ args, name, output, status }: ToolActivityProps) 
 
 export function ActivitySummary({ args, name, output, status }: ToolActivityProps) {
   const [expanded, setExpanded] = useState(false);
+  if (isWebSearchTool(name))
+    return <WebSearchActivity args={args} expanded={status === 'running' || expanded} onToggle={() => setExpanded(value => !value)} status={status} variant="summary" />;
+
   const command = toolSummary(args);
   const result = toolText(output);
   const hasDetails = command != null || result != null;
@@ -74,7 +80,7 @@ export function ActivitySummary({ args, name, output, status }: ToolActivityProp
   const label = activitySummaryLabel(name, status);
 
   return (
-    <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-activity-summary-item" role={status === 'running' ? 'status' : undefined}>
+    <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-activity-summary-item w-[min(100%,44rem)]" role={status === 'running' ? 'status' : undefined}>
       <button aria-expanded={isExpanded} aria-label={`${isExpanded ? '隐藏' : '显示'}工具 ${name} 详情`} className="flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={!hasDetails || status === 'running'} onClick={() => setExpanded(value => !value)} type="button">
         <ActivityIcon name={name} status={status} />
         <span>
@@ -84,13 +90,43 @@ export function ActivitySummary({ args, name, output, status }: ToolActivityProp
         {hasDetails && status !== 'running' && <ChevronDown aria-hidden="true" className={`ml-auto transition-transform ${isExpanded ? 'rotate-180' : ''}`} size={14} />}
       </button>
       {isExpanded && hasDetails && (
-        <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
+        <div className="chat-tool-activity-details mt-1.5 ml-6 grid gap-2 overflow-x-hidden overflow-y-auto rounded-lg border border-border-subtle bg-[color-mix(in_srgb,var(--foreground)_3%,transparent)] px-2.5 py-2 font-mono text-xs leading-normal [overflow-wrap:anywhere] text-text-secondary [&_code]:m-0 [&_code]:whitespace-pre-wrap [&_pre]:m-0 [&_pre]:whitespace-pre-wrap">
           {command != null && <code>{command}</code>}
           {result != null && <pre>{result}</pre>}
         </div>
       )}
     </div>
   );
+}
+
+function WebSearchActivity({ args, expanded, onToggle, status, variant }: { args?: unknown; expanded: boolean; onToggle: () => void; status: ToolStatus; variant: 'summary' | 'tool' }) {
+  const details = webSearchDetails(args);
+  const hasDetails = details.length > 0;
+  const label = webSearchLabel(status);
+  const disabled = !hasDetails || status === 'running';
+  const buttonLabel = `${expanded ? '隐藏' : '显示'}网页搜索详情`;
+  const content = (
+    <>
+      <button aria-expanded={expanded} aria-label={buttonLabel} className="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left font-[inherit] text-[13px] leading-5 text-text-tertiary disabled:cursor-default" disabled={disabled} onClick={onToggle} type="button">
+        <Globe aria-hidden="true" size={16} />
+        <span>{label}</span>
+        {hasDetails && status !== 'running' && <ChevronDown aria-hidden="true" className={`transition-transform ${expanded ? 'rotate-180' : ''}`} size={14} />}
+      </button>
+      {expanded && hasDetails && (
+        <div className="mt-1.5 ml-6 grid gap-2 text-[13px] leading-5 text-text-tertiary">
+          {details.map(detail => (
+            <p className="m-0 [overflow-wrap:anywhere]" key={detail}>
+              <Globe aria-hidden="true" className="mr-2 inline align-[-3px]" size={16} />
+              {`${label}：${detail}`}
+            </p>
+          ))}
+        </div>
+      )}
+    </>
+  );
+  return variant === 'tool'
+    ? <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-tool-activity w-[min(100%,44rem)]" role={status === 'running' ? 'status' : undefined}>{content}</div>
+    : <div aria-label={label} aria-live={status === 'running' ? 'polite' : undefined} className="chat-activity-summary-item w-[min(100%,44rem)]" role={status === 'running' ? 'status' : undefined}>{content}</div>;
 }
 
 function activitySummaryLabel(name: string, status: ToolStatus): string {
@@ -102,6 +138,38 @@ function activitySummaryLabel(name: string, status: ToolStatus): string {
   if (status === 'failed')
     return isCommand ? '命令执行失败' : isRead ? '读取文件失败' : isEdit ? '编辑文件失败' : `工具 ${name} 执行失败`;
   return isCommand ? '运行了命令' : isRead ? '已读取文件' : isEdit ? '编辑了文件' : `已使用工具 ${name}`;
+}
+
+function webSearchLabel(status: ToolStatus): string {
+  if (status === 'running')
+    return '正在搜索网页';
+  if (status === 'failed')
+    return '网页搜索失败';
+  return '已搜索网页';
+}
+
+function isWebSearchTool(name: string): boolean {
+  return name === 'web_search' || name === 'web-search';
+}
+
+function webSearchDetails(args: unknown): string[] {
+  if (!isRecord(args))
+    return [];
+  const source = isRecord(args.action) ? args.action : args;
+  const details = [
+    ...stringValues(source.queries),
+    stringValue(source.query),
+    webSearchFindDetail(source) ?? stringValue(source.url),
+  ].filter((value): value is string => value != null && value.trim().length > 0);
+  return [...new Set(details.map(value => value.trim()))];
+}
+
+function webSearchFindDetail(source: Record<string, unknown>): string | undefined {
+  const pattern = stringValue(source.pattern);
+  const url = stringValue(source.url);
+  if (pattern && url)
+    return `'${pattern}' in ${url}`;
+  return pattern;
 }
 
 function ActivityIcon({ name, status }: Pick<ToolActivityProps, 'name' | 'status'>) {
@@ -116,6 +184,18 @@ function ActivityIcon({ name, status }: Pick<ToolActivityProps, 'name' | 'status
   if (name === 'edit' || name === 'patch' || name === 'write')
     return <FilePenLine aria-hidden="true" size={16} />;
   return <Wrench aria-hidden="true" size={16} />;
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function stringValues(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function toolSummary(args: unknown): string | undefined {
