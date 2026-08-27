@@ -60,6 +60,9 @@ catalogs:
     cmdk:
       specifier: 1.1.1
       version: 1.1.1
+    cross-spawn:
+      specifier: 7.0.6
+      version: 7.0.6
     enum-plus:
       specifier: 3.3.0
       version: 3.3.0
@@ -345,6 +348,9 @@ importers:
       cmdk:
         specifier: catalog:core
         version: 1.1.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      cross-spawn:
+        specifier: catalog:core
+        version: 7.0.6
       enum-plus:
         specifier: catalog:core
         version: 3.3.0

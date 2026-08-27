@@ -5,7 +5,7 @@ import { PrimaryScopeEnum } from '@shared/config';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ProvidersSettingsView } from './providers';
+import { ProvidersPage, ProvidersSettingsView } from './providers';
 
 const messages: Record<string, string> = {
   'providers.add.close': '收起清单',
@@ -26,6 +26,7 @@ const messages: Record<string, string> = {
   'providers.empty': '还没有接入模型供应商。',
   'providers.error.chatgptUnsupportedRegion': 'ChatGPT 登录失败：当前国家或地区暂不支持 OpenAI Codex OAuth。',
   'providers.error.generic': '操作失败。',
+  'providers.error.load': '加载模型提供商失败，请重试。',
   'providers.modelSettings': '模型',
   'providers.noModels': '接入后会显示可用模型。',
   'providers.notConnected': '未接入',
@@ -69,8 +70,35 @@ function renderView(viewSnapshot: ProvidersSnapshot, overrides: Partial<Paramete
   );
 }
 
+function renderPage() {
+  return render(
+    <IntlProvider locale="zh-CN" messages={messages}>
+      <ProvidersPage />
+    </IntlProvider>,
+  );
+}
+
 describe('providers settings view', () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    delete (window as Partial<Window>).piApp;
+  });
+
+  it('shows an error instead of a blank page when the initial provider load fails', async () => {
+    Object.defineProperty(window, 'piApp', {
+      configurable: true,
+      value: {
+        providers: {
+          get: vi.fn().mockRejectedValue(new Error('Missing dependency')),
+          onChanged: vi.fn(() => () => undefined),
+        },
+      },
+    });
+
+    renderPage();
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('加载模型提供商失败，请重试。'));
+  });
 
   it('shows connected and available provider columns when nothing is connected', () => {
     const { container } = renderView(snapshot);

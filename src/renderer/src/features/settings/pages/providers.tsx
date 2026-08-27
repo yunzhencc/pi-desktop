@@ -1,16 +1,49 @@
 import type { ProvidersSnapshot } from '@shared/types';
 import { useEffect, useState } from 'react';
+import { useIntl } from 'react-intl';
 import { ProvidersSettingsView } from '../providers';
 
 export { ProvidersSettingsView } from '../providers';
 
 export function ProvidersPage() {
+  const { formatMessage } = useIntl();
   const [snapshot, setSnapshot] = useState<ProvidersSnapshot>();
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    window.piApp.providers.get().then(setSnapshot);
-    return window.piApp.providers.onChanged(setSnapshot);
+    let active = true;
+    void window.piApp.providers.get()
+      .then((snapshot) => {
+        if (active) {
+          setLoadError(false);
+          setSnapshot(snapshot);
+        }
+      })
+      .catch(() => {
+        if (active)
+          setLoadError(true);
+      });
+    const removeListener = window.piApp.providers.onChanged((snapshot) => {
+      if (active) {
+        setLoadError(false);
+        setSnapshot(snapshot);
+      }
+    });
+    return () => {
+      active = false;
+      removeListener();
+    };
   }, []);
+
+  if (loadError) {
+    return (
+      <div className="settings-provider-view h-full min-h-0 overflow-hidden pt-11.5">
+        <section className="mx-auto box-border flex h-full w-full max-w-[58rem] min-w-0 flex-col px-8 pt-5.5 pb-6">
+          <p className="m-0 text-sm text-text-tertiary" role="alert">{formatMessage({ id: 'providers.error.load' })}</p>
+        </section>
+      </div>
+    );
+  }
 
   if (!snapshot)
     return null;
