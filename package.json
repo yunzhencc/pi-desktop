@@ -54,7 +54,6 @@
     "@web-kits/audio": "catalog:core",
     "better-sqlite3": "catalog:core",
     "cmdk": "catalog:core",
-    "electron-updater": "catalog:core",
     "enum-plus": "catalog:core",
     "es-toolkit": "catalog:core",
     "hosted-git-info": "catalog:core",
