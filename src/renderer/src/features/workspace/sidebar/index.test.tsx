@@ -50,6 +50,23 @@ describe('workspace sidebar', () => {
     expect(screen.getByRole('button', { name: '添加项目' })).not.toBeNull();
   });
 
+  it('does not leave projects loading when one session list request fails', async () => {
+    const error = new Error('Unable to list sessions');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    window.piApp.workspaces.get.mockResolvedValue({ pinnedSessionPaths: [], selectedWorkspacePath: weather.path, workspaces: [weather, research] });
+    window.piApp.sessions.list.mockImplementation(path => path === weather.path ? Promise.reject(error) : Promise.resolve([session]));
+    const { container } = render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    await screen.findByText('Summarize the forecast');
+    await waitFor(() => expect(container.querySelectorAll('.animate-spin')).toHaveLength(0));
+    expect(consoleError).toHaveBeenCalledWith('Failed to list workspace sessions', weather.path, error);
+    consoleError.mockRestore();
+  });
+
   it('collapses the project list from its heading', async () => {
     render(
       <I18nProvider>

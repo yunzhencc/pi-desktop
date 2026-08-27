@@ -63,12 +63,17 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
     let refreshVersion = 0;
     const refresh = () => {
       const version = ++refreshVersion;
-      return Promise.all(workspace.workspaces.map(async item => [item.path, await window.piApp.sessions.list(item.path)] as const)).then((entries) => {
+      return Promise.all(workspace.workspaces.map(async (item) => {
+        try {
+          return [item.path, await window.piApp.sessions.list(item.path)] as const;
+        }
+        catch (error) {
+          console.error('Failed to list workspace sessions', item.path, error);
+          return [item.path, []] as const;
+        }
+      })).then((entries) => {
         if (active && version === refreshVersion)
           setSessionsByWorkspace(Object.fromEntries(entries));
-      }).catch(() => {
-        if (active && version === refreshVersion)
-          setSessionsByWorkspace({});
       });
     };
     const clearSelectedSession = () => setSelectedSessionPath(undefined);
