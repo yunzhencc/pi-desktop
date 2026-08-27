@@ -28,11 +28,12 @@
     "typecheck": "tsc --noEmit",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && electron-builder --win",
-    "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux",
+    "build:win": "npm run build && electron-builder --win --publish never",
+    "build:mac": "electron-vite build && electron-builder --mac --publish never",
+    "build:linux": "electron-vite build && electron-builder --linux --publish never",
     "prepare": "simple-git-hooks",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "release": "bumpp"
   },
   "dependencies": {
     "@dnd-kit/react": "catalog:core",
@@ -102,6 +103,7 @@
     "@vitest/coverage-v8": "catalog:test",
     "@vitest/ui": "catalog:test",
     "@vitest/web-worker": "catalog:test",
+    "bumpp": "catalog:dev",
     "code-inspector-plugin": "catalog:vite",
     "electron": "catalog:electron",
     "electron-builder": "catalog:electron",

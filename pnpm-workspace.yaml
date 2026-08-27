@@ -75,6 +75,7 @@ catalogs:
     zod: 4.4.3
     zustand: 5.0.15
   dev:
+    bumpp: 12.2.2
     lint-staged: 17.3.0
     react-grab: 0.2.0
     react-scan: 0.5.7
