@@ -31,6 +31,7 @@
     "build:win": "npm run build && electron-builder --win --publish never",
     "build:mac": "electron-vite build && electron-builder --mac --publish never",
     "build:linux": "electron-vite build && electron-builder --linux --publish never",
+    "verify:packaged-provider-runtime": "node scripts/assert-packaged-provider-runtime.mjs",
     "prepare": "simple-git-hooks",
     "preinstall": "npx only-allow pnpm",
     "release": "bumpp"
@@ -71,6 +72,7 @@
     "next-themes": "catalog:core",
     "overlayscrollbars": "catalog:core",
     "overlayscrollbars-react": "catalog:core",
+    "path-key": "catalog:core",
     "prosemirror-commands": "catalog:core",
     "prosemirror-history": "catalog:core",
     "prosemirror-keymap": "catalog:core",
@@ -79,7 +81,9 @@
     "prosemirror-state": "catalog:core",
     "prosemirror-view": "catalog:core",
     "react-intl": "catalog:core",
+    "shebang-command": "catalog:core",
     "shiki": "catalog:core",
+    "which": "catalog:core",
     "zod": "catalog:core",
     "zustand": "catalog:core"
   },
