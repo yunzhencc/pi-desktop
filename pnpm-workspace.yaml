@@ -20,6 +20,8 @@ allowBuilds:
   protobufjs: false
   simple-git-hooks: true
 
+patchedDependencies:
+  app-builder-lib@26.15.3: patches/app-builder-lib@26.15.3.patch
 catalogs:
   core:
     '@base-ui/react': 1.7.0
@@ -41,6 +43,7 @@ catalogs:
     clsx: 2.1.1
     cmdk: 1.1.1
     cross-spawn: 7.0.6
+    debug: 4.4.3
     enum-plus: 3.3.0
     es-toolkit: 1.51.0
     hosted-git-info: 10.1.1

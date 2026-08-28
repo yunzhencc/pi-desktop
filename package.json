@@ -57,6 +57,7 @@
     "better-sqlite3": "catalog:core",
     "cmdk": "catalog:core",
     "cross-spawn": "catalog:core",
+    "debug": "catalog:core",
     "electron-updater": "6.8.9",
     "enum-plus": "catalog:core",
     "es-toolkit": "catalog:core",
