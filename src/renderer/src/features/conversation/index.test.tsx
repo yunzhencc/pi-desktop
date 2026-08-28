@@ -115,7 +115,7 @@ describe('conversation page', () => {
     expect(screen.getByText('brief.pdf')).not.toBeNull();
     expect(screen.queryByText('PDF')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Show brief.pdf in folder' })).toBeNull();
-    expect(screen.getByLabelText('Attachments').getAttribute('data-variant')).toBe('message');
+    expect(screen.getByLabelText('附件').getAttribute('data-variant')).toBe('message');
     expect(screen.getByText('brief.pdf').closest('.chat-message-file-pill')).not.toBeNull();
     expect(screen.getByText('brief.pdf').closest('.chat-message-user-content')).toBeNull();
     expect(document.querySelector('.chat-composer-file-card-main')).toBeNull();
@@ -133,7 +133,7 @@ describe('conversation page', () => {
     expect(screen.getByText('brief.pdf')).not.toBeNull();
     expect(document.querySelector('.chat-message-file-pill')).not.toBeNull();
     expect(document.querySelector('.chat-message-user-content')).toBeNull();
-    expect(screen.getByLabelText('Attachments').hasAttribute('data-user-message-bubble')).toBe(true);
+    expect(screen.getByLabelText('附件').hasAttribute('data-user-message-bubble')).toBe(true);
     expect(screen.queryByRole('button', { name: 'Copy message' })).toBeNull();
   });
 
@@ -232,7 +232,7 @@ describe('conversation page', () => {
 
     act(() => onUpdate.mock.calls[0]![0]({ done: true, text: 'Done', timestamp: 1_000, type: 'assistant' }));
 
-    expect(screen.queryByRole('button', { name: 'Fork conversation from this message' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '从此消息创建分支' })).toBeNull();
   });
 
   it('forks at an assistant reply and switches to the new conversation', async () => {
@@ -248,7 +248,7 @@ describe('conversation page', () => {
     render(<ConversationPage />);
 
     act(() => onUpdate.mock.calls[0]![0]({ done: true, entryId: 'assistant-1', text: 'Original reply', timestamp: 2_000, type: 'assistant' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Fork conversation from this message' }));
+    fireEvent.click(screen.getByRole('button', { name: '从此消息创建分支' }));
 
     await waitFor(() => expect(forkAssistantMessage).toHaveBeenCalledWith('assistant-1'));
     expect(screen.getByText('Forked request')).not.toBeNull();
@@ -263,7 +263,7 @@ describe('conversation page', () => {
     render(<ConversationPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Fake composer' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Edit message' }));
+    fireEvent.click(screen.getByRole('button', { name: '编辑消息' }));
 
     expect(screen.getByRole('textbox', { name: 'Edit message' }).textContent).toBe('Build this');
     expect(editLastUserMessage).not.toHaveBeenCalled();
@@ -273,7 +273,7 @@ describe('conversation page', () => {
     expect(screen.getByText('Build this')).not.toBeNull();
     expect(editLastUserMessage).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit message' }));
+    fireEvent.click(screen.getByRole('button', { name: '编辑消息' }));
     fireEvent.click(screen.getByRole('button', { name: 'Send edited message' }));
 
     await waitFor(() => expect(editLastUserMessage).toHaveBeenCalledOnce());

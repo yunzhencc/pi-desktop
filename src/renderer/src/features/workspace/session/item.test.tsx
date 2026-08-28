@@ -28,6 +28,6 @@ describe('session item', () => {
       messages: messages[DEFAULT_LOCALE],
     });
 
-    expect(formatSessionAge(new Date(Date.now() - 17 * 60000).toISOString(), intl.formatMessage)).toBe('17 分');
+    expect(formatSessionAge(new Date(Date.now() - 17 * 60000).toISOString(), intl.formatMessage)).toBe('17m');
   });
 });

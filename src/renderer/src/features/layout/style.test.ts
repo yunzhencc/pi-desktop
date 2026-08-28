@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const styles = readFileSync(new URL('./style.css', import.meta.url), 'utf8');
+const styles = readFileSync(resolve(process.cwd(), 'src/renderer/src/features/layout/style.css'), 'utf8');
 
 describe('app shell surfaces', () => {
   it('keeps the Electron sidebar translucent over the native window material', () => {

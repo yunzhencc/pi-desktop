@@ -8,7 +8,7 @@ function readSystemLocales(): readonly string[] {
   if (typeof navigator === 'undefined')
     return [];
 
-  return navigator.languages.length > 0 ? navigator.languages : [navigator.language];
+  return navigator.languages?.length ? navigator.languages : navigator.language ? [navigator.language] : [];
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {

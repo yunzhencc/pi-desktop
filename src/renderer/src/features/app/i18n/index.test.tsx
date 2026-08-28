@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { I18nProvider, LocaleEnum, readLocale, resolveLocale, useAppLocale } from '.';
 
@@ -38,6 +38,22 @@ describe('i18n provider', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Auto detect' }));
     expect(screen.getByText('zh-CN')).not.toBeNull();
     expect(localStorage.getItem('pi-desktop-locale')).toBeNull();
+  });
+
+  it('falls back to navigator.language when navigator.languages is unavailable', () => {
+    cleanup();
+    Object.defineProperties(navigator, {
+      language: { configurable: true, value: 'zh-CN' },
+      languages: { configurable: true, value: undefined },
+    });
+
+    render(
+      <I18nProvider>
+        <LocaleProbe />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByText('zh-CN')).not.toBeNull();
   });
 
   it('allows only Chinese and English locales', () => {
