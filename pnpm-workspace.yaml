@@ -41,6 +41,7 @@ catalogs:
     clsx: 2.1.1
     cmdk: 1.1.1
     cross-spawn: 7.0.6
+    electron-updater: 6.8.9
     enum-plus: 3.3.0
     es-toolkit: 1.51.0
     hosted-git-info: ^10.1.1

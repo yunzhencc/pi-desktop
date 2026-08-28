@@ -11,6 +11,13 @@ export interface WorkspaceSnapshot {
   workspaces: WorkspaceSummary[];
 }
 
+export type AppUpdateState = 'idle' | 'checking' | 'downloading' | 'ready' | 'installing';
+
+export interface AppUpdateSnapshot {
+  downloadProgressPercent?: number;
+  state: AppUpdateState;
+}
+
 export type AttachmentKind = 'file' | 'image' | 'pdf' | 'text';
 
 export interface AttachmentMetadata {

@@ -9,6 +9,10 @@ export const IPC_CHANNELS = Enum({
   WindowFullScreenChanged: 'window-fullscreen-changed',
   WindowOpaqueSurfaceChanged: 'window-opaque-surface-changed',
 
+  AppUpdatesGet: 'app-updates:get',
+  AppUpdatesInstall: 'app-updates:install',
+  AppUpdatesChanged: 'app-updates:changed',
+
   ProvidersGet: 'providers:get',
   ProvidersApiKeySave: 'providers:api-key:save',
   ProvidersRemove: 'providers:remove',

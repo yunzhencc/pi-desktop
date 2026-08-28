@@ -38,6 +38,11 @@ export class PiRuntime {
   #promptActive = false;
   #streamedAssistantText = '';
   #turnStartedAtMs: number | undefined;
+
+  hasActiveSession(): boolean {
+    return this.#promptActive || this.#session?.isStreaming === true;
+  }
+
   #abortRequested = false;
   #sessionPath: string | undefined;
   #workspacePath: string | undefined;

@@ -4,6 +4,7 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils';
 import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { app, BrowserWindow, nativeTheme, screen, shell } from 'electron';
 import icon from '../../resources/icon.png?asset';
+import { AppUpdater } from './app-updater';
 import { AttachmentStore } from './attachments';
 import { registerAllHandlers } from './ipc';
 import { PiRuntime } from './pi-runtime';
@@ -19,6 +20,7 @@ import { WorkspaceRegistry } from './workspaces';
 let isPrimaryWindowOpaque = false;
 let syncPrimaryWindowBackdrop: (() => void) | undefined;
 const attachmentStore = new AttachmentStore();
+const appUpdater = new AppUpdater();
 const piRuntime = new PiRuntime(attachmentStore);
 let providerSettings: ProviderSettings;
 let workspaceRegistry: WorkspaceRegistry;
@@ -157,6 +159,7 @@ app.whenReady().then(async () => {
 
   registerAllHandlers({
     attachmentStore,
+    appUpdater,
     getIsPrimaryWindowOpaque: () => isPrimaryWindowOpaque,
     piRuntime,
     providerSettings,
@@ -166,6 +169,7 @@ app.whenReady().then(async () => {
   nativeTheme.on('updated', () => syncPrimaryWindowBackdrop?.());
 
   createWindow();
+  appUpdater.start();
 
   app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the

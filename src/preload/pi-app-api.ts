@@ -1,4 +1,5 @@
 import type {
+  AppUpdateSnapshot,
   AttachmentFailure,
   AttachmentMetadata,
   ModelPickerScope,
@@ -29,6 +30,11 @@ function onValue<T>(ipc: PiAppIpc, channel: string, callback: (value: T) => void
 
 export function createPiAppAPI(ipc: PiAppIpc) {
   return {
+    appUpdates: {
+      get: (): Promise<AppUpdateSnapshot> => ipc.invoke(IPC_CHANNELS.AppUpdatesGet),
+      install: (): Promise<void> => ipc.invoke(IPC_CHANNELS.AppUpdatesInstall),
+      onChanged: (callback: (snapshot: AppUpdateSnapshot) => void) => onValue(ipc, IPC_CHANNELS.AppUpdatesChanged, callback),
+    },
     windowControls: {
       getIsFullscreen: (): Promise<boolean> => ipc.invoke(IPC_CHANNELS.WindowIsFullScreen),
       onFullscreenChange: (callback: (isFullscreen: boolean) => void) => onValue(ipc, IPC_CHANNELS.WindowFullScreenChanged, callback),
