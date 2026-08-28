@@ -50,6 +50,24 @@ describe('workspace sidebar', () => {
     expect(screen.getByRole('button', { name: '添加项目' })).not.toBeNull();
   });
 
+  it('shows the no-chats placeholder after a project loads without sessions', async () => {
+    render(
+      <I18nProvider>
+        <WorkspaceSidebar />
+      </I18nProvider>,
+    );
+
+    const placeholder = await screen.findByText('暂无聊天');
+    expect(placeholder).toHaveClass(
+      'px-8',
+      'py-1',
+      'text-[14px]',
+      'leading-[21px]',
+      'text-text-tertiary',
+      'opacity-50',
+    );
+  });
+
   it('does not leave projects loading when one session list request fails', async () => {
     const error = new Error('Unable to list sessions');
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});

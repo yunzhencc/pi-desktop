@@ -193,6 +193,11 @@ export function WorkspaceSidebar({ onOpenSession }: WorkspaceSidebarProps) {
                 />
               );
             })}
+            {!isRunning && sessions.length === 0 && (
+              <div className="px-8 py-1 text-[14px] leading-[21px] text-text-tertiary opacity-50">
+                {formatMessage({ id: 'projects.noChats' })}
+              </div>
+            )}
           </div>
         )}
       </Fragment>
