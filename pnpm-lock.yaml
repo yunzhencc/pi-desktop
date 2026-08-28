@@ -235,9 +235,6 @@ catalogs:
     eslint-plugin-format:
       specifier: 2.0.1
       version: 2.0.1
-    eslint-plugin-pnpm:
-      specifier: 1.8.0
-      version: 1.8.0
     eslint-plugin-react-refresh:
       specifier: 0.5.4
       version: 0.5.4
@@ -538,9 +535,6 @@ importers:
       eslint-plugin-format:
         specifier: catalog:lint
         version: 2.0.1(eslint@10.8.1(jiti@2.7.0)(supports-color@7.2.0))
-      eslint-plugin-pnpm:
-        specifier: catalog:lint
-        version: 1.8.0(eslint@10.8.1(jiti@2.7.0)(supports-color@7.2.0))
       eslint-plugin-react-refresh:
         specifier: catalog:lint
         version: 0.5.4(eslint@10.8.1(jiti@2.7.0)(supports-color@7.2.0))

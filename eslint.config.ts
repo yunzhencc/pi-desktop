@@ -1,5 +1,4 @@
 import antfu from '@antfu/eslint-config';
-import pluginPnpm from 'eslint-plugin-pnpm';
 
 export default antfu(
   {
@@ -25,7 +24,6 @@ export default antfu(
   },
   {
     files: ['package.json'],
-    plugins: { pnpm: pluginPnpm },
     rules: {
       'pnpm/json-enforce-catalog': [
         'error',
