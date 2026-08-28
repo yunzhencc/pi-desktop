@@ -175,6 +175,9 @@ catalogs:
       specifier: 5.0.15
       version: 5.0.15
   dev:
+    bumpp:
+      specifier: 12.2.2
+      version: 12.2.2
     lint-staged:
       specifier: 17.3.0
       version: 17.3.0
