@@ -36,6 +36,10 @@ export async function readWorkspaceFile(workspacePath: string, relativePath: str
   return { path: toRendererPath(relativePath), text: bytes.toString('utf8') };
 }
 
+export async function resolveWorkspaceFilePath(workspacePath: string, relativePath: string): Promise<string> {
+  return (await resolveWorkspacePath(workspacePath, relativePath)).path;
+}
+
 export async function searchWorkspaceFiles(workspacePath: string, query: string): Promise<WorkspaceFileSearchResult> {
   const { path: root } = await resolveWorkspacePath(workspacePath, '', true);
   const entries: WorkspaceFileEntry[] = [];

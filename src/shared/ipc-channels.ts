@@ -31,6 +31,10 @@ export const IPC_CHANNELS = Enum({
   WorkspacesCreate: 'workspaces:create',
   WorkspacesUpdate: 'workspaces:update',
   WorkspacesSelect: 'workspaces:select',
+  WorkspacesListFiles: 'workspaces:list-files',
+  WorkspacesReadFile: 'workspaces:read-file',
+  WorkspacesSearchFiles: 'workspaces:search-files',
+  WorkspacesRevealFile: 'workspaces:reveal-file',
 
   SessionsList: 'sessions:list',
   SessionsGetUsageStats: 'sessions:get-usage-stats',

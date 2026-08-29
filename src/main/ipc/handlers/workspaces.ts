@@ -2,6 +2,7 @@ import type { PiRuntime } from '../../pi-runtime';
 import type { WorkspaceRegistry } from '../../workspaces';
 import { IPC_CHANNELS } from '@shared/ipc-channels';
 import { BrowserWindow, dialog, shell } from 'electron';
+import { listWorkspaceFiles, readWorkspaceFile, resolveWorkspaceFilePath, searchWorkspaceFiles } from '../../workspace-files';
 import { getWorkspaceGitBranch } from '../../workspaces';
 import { registerHandler } from '../registry';
 
@@ -11,6 +12,12 @@ interface WorkspaceHandlerDependencies {
 }
 
 export function registerWorkspaceHandlers({ piRuntime, workspaceRegistry }: WorkspaceHandlerDependencies): void {
+  const selectedWorkspacePath = () => {
+    const path = workspaceRegistry.snapshot().selectedWorkspacePath;
+    if (!path)
+      throw new Error('请先选择工作区');
+    return path;
+  };
   const selectWorkspace = async (path: string) => {
     const snapshot = await workspaceRegistry.select(path);
     piRuntime.setWorkspace(snapshot.selectedWorkspacePath!);
@@ -18,6 +25,26 @@ export function registerWorkspaceHandlers({ piRuntime, workspaceRegistry }: Work
   };
 
   registerHandler(IPC_CHANNELS.WorkspacesGet, () => workspaceRegistry.snapshot());
+  registerHandler(IPC_CHANNELS.WorkspacesListFiles, (_event, relativePath: unknown) => {
+    if (typeof relativePath !== 'string')
+      throw new TypeError('无效的文件路径');
+    return listWorkspaceFiles(selectedWorkspacePath(), relativePath);
+  });
+  registerHandler(IPC_CHANNELS.WorkspacesReadFile, (_event, relativePath: unknown) => {
+    if (typeof relativePath !== 'string')
+      throw new TypeError('无效的文件路径');
+    return readWorkspaceFile(selectedWorkspacePath(), relativePath);
+  });
+  registerHandler(IPC_CHANNELS.WorkspacesSearchFiles, (_event, query: unknown) => {
+    if (typeof query !== 'string')
+      throw new TypeError('无效的搜索内容');
+    return searchWorkspaceFiles(selectedWorkspacePath(), query);
+  });
+  registerHandler(IPC_CHANNELS.WorkspacesRevealFile, async (_event, relativePath: unknown) => {
+    if (typeof relativePath !== 'string')
+      throw new TypeError('无效的文件路径');
+    shell.showItemInFolder(await resolveWorkspaceFilePath(selectedWorkspacePath(), relativePath));
+  });
   registerHandler(IPC_CHANNELS.WorkspacesSetPinned, (_event, workspacePath: unknown, pinned: unknown, beforeWorkspacePath: unknown) => {
     if (typeof workspacePath !== 'string' || !workspacePath.trim() || typeof pinned !== 'boolean' || (beforeWorkspacePath !== undefined && typeof beforeWorkspacePath !== 'string'))
       throw new TypeError('无效的项目置顶请求');

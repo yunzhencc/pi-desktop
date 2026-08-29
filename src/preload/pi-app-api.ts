@@ -9,6 +9,9 @@ import type {
   ProviderId,
   ProvidersSnapshot,
   TranscriptUpdate,
+  WorkspaceFileContent,
+  WorkspaceFileEntry,
+  WorkspaceFileSearchResult,
   WorkspaceSnapshot,
 } from '../shared/types';
 import { webUtils } from 'electron';
@@ -79,6 +82,10 @@ export function createPiAppAPI(ipc: PiAppIpc) {
     workspaces: {
       clear: (): Promise<WorkspaceSnapshot> => ipc.invoke(IPC_CHANNELS.WorkspacesClear),
       get: (): Promise<WorkspaceSnapshot> => ipc.invoke(IPC_CHANNELS.WorkspacesGet),
+      listFiles: (relativePath: string): Promise<WorkspaceFileEntry[]> => ipc.invoke(IPC_CHANNELS.WorkspacesListFiles, relativePath),
+      readFile: (relativePath: string): Promise<WorkspaceFileContent> => ipc.invoke(IPC_CHANNELS.WorkspacesReadFile, relativePath),
+      searchFiles: (query: string): Promise<WorkspaceFileSearchResult> => ipc.invoke(IPC_CHANNELS.WorkspacesSearchFiles, query),
+      revealFile: (relativePath: string): Promise<void> => ipc.invoke(IPC_CHANNELS.WorkspacesRevealFile, relativePath),
       getGitBranch: (path: string): Promise<string | undefined> => ipc.invoke(IPC_CHANNELS.WorkspacesGetGitBranch, path),
       pickDirectory: (): Promise<string | undefined> => ipc.invoke(IPC_CHANNELS.WorkspacesPickDirectory),
       openDirectory: (path: string): Promise<void> => ipc.invoke(IPC_CHANNELS.WorkspacesOpenDirectory, path),
