@@ -53,3 +53,28 @@ it('uses server search results and reveals the selected path', async () => {
 
   expect(window.piApp.workspaces.revealFile).toHaveBeenCalledWith('src/answer.ts');
 });
+
+it('selects and reveals directories from the tree and search results', async () => {
+  const user = userEvent.setup();
+  window.piApp.workspaces.listFiles = vi.fn((path: string) => Promise.resolve(path
+    ? []
+    : [
+        { isDirectory: true, isFile: false, name: 'src', path: 'src' },
+      ]));
+  render(<I18nProvider><WorkspaceFileViewer /></I18nProvider>);
+
+  await user.click(await screen.findByRole('button', { name: 'src' }));
+  await user.click(screen.getByRole('button', { name: '在文件管理器中显示' }));
+  expect(window.piApp.workspaces.listFiles).toHaveBeenCalledWith('src');
+  expect(window.piApp.workspaces.revealFile).toHaveBeenLastCalledWith('src');
+
+  window.piApp.workspaces.searchFiles = vi.fn(() => Promise.resolve({
+    entries: [{ isDirectory: true, isFile: false, name: 'components', path: 'src/components' }],
+    truncated: false,
+  }));
+  await user.type(screen.getByRole('searchbox', { name: '筛选文件' }), 'components');
+  await user.click(await screen.findByRole('button', { name: 'src/components' }));
+  await user.click(screen.getByRole('button', { name: '在文件管理器中显示' }));
+
+  expect(window.piApp.workspaces.revealFile).toHaveBeenLastCalledWith('src/components');
+});

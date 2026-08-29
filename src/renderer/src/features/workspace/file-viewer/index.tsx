@@ -114,6 +114,15 @@ export function WorkspaceFileViewer() {
     if (!entriesByPath[path])
       void loadDirectory(path);
   };
+  const selectDirectory = (path: string) => {
+    readRequestRef.current++;
+    setSelectedPath(path);
+    setContent(undefined);
+    setHighlightedHtml(undefined);
+    setReadError(false);
+    setIsReading(false);
+    toggleDirectory(path);
+  };
 
   const renderEntries = (items: WorkspaceFileEntry[] | undefined, depth = 0): ReactNode => {
     if (!items)
@@ -127,7 +136,7 @@ export function WorkspaceFileViewer() {
           <button
             aria-expanded={entry.isDirectory ? expanded : undefined}
             className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-sm text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-[var(--focus)]"
-            onClick={() => entry.isDirectory ? toggleDirectory(entry.path) : void selectFile(entry.path)}
+            onClick={() => entry.isDirectory ? selectDirectory(entry.path) : void selectFile(entry.path)}
             style={{ paddingInlineStart: `${depth * 16 + 8}px` }}
             type="button"
           >
@@ -144,7 +153,7 @@ export function WorkspaceFileViewer() {
   };
 
   return (
-    <section className="flex h-full min-w-0 flex-col pt-11.5" aria-label={formatMessage({ id: 'fileViewer.title' })}>
+    <section className="flex h-full min-w-0 flex-1 flex-col pt-11.5" aria-label={formatMessage({ id: 'fileViewer.title' })}>
       <div className="border-b border-border px-3 py-2">
         <div className="mb-2 flex items-center gap-2 text-sm font-medium">
           <FileText aria-hidden="true" className="size-4" />

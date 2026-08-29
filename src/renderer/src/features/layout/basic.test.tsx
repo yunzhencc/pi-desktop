@@ -124,7 +124,7 @@ describe('app window surface', () => {
 
     expect(screen.queryByRole('region', { name: 'Files' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show right panel' }));
-    expect(screen.getByRole('region', { name: 'Files' })).not.toBeNull();
+    expect(screen.getByRole('region', { name: 'Files' })).toHaveClass('flex-1');
   });
 
   it('ignores a slower session navigation after a newer selection', async () => {
