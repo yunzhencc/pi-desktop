@@ -72,7 +72,11 @@ describe('app window surface', () => {
             selectedWorkspacePath: '/projects/weather',
             workspaces: [{ displayName: 'weather', lastOpenedAt: '2026-08-19T00:00:00.000Z', path: '/projects/weather' }],
           }),
+          listFiles: () => Promise.resolve([]),
           pick: () => Promise.resolve({ pinnedSessionPaths: [], workspaces: [] }),
+          readFile: () => Promise.resolve({ path: 'readme.md', text: '' }),
+          revealFile: () => Promise.resolve(),
+          searchFiles: () => Promise.resolve({ entries: [], truncated: false }),
           select: () => Promise.resolve({ pinnedSessionPaths: [], workspaces: [] }),
         },
         sessions: {
@@ -113,6 +117,14 @@ describe('app window surface', () => {
 
     expect(screen.getByRole('button', { name: '后退' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: '前进' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('mounts the file viewer only while the right panel is open', () => {
+    renderApp('en');
+
+    expect(screen.queryByRole('region', { name: 'Files' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show right panel' }));
+    expect(screen.getByRole('region', { name: 'Files' })).not.toBeNull();
   });
 
   it('ignores a slower session navigation after a newer selection', async () => {

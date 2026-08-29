@@ -2,7 +2,7 @@ import type { WorkspaceSnapshot } from '@shared/types';
 import type { AppHistory, AppLocation } from './utils';
 import { useShortcutSettings } from '@renderer/features/app/shortcuts';
 import { SettingsSidebar } from '@renderer/features/settings';
-import { WorkspaceSidebar } from '@renderer/features/workspace';
+import { WorkspaceFileViewer, WorkspaceSidebar } from '@renderer/features/workspace';
 import { useHotkeys } from '@tanstack/react-hotkeys';
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -343,13 +343,14 @@ export function BasicLayout() {
         <Outlet />
       </main>
       <aside
-        className="app-shell-right-panel relative shrink-0"
+        className="app-shell-right-panel relative flex min-w-0 shrink-0"
         data-open={isRightPanelOpen}
         data-width-mode={rightPanelWidthMode}
         style={{
           width: isRightPanelOpen ? displayedRightPanelWidth : 0,
         }}
       >
+        {isRightPanelOpen && <WorkspaceFileViewer />}
         {isRightPanelOpen && !isRightPanelExpanded && (
           <RightPanelResizeHandle
             mainContentWidth={mainContentWidth}
