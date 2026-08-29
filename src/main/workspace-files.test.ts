@@ -24,8 +24,8 @@ describe('workspace files', () => {
     await writeFile(join(workspace, 'README.md'), 'hello');
 
     await expect(listWorkspaceFiles(workspace, '')).resolves.toEqual([
-      { isDirectory: false, isFile: true, name: 'README.md', path: 'README.md' },
       { isDirectory: true, isFile: false, name: 'src', path: 'src' },
+      { isDirectory: false, isFile: true, name: 'README.md', path: 'README.md' },
     ]);
   });
 

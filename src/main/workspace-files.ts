@@ -20,7 +20,7 @@ export async function listWorkspaceFiles(workspacePath: string, relativePath: st
   }));
 
   return entries.filter((entry): entry is WorkspaceFileEntry => entry !== undefined)
-    .sort((left, right) => left.name.localeCompare(right.name));
+    .sort((left, right) => Number(right.isDirectory) - Number(left.isDirectory) || left.name.localeCompare(right.name));
 }
 
 export async function readWorkspaceFile(workspacePath: string, relativePath: string): Promise<WorkspaceFileContent> {
