@@ -4,6 +4,23 @@ export interface WorkspaceSummary {
   path: string;
 }
 
+export interface WorkspaceFileEntry {
+  isDirectory: boolean;
+  isFile: boolean;
+  name: string;
+  path: string;
+}
+
+export interface WorkspaceFileContent {
+  path: string;
+  text: string;
+}
+
+export interface WorkspaceFileSearchResult {
+  entries: WorkspaceFileEntry[];
+  truncated: boolean;
+}
+
 export interface WorkspaceSnapshot {
   pinnedSessionPaths: string[];
   pinnedWorkspacePaths: string[];
