@@ -1,6 +1,7 @@
 import type { WorkspaceFileContent, WorkspaceFileEntry, WorkspaceFileSearchResult } from '@shared/types';
 import { isUtf8 } from 'node:buffer';
-import { readdir, readFile, realpath, stat } from 'node:fs/promises';
+import { promises as fsPromises } from 'node:fs';
+import { readdir, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
 const MAX_PREVIEW_BYTES = 1024 * 1024;
@@ -29,7 +30,9 @@ export async function readWorkspaceFile(workspacePath: string, relativePath: str
   if (!fileStat.isFile() || fileStat.size > MAX_PREVIEW_BYTES)
     throw new TypeError('无法预览该文件');
 
-  const bytes = await readFile(path);
+  const bytes = await fsPromises.readFile(path);
+  if (bytes.length > MAX_PREVIEW_BYTES)
+    throw new TypeError('无法预览该文件');
   if (!isUtf8(bytes))
     throw new TypeError('无法预览非 UTF-8 文件');
 

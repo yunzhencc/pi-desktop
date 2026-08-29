@@ -1,8 +1,9 @@
 import { Buffer } from 'node:buffer';
+import { promises as fsPromises } from 'node:fs';
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { listWorkspaceFiles, readWorkspaceFile, searchWorkspaceFiles } from './workspace-files';
 
 const directories: string[] = [];
@@ -14,6 +15,7 @@ async function directory(name: string): Promise<string> {
 }
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(directories.splice(0).map(path => rm(path, { force: true, recursive: true })));
 });
 
@@ -55,6 +57,15 @@ describe('workspace files', () => {
     await expect(readWorkspaceFile(workspace, 'note.ts')).resolves.toEqual({ path: 'note.ts', text: 'export const answer = 42;' });
     await expect(readWorkspaceFile(workspace, 'binary.bin')).rejects.toThrow('无法预览');
     await expect(readWorkspaceFile(workspace, 'large.txt')).rejects.toThrow('无法预览');
+  });
+
+  it('rejects a file when the bytes read exceed the preview limit', async () => {
+    const workspace = await directory('workspace');
+    await writeFile(join(workspace, 'growing.txt'), 'small');
+    const readFile = vi.spyOn(fsPromises, 'readFile').mockResolvedValueOnce(Buffer.alloc(1024 * 1024 + 1));
+
+    await expect(readWorkspaceFile(workspace, 'growing.txt')).rejects.toThrow('无法预览');
+    readFile.mockRestore();
   });
 
   it('searches matching names case-insensitively and caps results', async () => {

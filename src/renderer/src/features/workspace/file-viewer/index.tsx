@@ -1,4 +1,4 @@
-import type { WorkspaceFileEntry } from '@shared/types';
+import type { WorkspaceFileEntry, WorkspaceSnapshot } from '@shared/types';
 import type { ReactNode } from 'react';
 import { Button } from '@pi-desktop/shadcn-ui/components/button';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
@@ -22,20 +22,58 @@ export function WorkspaceFileViewer() {
   const [selectedPath, setSelectedPath] = useState<string>();
   const [treeError, setTreeError] = useState(false);
   const readRequestRef = useRef(0);
+  const workspacePathRef = useRef<string>();
+  const workspaceVersionRef = useRef(0);
 
-  const loadDirectory = useCallback(async (path: string) => {
+  const loadDirectory = useCallback(async (path: string, workspaceVersion = workspaceVersionRef.current) => {
     try {
       const entries = await window.piApp.workspaces.listFiles(path);
-      setEntriesByPath(current => ({ ...current, [path]: entries }));
-      setTreeError(false);
+      if (workspaceVersion === workspaceVersionRef.current) {
+        setEntriesByPath(current => ({ ...current, [path]: entries }));
+        setTreeError(false);
+      }
     }
     catch {
-      setTreeError(true);
+      if (workspaceVersion === workspaceVersionRef.current)
+        setTreeError(true);
     }
   }, []);
 
   useEffect(() => {
-    void loadDirectory('');
+    let active = true;
+    const initialVersion = workspaceVersionRef.current;
+    const changeWorkspace = (path: string | undefined) => {
+      if (path === workspacePathRef.current)
+        return;
+      workspacePathRef.current = path;
+      const workspaceVersion = ++workspaceVersionRef.current;
+      readRequestRef.current++;
+      setContent(undefined);
+      setEntriesByPath({});
+      setExpandedPaths(new Set());
+      setHighlightedHtml(undefined);
+      setIsReading(false);
+      setQuery('');
+      setReadError(false);
+      setSearchResult(undefined);
+      setSelectedPath(undefined);
+      setTreeError(false);
+      if (path)
+        void loadDirectory('', workspaceVersion);
+    };
+    const onWorkspaceChanged = (event: Event) => changeWorkspace((event as CustomEvent<WorkspaceSnapshot>).detail.selectedWorkspacePath);
+    window.addEventListener('workspace-changed', onWorkspaceChanged);
+    void window.piApp.workspaces.get().then((workspace) => {
+      if (active && initialVersion === workspaceVersionRef.current)
+        changeWorkspace(workspace.selectedWorkspacePath);
+    }).catch(() => {
+      if (active && initialVersion === workspaceVersionRef.current)
+        setTreeError(true);
+    });
+    return () => {
+      active = false;
+      window.removeEventListener('workspace-changed', onWorkspaceChanged);
+    };
   }, [loadDirectory]);
 
   useEffect(() => {
@@ -43,11 +81,12 @@ export function WorkspaceFileViewer() {
       return;
 
     let active = true;
+    const workspaceVersion = workspaceVersionRef.current;
     void window.piApp.workspaces.searchFiles(query).then((result) => {
-      if (active)
+      if (active && workspaceVersion === workspaceVersionRef.current)
         setSearchResult(result);
     }).catch(() => {
-      if (active)
+      if (active && workspaceVersion === workspaceVersionRef.current)
         setSearchResult({ entries: [], truncated: false });
     });
     return () => {
@@ -60,14 +99,15 @@ export function WorkspaceFileViewer() {
       return;
 
     let active = true;
+    const workspaceVersion = workspaceVersionRef.current;
     void import('shiki').then(({ codeToHtml }) => codeToHtml(content.text, {
       lang: languageForPath(content.path),
       themes: { dark: 'github-dark', light: 'github-light' },
     })).then((html) => {
-      if (active)
+      if (active && workspaceVersion === workspaceVersionRef.current)
         setHighlightedHtml(html);
     }).catch(() => {
-      if (active)
+      if (active && workspaceVersion === workspaceVersionRef.current)
         setHighlightedHtml(undefined);
     });
     return () => {
@@ -83,6 +123,7 @@ export function WorkspaceFileViewer() {
 
   const selectFile = async (path: string) => {
     const request = ++readRequestRef.current;
+    const workspaceVersion = workspaceVersionRef.current;
     setSelectedPath(path);
     setContent(undefined);
     setHighlightedHtml(undefined);
@@ -90,15 +131,15 @@ export function WorkspaceFileViewer() {
     setIsReading(true);
     try {
       const nextContent = await window.piApp.workspaces.readFile(path);
-      if (request === readRequestRef.current)
+      if (request === readRequestRef.current && workspaceVersion === workspaceVersionRef.current)
         setContent(nextContent);
     }
     catch {
-      if (request === readRequestRef.current)
+      if (request === readRequestRef.current && workspaceVersion === workspaceVersionRef.current)
         setReadError(true);
     }
     finally {
-      if (request === readRequestRef.current)
+      if (request === readRequestRef.current && workspaceVersion === workspaceVersionRef.current)
         setIsReading(false);
     }
   };
