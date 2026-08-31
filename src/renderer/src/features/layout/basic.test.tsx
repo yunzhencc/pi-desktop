@@ -19,7 +19,7 @@ vi.mock('@tanstack/react-hotkeys', () => ({
 }));
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
-  Outlet: () => null,
+  Outlet: () => <div data-testid="conversation-outlet">Conversation</div>,
   useNavigate: () => navigate,
   useRouterState: ({ select }: { select: (state: { location: { pathname: string } }) => string }) => select({ location: { pathname: '/' } }),
 }));
@@ -137,6 +137,16 @@ describe('app window surface', () => {
     expect(screen.getByRole('region', { name: 'Files' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close file tab' }));
     expect(screen.getByRole('region', { name: 'Tools' })).toBeTruthy();
+  });
+
+  it('keeps the conversation visible beside Files', async () => {
+    renderApp('en');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Files' }));
+
+    expect(screen.getByTestId('conversation-outlet')).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Files' })).toBeTruthy();
   });
 
   it('returns from Files to the tool launcher with the top-right control', async () => {

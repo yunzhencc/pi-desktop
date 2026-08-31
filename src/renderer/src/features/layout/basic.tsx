@@ -311,11 +311,19 @@ export function BasicLayout() {
         )}
       </aside>
       <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface">
-        {toolSurface === 'closed' && <Outlet />}
-        {toolSurface === 'launcher' && <ToolLauncher filesAvailable={filesAvailable} onOpenFiles={openFiles} />}
-        <div className="min-h-0 flex-1" hidden={toolSurface !== 'files'}>
-          <WorkspaceFileViewer onClose={() => setToolSurface('launcher')} />
+        <div className="flex min-h-0 min-w-0 flex-1">
+          <div className={`min-w-0 ${toolSurface === 'files' ? 'min-w-72 flex-1 border-e border-border' : 'flex-1'}`}>
+            <Outlet />
+          </div>
+          <div className="min-h-0 min-w-0 flex-[2]" hidden={toolSurface !== 'files'}>
+            <WorkspaceFileViewer onClose={() => setToolSurface('launcher')} />
+          </div>
         </div>
+        {toolSurface === 'launcher' && (
+          <div className="absolute inset-0 z-20">
+            <ToolLauncher filesAvailable={filesAvailable} onOpenFiles={openFiles} />
+          </div>
+        )}
       </main>
     </div>
   );
