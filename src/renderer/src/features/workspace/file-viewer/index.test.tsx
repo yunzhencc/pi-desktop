@@ -52,7 +52,7 @@ it('loads the root and previews a selected text file', async () => {
   expect(source.closest('pre')?.parentElement).toHaveClass('leading-5');
 });
 
-it('keeps the selected file tab while its preview is loading', async () => {
+it('keeps the selected file label while its preview is loading', async () => {
   const user = userEvent.setup();
   const read = deferred<{ path: string; text: string }>();
   window.piApp.workspaces.listFiles = vi.fn(() => Promise.resolve([
@@ -63,7 +63,8 @@ it('keeps the selected file tab while its preview is loading', async () => {
 
   await user.click(await screen.findByRole('button', { name: 'answer.ts' }));
 
-  expect(screen.getByRole('tab', { name: 'answer.ts' })).toBeTruthy();
+  expect(screen.getAllByText('answer.ts').length).toBeGreaterThan(1);
+  expect(screen.queryByRole('tab')).toBeNull();
   expect(screen.getByText('正在加载文件')).toBeTruthy();
 });
 
@@ -112,6 +113,15 @@ it('calls onClose and retains both scroll positions across a viewer update', asy
   explorer.scrollTop = 78;
   fireEvent.scroll(code);
   fireEvent.scroll(explorer);
+
+  code.scrollLeft = 0;
+  code.scrollTop = 0;
+  explorer.scrollLeft = 0;
+  explorer.scrollTop = 0;
+  expect(code).toHaveProperty('scrollLeft', 0);
+  expect(code).toHaveProperty('scrollTop', 0);
+  expect(explorer).toHaveProperty('scrollLeft', 0);
+  expect(explorer).toHaveProperty('scrollTop', 0);
 
   await user.click(await screen.findByRole('button', { name: 'answer.ts' }));
   await user.click(screen.getByRole('button', { name: '关闭文件预览' }));

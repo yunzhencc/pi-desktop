@@ -263,9 +263,7 @@ export function WorkspaceFileViewer({ onClose }: { onClose: () => void }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex min-h-10 items-center gap-2 border-b border-border px-3 text-xs text-text-secondary">
           {selectedPath && (
-            <div role="tablist">
-              <span aria-selected="true" className="max-w-48 truncate rounded bg-muted px-2 py-1 text-foreground" role="tab">{selectedPath.split('/').at(-1)}</span>
-            </div>
+            <span className="max-w-48 truncate rounded bg-muted px-2 py-1 text-foreground">{selectedPath.split('/').at(-1)}</span>
           )}
           <span>{formatMessage({ id: 'fileViewer.root' })}</span>
           {breadcrumbs.map(breadcrumb => (
