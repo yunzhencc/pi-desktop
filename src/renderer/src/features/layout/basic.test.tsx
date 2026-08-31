@@ -128,12 +128,15 @@ describe('app window surface', () => {
     expect(screen.getByRole('button', { name: '前进' }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('mounts the file viewer only while the right panel is open', () => {
+  it('opens Files from the tool launcher and returns to the launcher when closed', async () => {
     renderApp('en');
 
     expect(screen.queryByRole('region', { name: 'Files' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Show right panel' }));
-    expect(screen.getByRole('region', { name: 'Files' })).toHaveClass('flex-1');
+    fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Files' }));
+    expect(screen.getByRole('region', { name: 'Files' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close file tab' }));
+    expect(screen.getByRole('region', { name: 'Tools' })).toBeTruthy();
   });
 
   it('shows the tool launcher rows and only enables Files for a workspace', () => {
@@ -142,7 +145,8 @@ describe('app window surface', () => {
 
     expect(screen.getByRole('region', { name: 'Tools' })).toBeTruthy();
     expect(screen.getAllByRole('button').filter(button => ['Review', 'Terminal', 'Browser', 'Files', 'Side chat'].includes(button.textContent ?? ''))).toHaveLength(1);
-    expect(screen.getByText('Review').closest('[aria-disabled="true"]')).toBeTruthy();
+    for (const label of ['Review', 'Terminal', 'Browser', 'Side chat'])
+      expect(screen.getByText(label).closest('[aria-disabled="true"]')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Files' })).toBeTruthy();
     const content = screen.getByRole('region', { name: 'Tools' }).textContent ?? '';
     const labels = ['Review', 'Terminal', 'Browser', 'Files', 'Side chat'];
@@ -211,6 +215,55 @@ describe('app window surface', () => {
 
     hotkeys.get('Mod+,')?.();
     expect(navigate).toHaveBeenCalledWith({ to: '/settings/general' });
+  });
+
+  it('opens Files with its shortcut only when a workspace is selected', async () => {
+    renderApp('en');
+
+    await screen.findByText('weather');
+    act(() => hotkeys.get('Mod+P')?.());
+    expect(screen.getByRole('region', { name: 'Files' })).toBeTruthy();
+
+    cleanup();
+    window.piApp.workspaces.get = () => Promise.resolve({ pinnedSessionPaths: [], workspaces: [] });
+    renderApp('en');
+    await act(async () => {});
+    act(() => hotkeys.get('Mod+P')?.());
+    expect(screen.queryByRole('region', { name: 'Files' })).toBeNull();
+  });
+
+  it('keeps file viewer state mounted while the launcher is visible', async () => {
+    const listFiles = vi.fn(() => Promise.resolve([]));
+    window.piApp.workspaces.listFiles = listFiles;
+    renderApp('en');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Files' }));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter files' }), { target: { value: 'weather' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Close file tab' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+
+    expect(screen.getByRole('searchbox', { name: 'Filter files' })).toHaveValue('weather');
+    expect(listFiles).toHaveBeenCalledOnce();
+  });
+
+  it('moves back through tool surfaces with Escape except from a focused input', async () => {
+    renderApp('en');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('region', { name: 'Tools' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Files' }));
+    const search = screen.getByRole('searchbox', { name: 'Filter files' });
+    search.focus();
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(screen.getByRole('region', { name: 'Files' })).toBeTruthy();
+
+    search.blur();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('region', { name: 'Tools' })).toBeTruthy();
   });
 
   it('toggles the current session pin with its shortcut', async () => {

@@ -124,7 +124,7 @@ it('calls onClose and retains both scroll positions across a viewer update', asy
   expect(explorer).toHaveProperty('scrollTop', 0);
 
   await user.click(await screen.findByRole('button', { name: 'answer.ts' }));
-  await user.click(screen.getByRole('button', { name: '关闭文件预览' }));
+  await user.click(screen.getByRole('button', { name: '关闭文件标签' }));
 
   expect(code).toHaveProperty('scrollLeft', 12);
   expect(code).toHaveProperty('scrollTop', 34);

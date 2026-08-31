@@ -42,36 +42,13 @@ html:not(.dark).electron-opaque .app-shell-left-panel {
   background: #fafafa;
 }
 
-.app-shell-right-panel {
-  background: var(--surface);
-  border-inline-end: 1px solid var(--border-subtle);
-  border-inline-start: 1px solid var(--border-subtle);
-  overflow: hidden;
-  box-shadow: -8px 0 16px -8px rgb(0 0 0 / 18%);
-  transition: width 500ms cubic-bezier(0.34, 1.1, 0.64, 1);
-}
-
-.app-shell-right-panel[data-open='false'] {
-  border-inline-end-color: transparent;
-  border-inline-start-color: transparent;
-  box-shadow: none;
-}
-
-.app-shell-right-panel[data-width-mode='full'] {
-  border-inline-start-color: transparent;
-  box-shadow: none;
-}
-
 .app-shell[data-resizing='true'] .app-shell-header-left,
-.app-shell[data-resizing='true'] .app-shell-header-right,
-.app-shell[data-resizing='true'] .app-shell-left-panel,
-.app-shell[data-resizing='true'] .app-shell-right-panel {
+.app-shell[data-resizing='true'] .app-shell-left-panel {
   transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-shell-left-panel,
-  .app-shell-right-panel {
+  .app-shell-left-panel {
     transition: none;
   }
 }

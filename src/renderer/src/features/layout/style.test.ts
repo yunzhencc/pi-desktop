@@ -23,10 +23,4 @@ describe('app shell surfaces', () => {
 
     expect(lightOpaqueSidebarRule).toContain('background: #fafafa;');
   });
-
-  it('keeps the light right panel bounded at the window edge', () => {
-    const rightPanelRule = styles.match(/\.app-shell-right-panel\s*\{([\s\S]*?)\}/)?.[1];
-
-    expect(rightPanelRule).toContain('border-inline-end: 1px solid var(--border-subtle);');
-  });
 });

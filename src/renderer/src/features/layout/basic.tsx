@@ -8,17 +8,9 @@ import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import {
-  getExpandedRightPanelWidth,
-  getRightPanelExpansionAfterToggle,
-  getRightPanelHeaderWidth,
-  getRightPanelWidthMode,
-  readRightPanelWidth,
-  RightPanelResizeHandle,
-  SidebarToggle,
-  writeRightPanelWidth,
-} from './components';
+import { SidebarToggle } from './components';
 import { Footer, SidebarResizeHandle } from './sidebar';
+import { ToolLauncher } from './tool-launcher';
 import {
   canGoBack,
   canGoForward,
@@ -30,9 +22,9 @@ import {
   readSidebarWidth,
 } from './utils';
 
-const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v3';
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
 const sidebarTriggerClass = 'sidebar-trigger flex size-8 cursor-default items-center justify-center rounded-lg text-text-secondary outline-none [-webkit-app-region:no-drag] hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] hover:text-foreground focus-visible:shadow-[0_0_0_2px_var(--focus)] disabled:pointer-events-none disabled:opacity-35';
+type ToolSurface = 'closed' | 'launcher' | 'files';
 
 export function BasicLayout() {
   const { formatMessage } = useIntl();
@@ -46,29 +38,17 @@ export function BasicLayout() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const historyRef = useRef<AppHistory>(createAppHistory({ kind: 'home' }));
   const navigationIdRef = useRef(0);
+  const selectedWorkspacePathRef = useRef<string>();
   const [appHistory, setAppHistory] = useState(historyRef.current);
+  const [filesAvailable, setFilesAvailable] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     return readSidebarWidth(
       localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY),
       window.innerWidth,
     );
   });
-  const [viewportSize, setViewportSize] = useState(() => ({
-    height: window.innerHeight,
-    width: window.innerWidth,
-  }));
-  const initialMainContentWidth = viewportSize.width - sidebarWidth;
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
-  const [isRightPanelExpanded, setIsRightPanelExpanded] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [rightPanelWidthRatio, setRightPanelWidthRatio] = useState(() => {
-    const width = readRightPanelWidth(
-      localStorage.getItem(RIGHT_PANEL_WIDTH_STORAGE_KEY),
-      initialMainContentWidth,
-      viewportSize.height,
-    );
-    return writeRightPanelWidth(width, initialMainContentWidth);
-  });
+  const [toolSurface, setToolSurface] = useState<ToolSurface>('closed');
 
   const toolbarInset = getToolbarInset({ isFullscreen, isMac });
   const toggleSidebar = () => {
@@ -121,6 +101,10 @@ export function BasicLayout() {
   const startNewConversation = () => {
     void visitLocation({ kind: 'home' });
   };
+  const openFiles = () => {
+    if (selectedWorkspacePathRef.current)
+      setToolSurface('files');
+  };
   const openSettings = () => void visitLocation({ kind: 'settings', path: '/settings/general' });
   const toggleCurrentSessionPin = () => {
     const location = currentAppLocation(historyRef.current);
@@ -137,35 +121,12 @@ export function BasicLayout() {
       .catch(() => {});
   };
   const headerLeftWidth = isSidebarVisible ? sidebarWidth : toolbarInset + 96;
-  const mainContentWidth = viewportSize.width - (isSidebarVisible ? sidebarWidth : 0);
-  const rightPanelWidth = readRightPanelWidth(
-    String(rightPanelWidthRatio),
-    mainContentWidth,
-    viewportSize.height,
-  );
-  const displayedRightPanelWidth = isRightPanelExpanded
-    ? getExpandedRightPanelWidth(mainContentWidth)
-    : rightPanelWidth;
-  const rightPanelWidthMode = getRightPanelWidthMode(isRightPanelExpanded);
-  const headerRightWidth = getRightPanelHeaderWidth(
-    isRightPanelExpanded,
-    displayedRightPanelWidth,
-    viewportSize.width,
-    headerLeftWidth,
-  );
-  const updateRightPanelWidth = (width: number) => {
-    setRightPanelWidthRatio(writeRightPanelWidth(width, mainContentWidth));
-  };
-  const toggleRightPanel = () => {
-    setIsRightPanelExpanded(getRightPanelExpansionAfterToggle(isRightPanelOpen, isRightPanelExpanded));
-    setIsRightPanelOpen(open => !open);
-  };
-  const toggleRightPanelExpanded = () => setIsRightPanelExpanded(expanded => !expanded);
   useHotkeys(
     [
       ...bindings.newConversation.map(hotkey => ({ callback: startNewConversation, hotkey })),
       ...bindings.toggleSidebar.map(hotkey => ({ callback: toggleSidebar, hotkey })),
       ...bindings.openSettings.map(hotkey => ({ callback: openSettings, hotkey })),
+      ...bindings.openFiles.map(hotkey => ({ callback: openFiles, hotkey })),
       ...bindings.toggleSessionPin.map(hotkey => ({ callback: toggleCurrentSessionPin, hotkey })),
       ...bindings.goBack.map(hotkey => ({ callback: () => void navigateHistory(-1), hotkey })),
       ...bindings.goForward.map(hotkey => ({ callback: () => void navigateHistory(1), hotkey })),
@@ -203,13 +164,49 @@ export function BasicLayout() {
   }, [isWindowOpaque]);
 
   useEffect(() => {
-    const updateViewportSize = () => {
-      setViewportSize({ height: window.innerHeight, width: window.innerWidth });
+    let active = true;
+    let receivedChange = false;
+    const updateWorkspace = (workspace: WorkspaceSnapshot) => {
+      selectedWorkspacePathRef.current = workspace.selectedWorkspacePath;
+      setFilesAvailable(Boolean(workspace.selectedWorkspacePath));
+    };
+    const onWorkspaceChanged = (event: Event) => {
+      receivedChange = true;
+      updateWorkspace((event as CustomEvent<WorkspaceSnapshot>).detail);
     };
 
-    window.addEventListener('resize', updateViewportSize);
-    return () => window.removeEventListener('resize', updateViewportSize);
+    window.addEventListener('workspace-changed', onWorkspaceChanged);
+    void window.piApp.workspaces.get().then((workspace) => {
+      if (active && !receivedChange)
+        updateWorkspace(workspace);
+    }).catch(() => {});
+
+    return () => {
+      active = false;
+      window.removeEventListener('workspace-changed', onWorkspaceChanged);
+    };
   }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        event.key !== 'Escape'
+        || target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || (target instanceof HTMLElement && target.isContentEditable)
+        || toolSurface === 'closed'
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      setToolSurface(toolSurface === 'files' ? 'launcher' : 'closed');
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [toolSurface]);
 
   return (
     <div className="app-shell relative flex h-svh min-h-0 overflow-hidden bg-transparent" data-resizing={isResizing}>
@@ -245,40 +242,14 @@ export function BasicLayout() {
         </div>
         <div className="min-w-0 flex-1" />
         <div
-          className="app-shell-header-right flex shrink-0 items-center justify-end px-4 ps-0 pe-2 transition-[width] duration-500 ease-[cubic-bezier(0.34,1.1,0.64,1)] motion-reduce:transition-none"
-          style={{
-            width: isRightPanelOpen ? headerRightWidth : 40,
-          }}
+          className="app-shell-header-right flex w-10 shrink-0 items-center justify-end pe-2"
         >
-          {isRightPanelOpen && (
-            <button
-              aria-label={formatMessage({ id: isRightPanelExpanded ? 'panel.restore' : 'panel.expand' })}
-              aria-pressed={isRightPanelExpanded}
-              className={`${sidebarTriggerClass} aria-pressed:bg-surface-editor`}
-              onClick={toggleRightPanelExpanded}
-              title={formatMessage({ id: isRightPanelExpanded ? 'panel.restore' : 'panel.expand' })}
-              type="button"
-            >
-              {isRightPanelExpanded
-                ? (
-                    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
-                      <path d="M6.1664 8.80845C6.7325 8.80845 7.1918 9.26774 7.1918 9.83384V13.3338C7.19155 13.6236 6.9562 13.8592 6.6664 13.8592C6.37672 13.8591 6.14126 13.6235 6.14101 13.3338V10.5936L2.70547 14.0379C2.50071 14.243 2.16753 14.2435 1.9623 14.0389C1.75709 13.8342 1.75665 13.501 1.96133 13.2957L5.39101 9.85923H2.6664C2.37672 9.85909 2.14126 9.6235 2.14101 9.33384C2.14101 9.04397 2.37657 8.80858 2.6664 8.80845H6.1664Z" fill="currentColor" />
-                      <path d="M13.2943 1.96274C13.4989 1.75743 13.8311 1.75731 14.0365 1.96177C14.2419 2.16637 14.243 2.49854 14.0385 2.70395L10.6127 6.14145H13.3334C13.6233 6.14145 13.8588 6.37689 13.8588 6.66684C13.8587 6.95674 13.6233 7.19223 13.3334 7.19223H9.8334C9.26734 7.19223 8.80807 6.73288 8.80801 6.16684V2.66684C8.80801 2.37689 9.04345 2.14145 9.3334 2.14145C9.62335 2.14145 9.85879 2.37689 9.85879 2.66684V5.41098L13.2943 1.96274Z" fill="currentColor" />
-                    </svg>
-                  )
-                : (
-                    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 20 20">
-                      <path d="M4.33496 11C4.33496 10.6327 4.63273 10.335 5 10.335C5.36727 10.335 5.66504 10.6327 5.66504 11V14.335H9L9.13379 14.3486C9.43692 14.4106 9.66504 14.6786 9.66504 15C9.66504 15.3214 9.43692 15.5894 9.13379 15.6514L9 15.665H5C4.63273 15.665 4.33496 15.3673 4.33496 15V11ZM14.335 9V5.66504H11C10.6327 5.66504 10.335 5.36727 10.335 5C10.335 4.63273 10.6327 4.33496 11 4.33496H15L15.1338 4.34863C15.4369 4.41057 15.665 4.67857 15.665 5V9C15.665 9.36727 15.3673 9.66504 15 9.66504C14.6327 9.66504 14.335 9.36727 14.335 9Z" fill="currentColor" />
-                    </svg>
-                  )}
-            </button>
-          )}
           <button
-            aria-expanded={isRightPanelOpen}
-            aria-label={formatMessage({ id: isRightPanelOpen ? 'panel.hide' : 'panel.show' })}
+            aria-expanded={toolSurface !== 'closed'}
+            aria-label={formatMessage({ id: toolSurface === 'closed' ? 'toolLauncher.show' : 'toolLauncher.hide' })}
             className={sidebarTriggerClass}
-            onClick={toggleRightPanel}
-            title={formatMessage({ id: 'panel.toggle' })}
+            onClick={() => setToolSurface(current => current === 'closed' ? 'launcher' : 'closed')}
+            title={formatMessage({ id: toolSurface === 'closed' ? 'toolLauncher.show' : 'toolLauncher.hide' })}
             type="button"
           >
             <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 20 20">
@@ -340,34 +311,12 @@ export function BasicLayout() {
         )}
       </aside>
       <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface">
-        <Outlet />
+        {toolSurface === 'closed' && <Outlet />}
+        {toolSurface === 'launcher' && <ToolLauncher filesAvailable={filesAvailable} onOpenFiles={openFiles} />}
+        <div className="min-h-0 flex-1" hidden={toolSurface !== 'files'}>
+          <WorkspaceFileViewer onClose={() => setToolSurface('launcher')} />
+        </div>
       </main>
-      <aside
-        className="app-shell-right-panel relative flex min-w-0 shrink-0"
-        data-open={isRightPanelOpen}
-        data-width-mode={rightPanelWidthMode}
-        style={{
-          width: isRightPanelOpen ? displayedRightPanelWidth : 0,
-        }}
-      >
-        {isRightPanelOpen && <WorkspaceFileViewer />}
-        {isRightPanelOpen && !isRightPanelExpanded && (
-          <RightPanelResizeHandle
-            mainContentWidth={mainContentWidth}
-            onClose={() => setIsRightPanelOpen(false)}
-            onResizeEnd={(width) => {
-              localStorage.setItem(
-                RIGHT_PANEL_WIDTH_STORAGE_KEY,
-                String(writeRightPanelWidth(width, mainContentWidth)),
-              );
-            }}
-            onResizingChange={setIsResizing}
-            onWidthChange={updateRightPanelWidth}
-            shellHeight={viewportSize.height}
-            width={rightPanelWidth}
-          />
-        )}
-      </aside>
     </div>
   );
 }
