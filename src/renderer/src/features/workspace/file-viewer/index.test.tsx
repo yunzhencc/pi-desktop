@@ -47,6 +47,24 @@ it('loads the root and previews a selected text file', async () => {
   await waitFor(() => expect(document.body).toHaveTextContent('export const answer = 42;'));
   expect(screen.getByText('1')).toBeTruthy();
   expect(screen.getByText('2')).toBeTruthy();
+  expect(screen.getByText('1').parentElement).toHaveClass('leading-5');
+  const source = screen.getByText((_, element) => element?.tagName === 'CODE' && element.textContent === 'export const answer = 42;\nexport default answer;');
+  expect(source.closest('pre')?.parentElement).toHaveClass('leading-5');
+});
+
+it('keeps the selected file tab while its preview is loading', async () => {
+  const user = userEvent.setup();
+  const read = deferred<{ path: string; text: string }>();
+  window.piApp.workspaces.listFiles = vi.fn(() => Promise.resolve([
+    { isDirectory: false, isFile: true, name: 'answer.ts', path: 'answer.ts' },
+  ]));
+  window.piApp.workspaces.readFile = vi.fn(() => read.promise);
+  render(<I18nProvider><WorkspaceFileViewer onClose={vi.fn()} /></I18nProvider>);
+
+  await user.click(await screen.findByRole('button', { name: 'answer.ts' }));
+
+  expect(screen.getByRole('tab', { name: 'answer.ts' })).toBeTruthy();
+  expect(screen.getByText('正在加载文件')).toBeTruthy();
 });
 
 it('uses server search results and reveals the selected path', async () => {
@@ -62,6 +80,47 @@ it('uses server search results and reveals the selected path', async () => {
   await user.click(screen.getByRole('button', { name: '在文件管理器中显示' }));
 
   expect(window.piApp.workspaces.revealFile).toHaveBeenCalledWith('src/answer.ts');
+});
+
+it('does not offer disclosure for flat directory search results', async () => {
+  const user = userEvent.setup();
+  window.piApp.workspaces.searchFiles = vi.fn(() => Promise.resolve({
+    entries: [{ isDirectory: true, isFile: false, name: 'components', path: 'src/components' }],
+    truncated: false,
+  }));
+  render(<I18nProvider><WorkspaceFileViewer onClose={vi.fn()} /></I18nProvider>);
+
+  await user.type(screen.getByRole('searchbox', { name: '筛选文件' }), 'components');
+
+  expect(await screen.findByRole('button', { name: 'src/components' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Expand components' })).toBeNull();
+});
+
+it('calls onClose and retains both scroll positions across a viewer update', async () => {
+  const user = userEvent.setup();
+  const onClose = vi.fn();
+  window.piApp.workspaces.listFiles = vi.fn(() => Promise.resolve([
+    { isDirectory: false, isFile: true, name: 'answer.ts', path: 'answer.ts' },
+  ]));
+  render(<I18nProvider><WorkspaceFileViewer onClose={onClose} /></I18nProvider>);
+
+  const code = screen.getByRole('region', { name: '文件预览' });
+  const explorer = screen.getByRole('region', { name: '资源管理器' });
+  code.scrollLeft = 12;
+  code.scrollTop = 34;
+  explorer.scrollLeft = 56;
+  explorer.scrollTop = 78;
+  fireEvent.scroll(code);
+  fireEvent.scroll(explorer);
+
+  await user.click(await screen.findByRole('button', { name: 'answer.ts' }));
+  await user.click(screen.getByRole('button', { name: '关闭文件预览' }));
+
+  expect(code).toHaveProperty('scrollLeft', 12);
+  expect(code).toHaveProperty('scrollTop', 34);
+  expect(explorer).toHaveProperty('scrollLeft', 56);
+  expect(explorer).toHaveProperty('scrollTop', 78);
+  expect(onClose).toHaveBeenCalledTimes(1);
 });
 
 it('expands directories without loading their children again when selected', async () => {
