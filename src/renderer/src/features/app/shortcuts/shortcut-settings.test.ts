@@ -55,6 +55,7 @@ describe('shortcut settings', () => {
       goBack: ['Mod+['],
       goForward: ['Mod+]'],
       newConversation: ['Mod+J'],
+      openFiles: ['Mod+P'],
     });
   });
 
