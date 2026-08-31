@@ -7,6 +7,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { IntlProvider } from 'react-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BasicLayout } from './basic';
+import { ToolLauncher } from './tool-launcher';
 
 const { hotkeys, hotkeyOptions, navigate } = vi.hoisted(() => ({ hotkeys: new Map<string, () => void>(), hotkeyOptions: [] as Array<{ ignoreInputs?: boolean }>, navigate: vi.fn() }));
 
@@ -40,6 +41,14 @@ function renderApp(locale: keyof typeof messages = 'en') {
       <ShortcutSettingsProvider>
         <BasicLayout />
       </ShortcutSettingsProvider>
+    </IntlProvider>,
+  );
+}
+
+function renderToolLauncher(filesAvailable: boolean, onOpenFiles = vi.fn()) {
+  return render(
+    <IntlProvider locale="en" messages={messages.en}>
+      <ToolLauncher filesAvailable={filesAvailable} onOpenFiles={onOpenFiles} />
     </IntlProvider>,
   );
 }
@@ -125,6 +134,30 @@ describe('app window surface', () => {
     expect(screen.queryByRole('region', { name: 'Files' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show right panel' }));
     expect(screen.getByRole('region', { name: 'Files' })).toHaveClass('flex-1');
+  });
+
+  it('shows the tool launcher rows and only enables Files for a workspace', () => {
+    const onOpenFiles = vi.fn();
+    renderToolLauncher(true, onOpenFiles);
+
+    expect(screen.getByRole('region', { name: 'Tools' })).toBeTruthy();
+    expect(screen.getAllByRole('button').filter(button => ['Review', 'Terminal', 'Browser', 'Files', 'Side chat'].includes(button.textContent ?? ''))).toHaveLength(1);
+    expect(screen.getByText('Review').closest('[aria-disabled="true"]')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Files' })).toBeTruthy();
+    const content = screen.getByRole('region', { name: 'Tools' }).textContent ?? '';
+    const labels = ['Review', 'Terminal', 'Browser', 'Files', 'Side chat'];
+    const positions = labels.map(label => content.indexOf(label));
+    expect(positions).toEqual([...positions].sort((left, right) => left - right));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+    expect(onOpenFiles).toHaveBeenCalledOnce();
+  });
+
+  it('disables Files in the tool launcher without a selected workspace', () => {
+    renderToolLauncher(false);
+
+    expect(screen.queryByRole('button', { name: 'Files' })).toBeNull();
+    expect(screen.getByText('Files').closest('[aria-disabled="true"]')).toBeTruthy();
   });
 
   it('ignores a slower session navigation after a newer selection', async () => {
