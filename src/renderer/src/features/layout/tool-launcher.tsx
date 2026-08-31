@@ -29,13 +29,11 @@ export function ToolLauncher({ filesAvailable, onOpenFiles }: ToolLauncherProps)
 
             return enabled
               ? (
-                  <div className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)]" key={id}>
-                    <button aria-label={formatMessage({ id: 'fileViewer.title' })} className="flex min-w-0 flex-1 items-center gap-3 text-left focus-visible:outline-2 focus-visible:outline-[var(--focus)]" onClick={onOpenFiles} type="button">
-                      <Icon aria-hidden="true" className="size-4 shrink-0" />
-                      <span>{label}</span>
-                    </button>
+                  <button aria-label={formatMessage({ id: 'fileViewer.title' })} className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-foreground hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] focus-visible:outline-2 focus-visible:outline-[var(--focus)]" key={id} onClick={onOpenFiles} type="button">
+                    <Icon aria-hidden="true" className="size-4 shrink-0" />
+                    <span className="min-w-0 flex-1">{label}</span>
                     {shortcutChip}
-                  </div>
+                  </button>
                 )
               : (
                   <div aria-disabled="true" className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-text-secondary opacity-60" key={id}>

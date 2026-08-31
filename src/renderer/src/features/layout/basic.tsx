@@ -245,11 +245,11 @@ export function BasicLayout() {
           className="app-shell-header-right flex w-10 shrink-0 items-center justify-end pe-2"
         >
           <button
-            aria-expanded={toolSurface !== 'closed'}
-            aria-label={formatMessage({ id: toolSurface === 'closed' ? 'toolLauncher.show' : 'toolLauncher.hide' })}
+            aria-expanded={toolSurface === 'launcher'}
+            aria-label={formatMessage({ id: toolSurface === 'launcher' ? 'toolLauncher.hide' : 'toolLauncher.show' })}
             className={sidebarTriggerClass}
-            onClick={() => setToolSurface(current => current === 'closed' ? 'launcher' : 'closed')}
-            title={formatMessage({ id: toolSurface === 'closed' ? 'toolLauncher.show' : 'toolLauncher.hide' })}
+            onClick={() => setToolSurface(current => current === 'launcher' ? 'closed' : 'launcher')}
+            title={formatMessage({ id: toolSurface === 'launcher' ? 'toolLauncher.hide' : 'toolLauncher.show' })}
             type="button"
           >
             <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 20 20">

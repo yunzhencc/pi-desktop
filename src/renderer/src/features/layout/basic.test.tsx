@@ -139,12 +139,22 @@ describe('app window surface', () => {
     expect(screen.getByRole('region', { name: 'Tools' })).toBeTruthy();
   });
 
+  it('returns from Files to the tool launcher with the top-right control', async () => {
+    renderApp('en');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Files' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
+
+    expect(screen.getByRole('region', { name: 'Tools' })).toBeTruthy();
+  });
+
   it('shows the tool launcher rows and only enables Files for a workspace', () => {
     const onOpenFiles = vi.fn();
     renderToolLauncher(true, onOpenFiles);
 
     expect(screen.getByRole('region', { name: 'Tools' })).toBeTruthy();
-    expect(screen.getAllByRole('button').filter(button => ['Review', 'Terminal', 'Browser', 'Files', 'Side chat'].includes(button.textContent ?? ''))).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Files' })).toHaveLength(1);
     for (const label of ['Review', 'Terminal', 'Browser', 'Side chat'])
       expect(screen.getByText(label).closest('[aria-disabled="true"]')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Files' })).toBeTruthy();
@@ -162,6 +172,15 @@ describe('app window surface', () => {
 
     expect(screen.queryByRole('button', { name: 'Files' })).toBeNull();
     expect(screen.getByText('Files').closest('[aria-disabled="true"]')).toBeTruthy();
+  });
+
+  it('opens Files when its launcher shortcut chip is clicked', () => {
+    const onOpenFiles = vi.fn();
+    renderToolLauncher(true, onOpenFiles);
+
+    fireEvent.click(screen.getByText('⌘P'));
+
+    expect(onOpenFiles).toHaveBeenCalledOnce();
   });
 
   it('ignores a slower session navigation after a newer selection', async () => {

@@ -105,6 +105,7 @@ it('calls onClose and retains both scroll positions across a viewer update', asy
   ]));
   render(<I18nProvider><WorkspaceFileViewer onClose={onClose} /></I18nProvider>);
 
+  const file = await screen.findByRole('button', { name: 'answer.ts' });
   const code = screen.getByRole('region', { name: '文件预览' });
   const explorer = screen.getByRole('region', { name: '资源管理器' });
   code.scrollLeft = 12;
@@ -123,7 +124,7 @@ it('calls onClose and retains both scroll positions across a viewer update', asy
   expect(explorer).toHaveProperty('scrollLeft', 0);
   expect(explorer).toHaveProperty('scrollTop', 0);
 
-  await user.click(await screen.findByRole('button', { name: 'answer.ts' }));
+  await user.click(file);
   await user.click(screen.getByRole('button', { name: '关闭文件标签' }));
 
   expect(code).toHaveProperty('scrollLeft', 12);
@@ -131,6 +132,12 @@ it('calls onClose and retains both scroll positions across a viewer update', asy
   expect(explorer).toHaveProperty('scrollLeft', 56);
   expect(explorer).toHaveProperty('scrollTop', 78);
   expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+it('reserves the 46px titlebar while keeping the workbench full height', () => {
+  render(<I18nProvider><WorkspaceFileViewer onClose={vi.fn()} /></I18nProvider>);
+
+  expect(screen.getByRole('region', { name: '文件' })).toHaveClass('h-full', 'pt-11.5');
 });
 
 it('expands directories without loading their children again when selected', async () => {
@@ -142,10 +149,56 @@ it('expands directories without loading their children again when selected', asy
       ]));
   render(<I18nProvider><WorkspaceFileViewer onClose={vi.fn()} /></I18nProvider>);
 
-  await user.click(await screen.findByRole('button', { name: 'Expand src' }));
+  await user.click(await screen.findByRole('button', { name: '展开 src' }));
   expect(window.piApp.workspaces.listFiles).toHaveBeenCalledWith('src');
+  expect(screen.getByRole('button', { name: '折叠 src' })).toBeTruthy();
   await user.click(screen.getByRole('button', { name: 'src' }));
   expect(window.piApp.workspaces.listFiles).toHaveBeenCalledTimes(2);
+});
+
+it('clears both scroll offsets when the workspace changes', async () => {
+  render(<I18nProvider><WorkspaceFileViewer onClose={vi.fn()} /></I18nProvider>);
+
+  const code = screen.getByRole('region', { name: '文件预览' });
+  const explorer = screen.getByRole('region', { name: '资源管理器' });
+  code.scrollLeft = 12;
+  code.scrollTop = 34;
+  explorer.scrollLeft = 56;
+  explorer.scrollTop = 78;
+  fireEvent.scroll(code);
+  fireEvent.scroll(explorer);
+
+  act(() => window.dispatchEvent(new CustomEvent('workspace-changed', {
+    detail: { pinnedSessionPaths: [], pinnedWorkspacePaths: [], selectedWorkspacePath: '/projects/new', workspaces: [] },
+  })));
+
+  expect(code).toHaveProperty('scrollLeft', 0);
+  expect(code).toHaveProperty('scrollTop', 0);
+  expect(explorer).toHaveProperty('scrollLeft', 0);
+  expect(explorer).toHaveProperty('scrollTop', 0);
+});
+
+it('ignores the initial workspace snapshot after a newer empty workspace event', async () => {
+  const initialWorkspace = deferred<{
+    pinnedSessionPaths: [];
+    pinnedWorkspacePaths: [];
+    selectedWorkspacePath: string;
+    workspaces: [];
+  }>();
+  window.piApp.workspaces.get = vi.fn(() => initialWorkspace.promise);
+  render(<I18nProvider><WorkspaceFileViewer onClose={vi.fn()} /></I18nProvider>);
+
+  act(() => window.dispatchEvent(new CustomEvent('workspace-changed', {
+    detail: { pinnedSessionPaths: [], pinnedWorkspacePaths: [], workspaces: [] },
+  })));
+  await act(async () => initialWorkspace.resolve({
+    pinnedSessionPaths: [],
+    pinnedWorkspacePaths: [],
+    selectedWorkspacePath: '/projects/stale',
+    workspaces: [],
+  }));
+
+  expect(window.piApp.workspaces.listFiles).not.toHaveBeenCalled();
 });
 
 it('clears prior query entries before the next search resolves', async () => {

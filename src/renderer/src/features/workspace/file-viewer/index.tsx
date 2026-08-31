@@ -48,13 +48,15 @@ export function WorkspaceFileViewer({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     let active = true;
-    const initialVersion = workspaceVersionRef.current;
+    let receivedChange = false;
     const changeWorkspace = (path: string | undefined) => {
       if (path === workspacePathRef.current)
         return;
       workspacePathRef.current = path;
       const workspaceVersion = ++workspaceVersionRef.current;
       readRequestRef.current++;
+      codeScrollOffsetRef.current = { left: 0, top: 0 };
+      explorerScrollOffsetRef.current = { left: 0, top: 0 };
       setContent(undefined);
       setEntriesByPath({});
       setExpandedPaths(new Set());
@@ -68,13 +70,16 @@ export function WorkspaceFileViewer({ onClose }: { onClose: () => void }) {
       if (path)
         void loadDirectory('', workspaceVersion);
     };
-    const onWorkspaceChanged = (event: Event) => changeWorkspace((event as CustomEvent<WorkspaceSnapshot>).detail.selectedWorkspacePath);
+    const onWorkspaceChanged = (event: Event) => {
+      receivedChange = true;
+      changeWorkspace((event as CustomEvent<WorkspaceSnapshot>).detail.selectedWorkspacePath);
+    };
     window.addEventListener('workspace-changed', onWorkspaceChanged);
     void window.piApp.workspaces.get().then((workspace) => {
-      if (active && initialVersion === workspaceVersionRef.current)
+      if (active && !receivedChange)
         changeWorkspace(workspace.selectedWorkspacePath);
     }).catch(() => {
-      if (active && initialVersion === workspaceVersionRef.current)
+      if (active && !receivedChange)
         setTreeError(true);
     });
     return () => {
@@ -222,7 +227,7 @@ export function WorkspaceFileViewer({ onClose }: { onClose: () => void }) {
                     : (
                         <button
                           aria-expanded={expanded}
-                          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${entry.name}`}
+                          aria-label={formatMessage({ id: expanded ? 'fileViewer.collapse' : 'fileViewer.expand' }, { name: entry.name })}
                           className="flex size-6 shrink-0 items-center justify-center rounded hover:bg-muted focus-visible:outline-2 focus-visible:outline-[var(--focus)]"
                           onClick={() => toggleDirectory(entry.path)}
                           type="button"
@@ -259,7 +264,7 @@ export function WorkspaceFileViewer({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-row overflow-hidden" aria-label={formatMessage({ id: 'fileViewer.title' })}>
+    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-row overflow-hidden pt-11.5" aria-label={formatMessage({ id: 'fileViewer.title' })}>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex min-h-10 items-center gap-2 border-b border-border px-3 text-xs text-text-secondary">
           {selectedPath && (
