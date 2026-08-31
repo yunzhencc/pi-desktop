@@ -2,14 +2,17 @@ import type { WorkspaceFileEntry, WorkspaceSnapshot } from '@shared/types';
 import type { ReactNode } from 'react';
 import { Button } from '@pi-desktop/shadcn-ui/components/button';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
-import { ScrollArea } from '@pi-desktop/shadcn-ui/components/scroll-area';
-import { ChevronDown, ChevronRight, CircleAlert, ExternalLink, FileText, Folder, LoaderCircle, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, CircleAlert, ExternalLink, FileText, Folder, LoaderCircle, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 type FileContent = Awaited<ReturnType<Window['piApp']['workspaces']['readFile']>>;
+interface ScrollOffset {
+  left: number;
+  top: number;
+}
 
-export function WorkspaceFileViewer() {
+export function WorkspaceFileViewer({ onClose }: { onClose: () => void }) {
   const { formatMessage } = useIntl();
   const [content, setContent] = useState<FileContent>();
   const [entriesByPath, setEntriesByPath] = useState<Record<string, WorkspaceFileEntry[] | undefined>>({});
@@ -21,6 +24,8 @@ export function WorkspaceFileViewer() {
   const [searchResult, setSearchResult] = useState<{ entries: WorkspaceFileEntry[]; truncated: boolean }>();
   const [selectedPath, setSelectedPath] = useState<string>();
   const [treeError, setTreeError] = useState(false);
+  const codeScrollOffsetRef = useRef<ScrollOffset>({ left: 0, top: 0 });
+  const explorerScrollOffsetRef = useRef<ScrollOffset>({ left: 0, top: 0 });
   const readRequestRef = useRef(0);
   const workspacePathRef = useRef<string>();
   const workspaceVersionRef = useRef(0);
@@ -120,6 +125,12 @@ export function WorkspaceFileViewer() {
     path: parts.slice(0, index + 1).join('/'),
   })) ?? [], [selectedPath]);
   const entries = query ? searchResult?.entries : entriesByPath[''];
+  const lineNumbers = content?.text.split('\n').map((_, index) => index + 1) ?? [];
+
+  const updateQuery = (nextQuery: string) => {
+    setSearchResult(undefined);
+    setQuery(nextQuery);
+  };
 
   const selectFile = async (path: string) => {
     const request = ++readRequestRef.current;
@@ -143,6 +154,14 @@ export function WorkspaceFileViewer() {
         setIsReading(false);
     }
   };
+  const selectDirectory = (path: string) => {
+    readRequestRef.current++;
+    setSelectedPath(path);
+    setContent(undefined);
+    setHighlightedHtml(undefined);
+    setReadError(false);
+    setIsReading(false);
+  };
   const toggleDirectory = (path: string) => {
     setExpandedPaths((current) => {
       const next = new Set(current);
@@ -155,15 +174,19 @@ export function WorkspaceFileViewer() {
     if (!entriesByPath[path])
       void loadDirectory(path);
   };
-  const selectDirectory = (path: string) => {
-    readRequestRef.current++;
-    setSelectedPath(path);
-    setContent(undefined);
-    setHighlightedHtml(undefined);
-    setReadError(false);
-    setIsReading(false);
-    toggleDirectory(path);
-  };
+
+  const restoreCodeScroll = useCallback((element: HTMLDivElement | null) => {
+    if (element) {
+      element.scrollLeft = codeScrollOffsetRef.current.left;
+      element.scrollTop = codeScrollOffsetRef.current.top;
+    }
+  }, []);
+  const restoreExplorerScroll = useCallback((element: HTMLDivElement | null) => {
+    if (element) {
+      element.scrollLeft = explorerScrollOffsetRef.current.left;
+      element.scrollTop = explorerScrollOffsetRef.current.top;
+    }
+  }, []);
 
   const renderEntries = (items: WorkspaceFileEntry[] | undefined, depth = 0): ReactNode => {
     if (!items)
@@ -172,21 +195,43 @@ export function WorkspaceFileViewer() {
     return items.map((entry) => {
       const expanded = expandedPaths.has(entry.path);
       const label = query ? entry.path : entry.name;
+      const paddingInlineStart = `${depth * 16 + 8}px`;
       return (
         <div key={entry.path}>
-          <button
-            aria-expanded={entry.isDirectory ? expanded : undefined}
-            className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-sm text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-[var(--focus)]"
-            onClick={() => entry.isDirectory ? selectDirectory(entry.path) : void selectFile(entry.path)}
-            style={{ paddingInlineStart: `${depth * 16 + 8}px` }}
-            type="button"
-          >
-            {entry.isDirectory
-              ? expanded ? <ChevronDown aria-hidden="true" className="size-4 shrink-0" /> : <ChevronRight aria-hidden="true" className="size-4 shrink-0" />
-              : <span className="w-4 shrink-0" />}
-            {entry.isDirectory ? <Folder aria-hidden="true" className="size-4 shrink-0 text-text-secondary" /> : <FileText aria-hidden="true" className="size-4 shrink-0 text-text-secondary" />}
-            <span className="min-w-0 truncate">{label}</span>
-          </button>
+          {entry.isDirectory
+            ? (
+                <div className="flex items-center" style={{ paddingInlineStart }}>
+                  <button
+                    aria-expanded={expanded}
+                    aria-label={`${expanded ? 'Collapse' : 'Expand'} ${entry.name}`}
+                    className="flex size-6 shrink-0 items-center justify-center rounded hover:bg-muted focus-visible:outline-2 focus-visible:outline-[var(--focus)]"
+                    onClick={() => toggleDirectory(entry.path)}
+                    type="button"
+                  >
+                    {expanded ? <ChevronDown aria-hidden="true" className="size-4" /> : <ChevronRight aria-hidden="true" className="size-4" />}
+                  </button>
+                  <button
+                    className={`flex min-w-0 flex-1 items-center gap-1.5 rounded py-1 pe-2 text-left text-sm text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-[var(--focus)]${selectedPath === entry.path ? ' bg-muted' : ''}`}
+                    onClick={() => selectDirectory(entry.path)}
+                    type="button"
+                  >
+                    <Folder aria-hidden="true" className="size-4 shrink-0 text-text-secondary" />
+                    <span className="min-w-0 truncate">{label}</span>
+                  </button>
+                </div>
+              )
+            : (
+                <button
+                  className={`flex w-full items-center gap-1.5 rounded py-1 pe-2 text-left text-sm text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-[var(--focus)]${selectedPath === entry.path ? ' bg-muted' : ''}`}
+                  onClick={() => void selectFile(entry.path)}
+                  style={{ paddingInlineStart }}
+                  type="button"
+                >
+                  <span className="w-6 shrink-0" />
+                  <FileText aria-hidden="true" className="size-4 shrink-0 text-text-secondary" />
+                  <span className="min-w-0 truncate">{label}</span>
+                </button>
+              )}
           {entry.isDirectory && expanded && !query && renderEntries(entriesByPath[entry.path], depth + 1)}
         </div>
       );
@@ -194,19 +239,79 @@ export function WorkspaceFileViewer() {
   };
 
   return (
-    <section className="flex h-full min-w-0 flex-1 flex-col pt-11.5" aria-label={formatMessage({ id: 'fileViewer.title' })}>
-      <div className="border-b border-border px-3 py-2">
-        <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-          <FileText aria-hidden="true" className="size-4" />
-          {formatMessage({ id: 'fileViewer.title' })}
+    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-row overflow-hidden" aria-label={formatMessage({ id: 'fileViewer.title' })}>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-10 items-center gap-2 border-b border-border px-3 text-xs text-text-secondary">
+          {content && <span className="max-w-48 truncate rounded bg-muted px-2 py-1 text-foreground">{content.path.split('/').at(-1)}</span>}
+          <span>{formatMessage({ id: 'fileViewer.root' })}</span>
+          {breadcrumbs.map(breadcrumb => (
+            <span className="flex min-w-0 items-center gap-1" key={breadcrumb.path}>
+              <ChevronRight aria-hidden="true" className="size-3 shrink-0" />
+              <span className="truncate">{breadcrumb.label}</span>
+            </span>
+          ))}
+          {selectedPath && (
+            <Button aria-label={formatMessage({ id: 'fileViewer.reveal' })} className="ms-auto" onClick={() => void window.piApp.workspaces.revealFile(selectedPath)} size="icon-xs" title={formatMessage({ id: 'fileViewer.reveal' })} variant="ghost">
+              <ExternalLink aria-hidden="true" />
+            </Button>
+          )}
+          <Button aria-label={formatMessage({ id: 'fileViewer.close' })} onClick={onClose} size="icon-xs" title={formatMessage({ id: 'fileViewer.close' })} variant="ghost">
+            <X aria-hidden="true" />
+          </Button>
         </div>
-        <div className="relative">
-          <Search aria-hidden="true" className="pointer-events-none absolute start-2 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
-          <Input aria-label={formatMessage({ id: 'fileViewer.search' })} className="ps-8" onChange={event => setQuery(event.target.value)} type="search" value={query} />
+        <div
+          className="min-h-0 flex-1 overflow-auto"
+          onScroll={(event) => {
+            codeScrollOffsetRef.current = { left: event.currentTarget.scrollLeft, top: event.currentTarget.scrollTop };
+          }}
+          ref={restoreCodeScroll}
+        >
+          {isReading && (
+            <p className="flex items-center gap-2 p-3 text-sm text-text-secondary">
+              <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+              {formatMessage({ id: 'fileViewer.loading' })}
+            </p>
+          )}
+          {readError && (
+            <p className="flex items-center gap-2 p-3 text-sm text-text-secondary">
+              <CircleAlert aria-hidden="true" className="size-4" />
+              {formatMessage({ id: 'fileViewer.unavailable' })}
+            </p>
+          )}
+          {!content && !isReading && !readError && <p className="p-3 text-sm text-text-secondary">{formatMessage({ id: 'fileViewer.empty' })}</p>}
+          {content && (
+            <div className="flex min-h-full min-w-max">
+              <div aria-hidden="true" className="select-none border-e border-border px-3 py-3 text-right font-mono text-xs leading-5 text-text-secondary">
+                {lineNumbers.map(number => <div key={number}>{number}</div>)}
+              </div>
+              {highlightedHtml
+                ? (
+                    // eslint-disable-next-line react/dom-no-dangerously-set-innerhtml -- Shiki escapes the authorized plain-text response.
+                    <div className="min-w-0 flex-1 [&_pre]:m-0 [&_pre]:min-h-full [&_pre]:overflow-visible [&_pre]:p-3 [&_pre]:text-xs" dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
+                  )
+                : <pre className="m-0 min-h-full p-3 text-xs"><code>{content.text}</code></pre>}
+            </div>
+          )}
         </div>
       </div>
-      <div className="grid min-h-0 flex-1 grid-rows-[minmax(8rem,1fr)_minmax(12rem,2fr)]">
-        <ScrollArea className="border-b border-border">
+      <aside className="flex h-full w-72 shrink-0 flex-col border-l border-border" aria-label={formatMessage({ id: 'fileViewer.explorer' })}>
+        <div className="border-b border-border px-3 py-2">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+            <FileText aria-hidden="true" className="size-4" />
+            {formatMessage({ id: 'fileViewer.explorer' })}
+          </div>
+          <div className="relative">
+            <Search aria-hidden="true" className="pointer-events-none absolute start-2 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
+            <Input aria-label={formatMessage({ id: 'fileViewer.search' })} className="ps-8" onChange={event => updateQuery(event.target.value)} type="search" value={query} />
+          </div>
+        </div>
+        <div
+          className="min-h-0 flex-1 overflow-auto"
+          onScroll={(event) => {
+            explorerScrollOffsetRef.current = { left: event.currentTarget.scrollLeft, top: event.currentTarget.scrollTop };
+          }}
+          ref={restoreExplorerScroll}
+        >
           {query && searchResult?.truncated && <p className="px-3 py-2 text-xs text-text-secondary">{formatMessage({ id: 'fileViewer.search.truncated' })}</p>}
           {treeError
             ? (
@@ -216,45 +321,8 @@ export function WorkspaceFileViewer() {
                 </p>
               )
             : renderEntries(entries)}
-        </ScrollArea>
-        <div className="flex min-h-0 flex-col">
-          <div className="flex min-h-10 items-center gap-1 border-b border-border px-3 text-xs text-text-secondary">
-            <span>{formatMessage({ id: 'fileViewer.root' })}</span>
-            {breadcrumbs.map(breadcrumb => (
-              <span className="flex items-center gap-1" key={breadcrumb.path}>
-                <ChevronRight aria-hidden="true" className="size-3" />
-                {breadcrumb.label}
-              </span>
-            ))}
-            {selectedPath && (
-              <Button aria-label={formatMessage({ id: 'fileViewer.reveal' })} className="ms-auto" onClick={() => void window.piApp.workspaces.revealFile(selectedPath)} size="icon-xs" title={formatMessage({ id: 'fileViewer.reveal' })} variant="ghost">
-                <ExternalLink aria-hidden="true" />
-              </Button>
-            )}
-          </div>
-          <ScrollArea className="min-h-0 flex-1">
-            {isReading && (
-              <p className="flex items-center gap-2 p-3 text-sm text-text-secondary">
-                <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-                {formatMessage({ id: 'fileViewer.loading' })}
-              </p>
-            )}
-            {readError && (
-              <p className="flex items-center gap-2 p-3 text-sm text-text-secondary">
-                <CircleAlert aria-hidden="true" className="size-4" />
-                {formatMessage({ id: 'fileViewer.unavailable' })}
-              </p>
-            )}
-            {!content && !isReading && !readError && <p className="p-3 text-sm text-text-secondary">{formatMessage({ id: 'fileViewer.empty' })}</p>}
-            {content && (highlightedHtml
-              ? (
-                  // eslint-disable-next-line react/dom-no-dangerously-set-innerhtml -- Shiki escapes the authorized plain-text response.
-                  <div className="[&_pre]:m-0 [&_pre]:min-h-full [&_pre]:overflow-auto [&_pre]:p-3 [&_pre]:text-xs" dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
-                )
-              : <pre className="m-0 min-h-full overflow-auto p-3 text-xs"><code>{content.text}</code></pre>)}
-          </ScrollArea>
         </div>
-      </div>
+      </aside>
     </section>
   );
 }
