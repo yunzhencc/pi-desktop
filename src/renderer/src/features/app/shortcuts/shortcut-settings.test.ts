@@ -15,6 +15,7 @@ describe('shortcut settings', () => {
       goBack: ['Mod+['],
       goForward: ['Mod+]'],
       newConversation: ['Mod+N', 'Mod+Shift+O'],
+      openFiles: ['Mod+P'],
       openSettings: ['Mod+,'],
       toggleSessionPin: ['Mod+Shift+P'],
       toggleSidebar: ['Mod+B'],
@@ -27,6 +28,7 @@ describe('shortcut settings', () => {
       'toggleSessionPin',
       'goBack',
       'goForward',
+      'openFiles',
     ]);
   });
 
@@ -36,6 +38,7 @@ describe('shortcut settings', () => {
       goBack: ['Mod+['],
       goForward: ['Mod+]'],
       newConversation: ['Mod+J'],
+      openFiles: ['Mod+P'],
       openSettings: ['Mod+,'],
       toggleSessionPin: ['Mod+Shift+P'],
       toggleSidebar: [],

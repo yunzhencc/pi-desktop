@@ -10,6 +10,7 @@ export const shortcutDefinitions = [
   { description: 'shortcut.toggleSessionPin.description', id: 'toggleSessionPin', title: 'shortcut.toggleSessionPin.title' },
   { description: 'shortcut.goBack.description', id: 'goBack', title: 'shortcut.goBack.title' },
   { description: 'shortcut.goForward.description', id: 'goForward', title: 'shortcut.goForward.title' },
+  { description: 'shortcut.openFiles.description', id: 'openFiles', title: 'shortcut.openFiles.title' },
 ] as const;
 
 export type ShortcutId = (typeof shortcutDefinitions)[number]['id'];
@@ -20,6 +21,7 @@ const defaultShortcutBindings: ShortcutBindings = {
   goBack: ['Mod+['],
   goForward: ['Mod+]'],
   newConversation: ['Mod+N', 'Mod+Shift+O'],
+  openFiles: ['Mod+P'],
   openSettings: ['Mod+,'],
   toggleSessionPin: ['Mod+Shift+P'],
   toggleSidebar: ['Mod+B'],
