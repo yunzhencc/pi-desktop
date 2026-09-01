@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@pi-desktop/shadcn-ui/components/button';
 import { Input } from '@pi-desktop/shadcn-ui/components/input';
 import { ChevronDown, ChevronRight, CircleAlert, ExternalLink, FileText, Folder, LoaderCircle, Search, X } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 type FileContent = Awaited<ReturnType<Window['piApp']['workspaces']['readFile']>>;
@@ -127,10 +127,6 @@ export function WorkspaceFileViewer({ onClose }: { onClose: () => void }) {
     };
   }, [content]);
 
-  const breadcrumbs = useMemo(() => selectedPath?.split('/').filter(Boolean).map((label, index, parts) => ({
-    label,
-    path: parts.slice(0, index + 1).join('/'),
-  })) ?? [], [selectedPath]);
   const entries = query ? searchResult?.entries : entriesByPath[''];
   const lineNumbers = content?.text.split('\n').map((_, index) => index + 1) ?? [];
 
@@ -266,17 +262,13 @@ export function WorkspaceFileViewer({ onClose }: { onClose: () => void }) {
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-row overflow-hidden pt-11.5" aria-label={formatMessage({ id: 'fileViewer.title' })}>
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex min-h-10 items-center gap-2 border-b border-border px-3 text-xs text-text-secondary">
-          {selectedPath && (
-            <span className="max-w-48 truncate rounded bg-muted px-2 py-1 text-foreground">{selectedPath.split('/').at(-1)}</span>
-          )}
-          <span>{formatMessage({ id: 'fileViewer.root' })}</span>
-          {breadcrumbs.map(breadcrumb => (
-            <span className="flex min-w-0 items-center gap-1" key={breadcrumb.path}>
-              <ChevronRight aria-hidden="true" className="size-3 shrink-0" />
-              <span className="truncate">{breadcrumb.label}</span>
-            </span>
-          ))}
+        <div className="flex h-10 items-center border-b border-border text-xs text-text-secondary">
+          <div className="flex min-w-0 flex-1 self-stretch" role="tablist">
+            <div aria-selected="true" className="flex min-w-0 max-w-64 items-center gap-2 border-e border-b-2 border-b-foreground px-3 text-foreground" role="tab">
+              <FileText aria-hidden="true" className="size-3.5 shrink-0 text-text-secondary" />
+              <span className="truncate">{selectedPath?.split('/').at(-1) ?? formatMessage({ id: 'fileViewer.title' })}</span>
+            </div>
+          </div>
           {selectedPath && (
             <Button aria-label={formatMessage({ id: 'fileViewer.reveal' })} className="ms-auto" onClick={() => void window.piApp.workspaces.revealFile(selectedPath)} size="icon-xs" title={formatMessage({ id: 'fileViewer.reveal' })} variant="ghost">
               <ExternalLink aria-hidden="true" />
@@ -323,12 +315,8 @@ export function WorkspaceFileViewer({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
-      <aside className="flex h-full w-72 shrink-0 flex-col border-l border-border" aria-label={formatMessage({ id: 'fileViewer.explorer' })}>
-        <div className="border-b border-border px-3 py-2">
-          <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-            <FileText aria-hidden="true" className="size-4" />
-            {formatMessage({ id: 'fileViewer.explorer' })}
-          </div>
+      <aside className="flex h-full w-64 shrink-0 flex-col border-l border-border" aria-label={formatMessage({ id: 'fileViewer.explorer' })}>
+        <div className="border-b border-border p-2">
           <div className="relative">
             <Search aria-hidden="true" className="pointer-events-none absolute start-2 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
             <Input aria-label={formatMessage({ id: 'fileViewer.search' })} className="ps-8" onChange={event => updateQuery(event.target.value)} type="search" value={query} />

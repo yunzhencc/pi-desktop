@@ -121,6 +121,25 @@ describe('app window surface', () => {
     expect(screen.getByRole('button', { name: '快速聊天' })).toBeTruthy();
   });
 
+  it('gives the conversation outlet a full-height flex host', () => {
+    renderApp('en');
+
+    const host = screen.getByTestId('conversation-outlet').parentElement;
+    expect(host?.classList.contains('flex')).toBe(true);
+    expect(host?.classList.contains('min-h-0')).toBe(true);
+    expect(host?.classList.contains('flex-1')).toBe(true);
+  });
+
+  it('opens the tool launcher in a right-side panel without covering the conversation', () => {
+    renderApp('en');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
+
+    const panel = screen.getByRole('complementary', { name: 'Tools' });
+    expect(panel).toContainElement(screen.getByRole('region', { name: 'Tools' }));
+    expect(screen.getByTestId('conversation-outlet')).toBeVisible();
+  });
+
   it('shows disabled application-history controls before any navigation', () => {
     renderApp('zh-CN');
 
@@ -128,7 +147,7 @@ describe('app window surface', () => {
     expect(screen.getByRole('button', { name: '前进' }).hasAttribute('disabled')).toBe(true);
   });
 
-  it('opens Files from the tool launcher and returns to the launcher when closed', async () => {
+  it('opens Files from the tool launcher and returns to the conversation when closed', async () => {
     renderApp('en');
 
     expect(screen.queryByRole('region', { name: 'Files' })).toBeNull();
@@ -136,7 +155,8 @@ describe('app window surface', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Files' }));
     expect(screen.getByRole('region', { name: 'Files' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close file tab' }));
-    expect(screen.getByRole('region', { name: 'Tools' })).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Tools' })).toBeNull();
+    expect(screen.getByTestId('conversation-outlet')).toBeVisible();
   });
 
   it('keeps the conversation visible beside Files', async () => {
@@ -175,6 +195,19 @@ describe('app window surface', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Files' }));
     expect(onOpenFiles).toHaveBeenCalledOnce();
+  });
+
+  it('uses Codex’s compact side-panel action density', () => {
+    renderToolLauncher(true);
+
+    const launcher = screen.getByRole('region', { name: 'Tools' });
+    expect(launcher.className).toContain('p-2');
+    expect(launcher.firstElementChild?.className).toContain('max-w-xl');
+    const review = screen.getByText('Review').closest('[aria-disabled="true"]');
+    expect(review?.className).toContain('min-h-10');
+    expect(review?.className).toContain('gap-2');
+    expect(review?.className).toContain('rounded-md');
+    expect(review?.className).toContain('text-sm');
   });
 
   it('disables Files in the tool launcher without a selected workspace', () => {
@@ -269,8 +302,8 @@ describe('app window surface', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Files' }));
     fireEvent.change(screen.getByRole('searchbox', { name: 'Filter files' }), { target: { value: 'weather' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Close file tab' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Files' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show tools' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Files' }));
 
     expect(screen.getByRole('searchbox', { name: 'Filter files' })).toHaveValue('weather');
     expect(listFiles).toHaveBeenCalledOnce();

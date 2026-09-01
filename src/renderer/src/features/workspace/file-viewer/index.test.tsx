@@ -64,7 +64,7 @@ it('keeps the selected file label while its preview is loading', async () => {
   await user.click(await screen.findByRole('button', { name: 'answer.ts' }));
 
   expect(screen.getAllByText('answer.ts').length).toBeGreaterThan(1);
-  expect(screen.queryByRole('tab')).toBeNull();
+  expect(screen.getByRole('tab', { name: 'answer.ts' })).toBeTruthy();
   expect(screen.getByText('正在加载文件')).toBeTruthy();
 });
 

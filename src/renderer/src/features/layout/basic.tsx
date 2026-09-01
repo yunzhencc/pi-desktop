@@ -8,7 +8,7 @@ import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { SidebarToggle } from './components';
+import { readRightPanelWidth, RightPanelResizeHandle, SidebarToggle, writeRightPanelWidth } from './components';
 import { Footer, SidebarResizeHandle } from './sidebar';
 import { ToolLauncher } from './tool-launcher';
 import {
@@ -23,6 +23,7 @@ import {
 } from './utils';
 
 const SIDEBAR_WIDTH_STORAGE_KEY = 'sidebar-width';
+const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'app-shell:right-panel-width:v4';
 const sidebarTriggerClass = 'sidebar-trigger flex size-8 cursor-default items-center justify-center rounded-lg text-text-secondary outline-none [-webkit-app-region:no-drag] hover:bg-[color-mix(in_srgb,var(--foreground)_6%,transparent)] hover:text-foreground focus-visible:shadow-[0_0_0_2px_var(--focus)] disabled:pointer-events-none disabled:opacity-35';
 type ToolSurface = 'closed' | 'launcher' | 'files';
 
@@ -47,6 +48,12 @@ export function BasicLayout() {
       window.innerWidth,
     );
   });
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
+  const initialMainContentWidth = viewportWidth - sidebarWidth;
+  const [rightPanelWidthRatio, setRightPanelWidthRatio] = useState(() => writeRightPanelWidth(
+    readRightPanelWidth(localStorage.getItem(RIGHT_PANEL_WIDTH_STORAGE_KEY), initialMainContentWidth),
+    initialMainContentWidth,
+  ));
   const [isResizing, setIsResizing] = useState(false);
   const [toolSurface, setToolSurface] = useState<ToolSurface>('closed');
 
@@ -121,6 +128,9 @@ export function BasicLayout() {
       .catch(() => {});
   };
   const headerLeftWidth = isSidebarVisible ? sidebarWidth : toolbarInset + 96;
+  const mainContentWidth = viewportWidth - (isSidebarVisible ? sidebarWidth : 0);
+  const rightPanelWidth = readRightPanelWidth(String(rightPanelWidthRatio), mainContentWidth);
+  const updateRightPanelWidth = (width: number) => setRightPanelWidthRatio(writeRightPanelWidth(width, mainContentWidth));
   useHotkeys(
     [
       ...bindings.newConversation.map(hotkey => ({ callback: startNewConversation, hotkey })),
@@ -137,6 +147,12 @@ export function BasicLayout() {
   useEffect(() => {
     window.piApp.windowControls.getIsFullscreen().then(setIsFullscreen);
     return window.piApp.windowControls.onFullscreenChange(setIsFullscreen);
+  }, []);
+
+  useEffect(() => {
+    const updateViewportWidth = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', updateViewportWidth);
+    return () => window.removeEventListener('resize', updateViewportWidth);
   }, []);
 
   useEffect(() => {
@@ -312,18 +328,28 @@ export function BasicLayout() {
       </aside>
       <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface">
         <div className="flex min-h-0 min-w-0 flex-1">
-          <div className={`min-w-0 ${toolSurface === 'files' ? 'min-w-72 flex-1 border-e border-border' : 'flex-1'}`}>
+          <div className="flex min-h-0 min-w-0 flex-1">
             <Outlet />
           </div>
-          <div className="min-h-0 min-w-0 flex-[2]" hidden={toolSurface !== 'files'}>
-            <WorkspaceFileViewer onClose={() => setToolSurface('launcher')} />
-          </div>
+          {toolSurface !== 'closed' && (
+            <aside aria-label={formatMessage({ id: 'toolLauncher.title' })} className="relative flex min-h-0 shrink-0 flex-col border-s border-border bg-surface" style={{ width: rightPanelWidth }}>
+              <div className="min-h-0 flex-1" hidden={toolSurface !== 'files'}>
+                <WorkspaceFileViewer onClose={() => setToolSurface('closed')} />
+              </div>
+              {toolSurface === 'launcher' && <ToolLauncher filesAvailable={filesAvailable} onOpenFiles={openFiles} />}
+              <RightPanelResizeHandle
+                mainContentWidth={mainContentWidth}
+                onClose={() => setToolSurface('closed')}
+                onResizeEnd={(width) => {
+                  localStorage.setItem(RIGHT_PANEL_WIDTH_STORAGE_KEY, String(writeRightPanelWidth(width, mainContentWidth)));
+                }}
+                onResizingChange={setIsResizing}
+                onWidthChange={updateRightPanelWidth}
+                width={rightPanelWidth}
+              />
+            </aside>
+          )}
         </div>
-        {toolSurface === 'launcher' && (
-          <div className="absolute inset-0 z-20">
-            <ToolLauncher filesAvailable={filesAvailable} onOpenFiles={openFiles} />
-          </div>
-        )}
       </main>
     </div>
   );
